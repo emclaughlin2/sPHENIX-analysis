@@ -1,0 +1,7 @@
+executable = full_jet_ue_pileup.sh
+arguments = $(run) $(is0mrad)
+output = output_logs/output_full_jet_ue_pileup_$(Process).out
+when_to_transfer_output = ON_EXIT
+error			= output_logs/error_full_jet_ue_pileup_$(Process).err
+log = /tmp/egm2153_$(Process).log
+queue run, is0mrad from full_run_list.txt

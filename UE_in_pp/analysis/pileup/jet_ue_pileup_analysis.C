@@ -41,7 +41,8 @@ std::vector<int> run_numbers;
 std::vector<double> collision_rates;
 std::vector<double> pileup_rates;
 //std::vector<double> pileup_bins = {0.0,0.015};
-std::vector<double> pileup_bins = {0.0,0.015,0.02,0.028,0.05};
+//std::vector<double> pileup_bins = {0.0,0.015,0.02,0.028,0.05};
+std::vector<double> pileup_bins = {0.028,0.05};
 
 void jet_ue_pileup_analysis(bool sim = true, bool clusters = true, bool emcal_clusters = false, bool applyCorr = false, bool do_bkg_cut = true, bool dijet_bkg_cut = true, bool do_jet_pt_range = true) {
 
@@ -96,7 +97,7 @@ void jet_ue_pileup_analysis(bool sim = true, bool clusters = true, bool emcal_cl
     float deltaphimin = 3.0*M_PI/4.0;
 
     for (int pb = 1; pb < pileup_bins.size(); pb++) {
-    	string outfilename = "pileup_inclusive_jet_UE_analysis";
+    	string outfilename = "pileup_inclusive_jet_UE_analysis_test_Oct2025";
     	if (!clusters) outfilename += "_calo_tower_sum";
     	if (clusters && emcal_clusters) outfilename += "_emcal_clusters";
     	if (do_jet_pt_range) outfilename += "_leadjet_15_20_GeV";
@@ -139,6 +140,16 @@ void jet_ue_pileup_analysis(bool sim = true, bool clusters = true, bool emcal_cl
 	  	TH1F* h_et_towards = new TH1F("h_et_towards","",netbins, etbins);
 	  	TH1F* h_et_transverse = new TH1F("h_et_transverse","",netbins, etbins);
 	  	TH1F* h_et_away = new TH1F("h_et_away","",netbins, etbins);
+
+	  	TH1F* h_emcal_et_towards_spectra = new TH1F("h_emcal_et_towards_spectra","",100, -1.0, 5.0);
+	  	TH1F* h_emcal_et_transverse_spectra = new TH1F("h_emcal_et_transverse_spectra","",100, -1.0, 5.0);
+	  	TH1F* h_emcal_et_away_spectra = new TH1F("h_emcal_et_away_spectra","",100, -1.0, 5.0);
+	  	TH1F* h_ihcal_et_towards_spectra = new TH1F("h_ihcal_et_towards_spectra","",100, -1.0, 5.0);
+	  	TH1F* h_ihcal_et_transverse_spectra = new TH1F("h_ihcal_et_transverse_spectra","",100, -1.0, 5.0);
+	  	TH1F* h_ihcal_et_away_spectra = new TH1F("h_ihcal_et_away_spectra","",100, -1.0, 5.0);
+	  	TH1F* h_ohcal_et_towards_spectra = new TH1F("h_ohcal_et_towards_spectra","",100, -1.0, 5.0);
+	  	TH1F* h_ohcal_et_transverse_spectra = new TH1F("h_ohcal_et_transverse_spectra","",100, -1.0, 5.0);
+	  	TH1F* h_ohcal_et_away_spectra = new TH1F("h_ohcal_et_away_spectra","",100, -1.0, 5.0);
 
 	  	// create topocluster histograms 
 	  	int topo_thresholds[] = {-9999,0,100,200,300,500,1000,2000};
@@ -464,14 +475,17 @@ void jet_ue_pileup_analysis(bool sim = true, bool clusters = true, bool emcal_cl
 	  				if (fabs(dphi) < M_PI/3.0) { // towards region 
 	  					et_towards += emcale[i]/cosh(emcaleta[i]);
 	  					h_ue_2D_towards->Fill(emcaleta[i],dphi,emcale[i]/cosh(emcaleta[i]));
+	  					h_emcal_et_towards_spectra->Fill(emcale[i]/cosh(emcaleta[i]));
 	  				} else if (fabs(dphi) > M_PI/3.0 && fabs(dphi) < (2.0*M_PI)/3.0) { // transverse region 
 						et_transverse += emcale[i]/cosh(emcaleta[i]);
 	  					h_ue_2D_transverse->Fill(emcaleta[i],dphi,emcale[i]/cosh(emcaleta[i]));
 	  					h_trans_et_2D_index_emcal->Fill(emcalieta[i],emcaliphi[i],emcale[i]/cosh(emcaleta[i]));
 	  					h_trans_et_2D_index_total->Fill(emcalieta[i]/4,emcaliphi[i]/4,emcale[i]/cosh(emcaleta[i]));
+	  					h_emcal_et_transverse_spectra->Fill(emcale[i]/cosh(emcaleta[i]));
 	  				} else if (fabs(dphi) > (2.0*M_PI)/3.0) { // away region 
 	  					et_away += emcale[i]/cosh(emcaleta[i]);
 	  					h_ue_2D_away->Fill(emcaleta[i],dphi,emcale[i]/cosh(emcaleta[i]));
+	  					h_emcal_et_away_spectra->Fill(emcale[i]/cosh(emcaleta[i]));
 	  				}
 	  			}
 
@@ -483,14 +497,17 @@ void jet_ue_pileup_analysis(bool sim = true, bool clusters = true, bool emcal_cl
 	  				if (fabs(dphi) < M_PI/3.0) {
 	  					et_towards += ihcale[i]/cosh(ihcaleta[i]);
 	  					h_ue_2D_towards->Fill(ihcaleta[i],dphi,ihcale[i]/cosh(ihcaleta[i]));
+	  					h_ihcal_et_towards_spectra->Fill(ihcale[i]/cosh(ihcaleta[i]));
 	  				} else if (fabs(dphi) > M_PI/3.0 && fabs(dphi) < (2.0*M_PI)/3.0) {
 						et_transverse += ihcale[i]/cosh(ihcaleta[i]);
 	  					h_ue_2D_transverse->Fill(ihcaleta[i],dphi,ihcale[i]/cosh(ihcaleta[i]));
 	  					h_trans_et_2D_index_ihcal->Fill(ihcalieta[i],ihcaliphi[i],ihcale[i]/cosh(ihcaleta[i]));
 	  					h_trans_et_2D_index_total->Fill(ihcalieta[i],ihcaliphi[i],ihcale[i]/cosh(ihcaleta[i]));
+	  					h_ihcal_et_transverse_spectra->Fill(ihcale[i]/cosh(ihcaleta[i]));
 	  				} else if (fabs(dphi) > (2.0*M_PI)/3.0) {
 	  					et_away += ihcale[i]/cosh(ihcaleta[i]);
 	  					h_ue_2D_away->Fill(ihcaleta[i],dphi,ihcale[i]/cosh(ihcaleta[i]));
+	  					h_ihcal_et_away_spectra->Fill(ihcale[i]/cosh(ihcaleta[i]));
 	  				}
 	  			}
 
@@ -502,14 +519,17 @@ void jet_ue_pileup_analysis(bool sim = true, bool clusters = true, bool emcal_cl
 	  				if (fabs(dphi) < M_PI/3.0) {
 	  					et_towards += ohcale[i]/cosh(ohcaleta[i]);
 	  					h_ue_2D_towards->Fill(ohcaleta[i],dphi,ohcale[i]/cosh(ohcaleta[i]));
+	  					h_ohcal_et_towards_spectra->Fill(ohcale[i]/cosh(ohcaleta[i]));
 	  				} else if (fabs(dphi) > M_PI/3.0 && fabs(dphi) < (2.0*M_PI)/3.0) {
 						et_transverse += ohcale[i]/cosh(ohcaleta[i]);
 	  					h_ue_2D_transverse->Fill(ohcaleta[i],dphi,ohcale[i]/cosh(ohcaleta[i]));
 	  					h_trans_et_2D_index_ohcal->Fill(ohcalieta[i],ohcaliphi[i],ohcale[i]/cosh(ohcaleta[i]));
 	  					h_trans_et_2D_index_total->Fill(ohcalieta[i],ohcaliphi[i],ohcale[i]/cosh(ohcaleta[i]));
+	  					h_ohcal_et_transverse_spectra->Fill(ohcale[i]/cosh(ohcaleta[i]));
 	  				} else if (fabs(dphi) > (2.0*M_PI)/3.0) {
 	  					et_away += ohcale[i]/cosh(ohcaleta[i]);
 	  					h_ue_2D_away->Fill(ohcaleta[i],dphi,ohcale[i]/cosh(ohcaleta[i]));
+	  					h_ohcal_et_away_spectra->Fill(ohcale[i]/cosh(ohcaleta[i]));
 	  				}
 	  			}
 	  		} else { // using clusters to find total energy in towards, transverse and away regions 
@@ -602,6 +622,16 @@ void jet_ue_pileup_analysis(bool sim = true, bool clusters = true, bool emcal_cl
 	  	h_ue_pt_towards->Scale(1.0/(secteta*sectphi));
 	  	h_ue_pt_transverse->Scale(1.0/(secteta*sectphi));
 	  	h_ue_pt_away->Scale(1.0/(secteta*sectphi));
+
+	  	h_emcal_et_towards_spectra->Write();
+		h_emcal_et_transverse_spectra->Write();
+		h_emcal_et_away_spectra->Write();
+		h_ihcal_et_towards_spectra->Write();
+		h_ihcal_et_transverse_spectra->Write();
+		h_ihcal_et_away_spectra->Write();
+		h_ohcal_et_towards_spectra->Write();
+		h_ohcal_et_transverse_spectra->Write();
+		h_ohcal_et_away_spectra->Write();
 
 	  	out->Write();
 	  	out->Close();

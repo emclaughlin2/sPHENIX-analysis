@@ -1,0 +1,7 @@
+executable = ana468_509_qa.sh
+arguments = $(run)
+output = output_logs/output_ana_qa_$(Process).out
+when_to_transfer_output = ON_EXIT
+error			= output_logs/error_ana_qa_$(Process).err
+log = /tmp/egm2153_$(Process).log
+queue run from ana468_509_qa_queue.list

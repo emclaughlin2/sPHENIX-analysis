@@ -21,7 +21,7 @@ void draw_reweighted_spectra(TH1D* truth, TH1D* reweight, bool jet, std::pair<do
     pad1->Draw();
     pad1->cd();
     if (jet) pad1->SetLogy(1);
-    else pad1->SetLogx(1);
+    //else pad1->SetLogx(1);
 
     vector<double> bins;
     vector<double> bin_size;
@@ -78,7 +78,7 @@ void draw_reweighted_spectra(TH1D* truth, TH1D* reweight, bool jet, std::pair<do
     pad2->SetBottomMargin(0.2);
     pad2->Draw();
     pad2->cd();
-    if (!jet) pad2->SetLogx(1);
+    //if (!jet) pad2->SetLogx(1);
 
     TH1D* r0 = (TH1D*)reweight->Clone("ratio");
     r0->Divide(truth);
@@ -121,16 +121,17 @@ void plot_reweight() {
 
     std::vector<std::string> syst = {"calib_dijet","calib_dijet_jesdown","calib_dijet_jesup","calib_dijet_jerdown","calib_dijet_jerup"};
     std::vector<std::string> syst_tags = {"Nominal", "JES Down", "JES Up", "JER Down", "JER Up"};
-    std::vector<std::string> trim = {"_trim_10","_reweight_trim_10"};
+    //std::vector<std::string> trim = {"_trim_10","_reweight_trim_10"};
+    std::vector<std::string> trim = {"","_trim_5","_trim_10","_reweight","_reweight_trim_5","_reweight_trim_10"};
 
-    TFile* f = TFile::Open("output_unfolded_data_iter_3_1000toys.root");
+    TFile* f = TFile::Open("run28_output_files/output_unfolded_data_efrac_bkg_cut_calib_dijet_run28_iter_3_1000toys.root");
 
     std::vector<std::vector<TH2D*>> h_truth_2D(5, std::vector<TH2D*>(2, nullptr));
     std::vector<std::vector<TH1D*>> hj_truth(5, std::vector<TH1D*>(2, nullptr));
     std::vector<std::vector<TH1D*>> hc_truth(5, std::vector<TH1D*>(2, nullptr));
     
     for (int i = 0; i < syst.size(); i++) {
-        for (int j = 0; j < 2; j++) {
+        for (int j = 0; j < trim.size(); j++) {
             h_truth_2D[i][j] = (TH2D*)f->Get(("h_truth_"+syst[i]+trim[j]).c_str());
             hj_truth[i][j] = h_truth_2D[i][j]->ProjectionX(("hj_truth_"+syst[i]+trim[j]).c_str());
             hc_truth[i][j] = h_truth_2D[i][j]->ProjectionY(("hc_truth_"+syst[i]+trim[j]).c_str());
@@ -138,10 +139,13 @@ void plot_reweight() {
     }
     
     for (int i = 0; i < syst.size(); i++) {
-            string jet_outfile = "run21_figure/h_reweighted_truth_jet_spectrum_" + syst[i] + "_iter_3.png";
-            string et_outfile = "run21_figure/h_reweighted_truth_et_spectrum_" + syst[i] + "_iter_3.png";
-            draw_reweighted_spectra(hj_truth[i][0], hj_truth[i][1], true, std::make_pair(17.0, 82.0), syst_tags[i], jet_outfile.c_str());
-            draw_reweighted_spectra(hc_truth[i][0], hc_truth[i][1], false, std::make_pair(0.1, 35), syst_tags[i], et_outfile.c_str());
+            string jet_outfile = "plots_run28/h_reweighted_truth_jet_spectrum_" + syst[i] + "_iter_3.png";
+            string et_outfile = "plots_run28/h_reweighted_truth_et_spectrum_" + syst[i] + "_iter_3.png";
+            draw_reweighted_spectra(hj_truth[i][0], hj_truth[i][1], true, std::make_pair(0.0, 1.0), syst_tags[i], jet_outfile.c_str());
+            draw_reweighted_spectra(hc_truth[i][0], hc_truth[i][1], false, std::make_pair(0.0, 1.0), syst_tags[i], et_outfile.c_str());
+    
+            //draw_reweighted_spectra(hj_truth[i][0], hj_truth[i][1], true, std::make_pair(17.0, 82.0), syst_tags[i], jet_outfile.c_str());
+            //draw_reweighted_spectra(hc_truth[i][0], hc_truth[i][1], false, std::make_pair(0.1, 35), syst_tags[i], et_outfile.c_str());
     }
     
 

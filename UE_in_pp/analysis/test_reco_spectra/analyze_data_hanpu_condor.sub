@@ -1,0 +1,7 @@
+executable = analysis_data_backuphanputtree.sh
+arguments = $(run) $(start) $(end)
+output = output_logs/output_hanpu_$(Process).out
+when_to_transfer_output = ON_EXIT
+error			= output_logs/error_hanpu_$(Process).err
+log = /tmp/egm2153_$(Process).log
+queue run, start, end from analyze_sim_hanpu_queue.list

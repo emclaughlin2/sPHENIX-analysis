@@ -28,7 +28,7 @@ namespace Enable
 {
   bool HIJETS = false;
   int HIJETS_VERBOSITY = 0;
-  bool HIJETS_MC = true;
+  bool HIJETS_MC = false; //true;
   bool HIJETS_TRUTH = true;
 }  // namespace Enable
 

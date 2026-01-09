@@ -1,5 +1,16 @@
 .ipynb_checkpoints
 .vscode
+._.DS_Store
+._*.png
+._*.py
+._*.pdf
+._*
+
+**/output_logs/
+**/output_logs/*
+
+JS-Jet/Calibrations/*
+CaloCDB/*
 
 # Compiled Object files
 *.slo

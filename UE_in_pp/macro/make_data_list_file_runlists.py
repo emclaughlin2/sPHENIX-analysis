@@ -7,7 +7,7 @@ base_directory = '/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/data
 file_list = [f for f in os.listdir(base_directory) if f.endswith('.list')]
 
 # Number of files per output file
-files_per_runlist = 5785
+files_per_runlist = 10622
 
 # Split the file list into chunks of 5000
 for i in range(0, len(file_list), files_per_runlist):

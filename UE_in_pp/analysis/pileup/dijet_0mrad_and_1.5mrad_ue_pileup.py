@@ -15,15 +15,25 @@ leg_tags = ['0-2','2-3','3-4','4-5','5-6','6-7','7-8','8-9','9-10']
 rgb = [[230, 25, 75], [60, 180, 75], [255, 225, 25], [0, 130, 200], [245, 130, 48], [145, 30, 180], [70, 240, 240], [240, 50, 230], [210, 245, 60], [250, 190, 212], [0, 128, 128], [220, 190, 255], [170, 110, 40], [128, 128, 128], [128, 0, 0], [0, 0, 0], [128, 128, 0], [255, 215, 180], [0, 0, 128], [34, 139, 34]]
 colors = [TColor.GetColor(rgb[i][0],rgb[i][1],rgb[i][2]) for i in range(len(rgb))]
 
-files = ['pileup_0mrad_and_1.5mrad_UE_analysis_leadjet_15_20_GeV_rate_range_0.000000_0.020000.root',
-                'pileup_0mrad_and_1.5mrad_UE_analysis_leadjet_15_20_GeV_rate_range_0.020000_0.030000.root',
-                'pileup_0mrad_and_1.5mrad_UE_analysis_leadjet_15_20_GeV_rate_range_0.030000_0.040000.root',
-                'pileup_0mrad_and_1.5mrad_UE_analysis_leadjet_15_20_GeV_rate_range_0.040000_0.050000.root',
-                'pileup_0mrad_and_1.5mrad_UE_analysis_leadjet_15_20_GeV_rate_range_0.050000_0.060000.root',
-                'pileup_0mrad_and_1.5mrad_UE_analysis_leadjet_15_20_GeV_rate_range_0.060000_0.070000.root',
-                'pileup_0mrad_and_1.5mrad_UE_analysis_leadjet_15_20_GeV_rate_range_0.070000_0.080000.root',
-                'pileup_0mrad_and_1.5mrad_UE_analysis_leadjet_15_20_GeV_rate_range_0.080000_0.090000.root',
-                'pileup_0mrad_and_1.5mrad_UE_analysis_leadjet_15_20_GeV_rate_range_0.090000_0.100000.root']
+#files = ['pileup_0mrad_and_1.5mrad_UE_analysis_leadjet_15_20_GeV_rate_range_0.000000_0.020000.root',
+#                'pileup_0mrad_and_1.5mrad_UE_analysis_leadjet_15_20_GeV_rate_range_0.020000_0.030000.root',
+#                'pileup_0mrad_and_1.5mrad_UE_analysis_leadjet_15_20_GeV_rate_range_0.030000_0.040000.root',
+#                'pileup_0mrad_and_1.5mrad_UE_analysis_leadjet_15_20_GeV_rate_range_0.040000_0.050000.root',
+#                'pileup_0mrad_and_1.5mrad_UE_analysis_leadjet_15_20_GeV_rate_range_0.050000_0.060000.root',
+#                'pileup_0mrad_and_1.5mrad_UE_analysis_leadjet_15_20_GeV_rate_range_0.060000_0.070000.root',
+#                'pileup_0mrad_and_1.5mrad_UE_analysis_leadjet_15_20_GeV_rate_range_0.070000_0.080000.root',
+#                'pileup_0mrad_and_1.5mrad_UE_analysis_leadjet_15_20_GeV_rate_range_0.080000_0.090000.root',
+#                'pileup_0mrad_and_1.5mrad_UE_analysis_leadjet_15_20_GeV_rate_range_0.090000_0.100000.root']
+
+files = ['pileup_0mrad_and_1.5mrad_UE_analysis_leadjet_15_20_GeV_zvtx_lt_10cm_no_low_ET_towers_rate_range_0.000000_0.020000.root',
+                'pileup_0mrad_and_1.5mrad_UE_analysis_leadjet_15_20_GeV_zvtx_lt_10cm_no_low_ET_towers_rate_range_0.020000_0.030000.root',
+                'pileup_0mrad_and_1.5mrad_UE_analysis_leadjet_15_20_GeV_zvtx_lt_10cm_no_low_ET_towers_rate_range_0.030000_0.040000.root',
+                'pileup_0mrad_and_1.5mrad_UE_analysis_leadjet_15_20_GeV_zvtx_lt_10cm_no_low_ET_towers_rate_range_0.040000_0.050000.root',
+                'pileup_0mrad_and_1.5mrad_UE_analysis_leadjet_15_20_GeV_zvtx_lt_10cm_no_low_ET_towers_rate_range_0.050000_0.060000.root',
+                'pileup_0mrad_and_1.5mrad_UE_analysis_leadjet_15_20_GeV_zvtx_lt_10cm_no_low_ET_towers_rate_range_0.060000_0.070000.root',
+                'pileup_0mrad_and_1.5mrad_UE_analysis_leadjet_15_20_GeV_zvtx_lt_10cm_no_low_ET_towers_rate_range_0.070000_0.080000.root',
+                'pileup_0mrad_and_1.5mrad_UE_analysis_leadjet_15_20_GeV_zvtx_lt_10cm_no_low_ET_towers_rate_range_0.080000_0.090000.root',
+                'pileup_0mrad_and_1.5mrad_UE_analysis_leadjet_15_20_GeV_zvtx_lt_10cm_no_low_ET_towers_rate_range_0.090000_0.100000.root']
 
 h_ue_towards = []
 h_ue_transverse = []
@@ -201,7 +211,7 @@ legend.Draw()
 
 c.Update()
 c.Draw()
-c.SaveAs("0mrad_plots/h_ue_pileup_towards_0mrad_and_1.5mrad_15_20GeV_Topoclusters.png")
+c.SaveAs("0mrad_plots/h_ue_pileup_towards_0mrad_and_1.5mrad_15_20GeV_Topoclusters_no_low_ET_towers.png")
 # Draw the graphs
 c = ROOT.TCanvas("c6", "TGraphErrors Example", 800, 600)
 
@@ -222,7 +232,7 @@ legend.Draw()
 
 c.Update()
 c.Draw()
-c.SaveAs("0mrad_plots/h_ue_pileup_transverse_0mrad_and_1.5mrad_15_20GeV_Topoclusters.png")
+c.SaveAs("0mrad_plots/h_ue_pileup_transverse_0mrad_and_1.5mrad_15_20GeV_Topoclusters_no_low_ET_towers.png")
 
 # Draw the graphs
 c = ROOT.TCanvas("c11", "TGraphErrors Example", 800, 600)
@@ -240,7 +250,7 @@ legend.Draw()
 
 c.Update()
 c.Draw()
-c.SaveAs("0mrad_plots/h_ue_pileup_away_0mrad_and_1.5mrad_15_20GeV_Topoclusters.png")
+c.SaveAs("0mrad_plots/h_ue_pileup_away_0mrad_and_1.5mrad_15_20GeV_Topoclusters_no_low_ET_towers.png")
 
 '''
 

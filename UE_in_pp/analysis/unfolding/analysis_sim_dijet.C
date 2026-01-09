@@ -40,11 +40,12 @@ void get_calibjet(float& calibjet_pt, float& calibjet_eta, float& calibjet_phi, 
 void get_truthjet(float& goodtruthjet_pt, float& goodtruthjet_eta, float& goodtruthjet_phi, float jet_pt, float jet_eta, float jet_phi, bool dijet);
 void match_meas_truth(float meas_eta, float meas_phi, bool& matched, float truth_eta, float truth_phi, float jet_radius);
 void fill_response_matrix(TH2D*& h_truth, TH2D*& h_meas, RooUnfoldResponse*& h_resp, TH2D*& h_fake, TH2D*& h_miss, RooUnfoldResponse*& h_count, float meas_pt, float matched, float truth_pt, float meas_et, float truth_et, float weight_scale);
-void fill_response_matrix_full(TH2D*& h_truth, TH2D*& h_meas, RooUnfoldResponse*& h_resp, TH2D*& h_fake, TH2D*& h_miss, RooUnfoldResponse*& h_count, TH2D*& h_count_fake, TH2D*& h_count_miss, TH2D*& h_jetpt, TH2D*& h_caloet, TH2D*& h_nw_jetpt, TH2D*& h_nw_caloet, float meas_pt, float matched, float truth_pt, float meas_et, float truth_et, float weight_scale);
+void fill_response_matrix_full(TH2D*& h_truth, TH2D*& h_meas, RooUnfoldResponse*& h_resp, TH2D*& h_fake, TH2D*& h_miss, RooUnfoldResponse*& h_count, TH2D*& h_count_fake, TH2D*& h_count_miss, RooUnfoldResponse*& h_jetpt, RooUnfoldResponse*& h_caloet, RooUnfoldResponse*& h_count_jetpt, RooUnfoldResponse*& h_count_caloet, float meas_pt, float matched, float truth_pt, float meas_et, float truth_et, float weight_scale);
 void fill_trim_response_matrix(RooUnfoldResponse*& h_resp, float meas_pt, float matched, float truth_pt, float meas_et, float truth_et, float weight_scale, const TMatrixD& counts_matrix, TH2D* h_counts_measured, TH2D* h_counts_truth, float trim_value);
 void fill_reweighted_trim_response_matrix(RooUnfoldResponse*& h_resp, float meas_pt, float matched, float truth_pt, float meas_et, float truth_et, float weight_scale, const TMatrixD& counts_matrix, TH2D* h_counts_measured, TH2D* h_counts_truth, float trim_value, TH2D* h_prior_weights);
+void fill_trim_1D_response_matrices(RooUnfoldResponse*& h_jetpt_resp, RooUnfoldResponse*& h_caloet_resp, float meas_pt, float matched, float truth_pt, float meas_et, float truth_et, float weight_scale, const TMatrixD& counts_matrix, TH2D* h_counts_measured, TH2D* h_counts_truth, float trim_value);
+void fill_reweighted_trim_1D_response_matrices(RooUnfoldResponse*& h_jetpt_resp, RooUnfoldResponse*& h_caloet_resp, float meas_pt, float matched, float truth_pt, float meas_et, float truth_et, float weight_scale, const TMatrixD& counts_matrix, TH2D* h_counts_measured, TH2D* h_counts_truth, float trim_value, TH1D* h_jetpt_prior_weights, TH1D* h_caloet_prior_weights);
 
-TF1* f_jer = new TF1("f_jer", "sqrt( 0.095077098*0.095077098 + (0.63134847*0.63134847/x) + (2.1664610*2.1664610/(x*x)) )", 0, 100);
 TRandom3 randGen(1234);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -53,6 +54,17 @@ TRandom3 randGen(1234);
 //  This macro creates response matrices for 2D unfolding of leading jet pT and transverse region energy density                 //
 //                                                                                                                               //
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+double MapToUniform(double et, const double* bin_edges, int nbins) {
+    if (et < bin_edges[0] || et >= bin_edges[nbins]) return -1; // out of range
+    for (int i = 0; i < nbins; ++i) {
+        if (et >= bin_edges[i] && et < bin_edges[i + 1]) {
+            double bin_center_fraction = (i + 0.5) / nbins;
+            return bin_center_fraction;
+        }
+    }
+    return -1;
+}
 
 void analysis_sim_dijet(std::string runtype = "mb", int start_seg = 0, int end_seg = 200, int iter = 1, bool clusters = true, bool emcal_clusters = false)  {
     
@@ -84,19 +96,32 @@ void analysis_sim_dijet(std::string runtype = "mb", int start_seg = 0, int end_s
         truthjet_pt_min = 52;
         truthjet_pt_max = 3000;
         if (iter > 1) count_filename = "analysis_sim_run21_output/output_dijet_sim_iter_1_jet50.root";
+    } else if (runtype == "herwig_jet10") {
+        weight_scale = Herwig_Jet10GeV_scale;
+        truthjet_pt_min = 14;
+        truthjet_pt_max = 35;
+        if (iter > 1) count_filename = "analysis_sim_run21_output/output_dijet_sim_iter_1_herwig_jet10.root";
+    } else if (runtype == "herwig_jet30") {
+        weight_scale = Herwig_Jet30GeV_scale;
+        truthjet_pt_min = 35;
+        truthjet_pt_max = 3000;
+        if (iter > 1) count_filename = "analysis_sim_run21_output/output_dijet_sim_iter_1_herwig_jet30.root";
     } else {
         std::cout << "Unknown runtype" << std::endl;
         return;
     }
 
     TFile *f_count;
-    RooUnfoldResponse* h_count[7];
+    RooUnfoldResponse* h_count[9];
     std::vector<std::string> count_matrix_names = {"h_respmatrix_calib_dijet_counts","h_respmatrix_calib_dijet_jesdown_counts","h_respmatrix_calib_dijet_jesup_counts",
-    "h_respmatrix_calib_dijet_jerdown_counts","h_respmatrix_calib_dijet_jerup_counts","h_respmatrix_calib_dijet_half1_counts","h_respmatrix_calib_dijet_half2_counts"};
+    "h_respmatrix_calib_dijet_jerdown_counts","h_respmatrix_calib_dijet_jerup_counts","h_respmatrix_calib_dijet_half1_counts","h_respmatrix_calib_dijet_half2_counts",
+    "h_jetpt_respmatrix_counts","h_caloet_respmatrix_counts"};
     std::vector<TMatrixD> counts_matrix;
     //counts_matrix.resize(7);
     TH2D* counts_measured[7]; 
     TH2D* counts_truth[7]; 
+    TH1D* counts1D_measured[2];
+    TH1D* counts1D_truth[2];
     if (iter > 1) {
         f_count = new TFile(count_filename.c_str(),"READ");
         for (int i = 0; i < count_matrix_names.size(); i++) {
@@ -105,8 +130,13 @@ void analysis_sim_dijet(std::string runtype = "mb", int start_seg = 0, int end_s
             TMatrixD mat_copy(mat_ref);
             counts_matrix.push_back(mat_copy);
             std::cout << "Matrix " << i << " size: " << counts_matrix[i].GetNrows() << " x " << counts_matrix[i].GetNcols() << std::endl;
-            counts_measured[i] = dynamic_cast<TH2D*>(h_count[i]->Hmeasured());
-            counts_truth[i] = dynamic_cast<TH2D*>(h_count[i]->Htruth());
+            if (i < 7) {
+                counts_measured[i] = dynamic_cast<TH2D*>(h_count[i]->Hmeasured());
+                counts_truth[i] = dynamic_cast<TH2D*>(h_count[i]->Htruth());
+            } else {
+                counts1D_measured[i-7] = dynamic_cast<TH1D*>(h_count[i]->Hmeasured());
+                counts1D_truth[i-7] = dynamic_cast<TH1D*>(h_count[i]->Htruth());
+            }
         }
         f_count->Close();
 
@@ -115,14 +145,21 @@ void analysis_sim_dijet(std::string runtype = "mb", int start_seg = 0, int end_s
 
     TFile *f_reweight; 
     TH2D* weights[7][3];
+    TH1D* weights1D[2][3];
     std::vector<std::string> pw_syst = {"weights_calib_dijet","weights_calib_dijet_jesdown","weights_calib_dijet_jesup",
-    "weights_calib_dijet_jerdown","weights_calib_dijet_jerup","weights_calib_dijet_half1","weights_calib_dijet_half2"};
+    "weights_calib_dijet_jerdown","weights_calib_dijet_jerup","weights_calib_dijet_half1","weights_calib_dijet_half2",
+    "weights_jetpt","weights_caloet"};
     std::vector<std::string> pw_trim = {"","_trim_5","_trim_10"};
     if (iter > 2) {
-        f_reweight = new TFile("output_reweighted_respmatrix_run21_iter_2.root", "READ");
+        if (runtype == "herwig_jet10" || runtype == "herwig_jet30") {
+            f_reweight = new TFile("output_herwig_reweighted_respmatrix_run21_iter_2.root", "READ");
+        } else {
+            f_reweight = new TFile("output_reweighted_respmatrix_run21_iter_2.root", "READ");
+        }
         for (int i = 0; i < pw_syst.size(); i++) {
             for (int j = 0; j < pw_trim.size(); j++) {
-                weights[i][j] = dynamic_cast<TH2D*>(f_reweight->Get((pw_syst[i]+pw_trim[j]).c_str()));
+                if (i < 7) { weights[i][j] = dynamic_cast<TH2D*>(f_reweight->Get((pw_syst[i]+pw_trim[j]).c_str())); }
+                else { weights1D[i-7][j] = dynamic_cast<TH1D*>(f_reweight->Get((pw_syst[i]+pw_trim[j]).c_str())); }
             }
         }
     }
@@ -161,6 +198,7 @@ void analysis_sim_dijet(std::string runtype = "mb", int start_seg = 0, int end_s
     int ihcaln = 0; float ihcale[1536] = {0.0}; float ihcaleta[1536] = {0.0}; float ihcalphi[1536] = {0.0};
     int ohcaln = 0; float ohcale[1536] = {0.0}; float ohcaleta[1536] = {0.0}; float ohcalphi[1536] = {0.0};
     int clsmult = 0; float cluster_e[10000] = {0.0}; float cluster_eta[10000] = {0.0}; float cluster_phi[10000] = {0.0};
+    int cluster_ntowers[2000]; int cluster_tower_calo[200][500]; int cluster_tower_ieta[200][500]; int cluster_tower_iphi[200][500]; float cluster_tower_e[200][500];
     if (!clusters) {
         chain.SetBranchStatus("emcaln", 1); chain.SetBranchAddress("emcaln",&emcaln);
         chain.SetBranchStatus("emcale", 1); chain.SetBranchAddress("emcale",emcale);
@@ -179,6 +217,11 @@ void analysis_sim_dijet(std::string runtype = "mb", int start_seg = 0, int end_s
         chain.SetBranchStatus("cluster_e", 1); chain.SetBranchAddress("cluster_e",cluster_e);
         chain.SetBranchStatus("cluster_eta", 1); chain.SetBranchAddress("cluster_eta",cluster_eta);
         chain.SetBranchStatus("cluster_phi", 1); chain.SetBranchAddress("cluster_phi",cluster_phi);
+        chain.SetBranchStatus("cluster_ntowers", 1); chain.SetBranchAddress("cluster_ntowers",cluster_ntowers);
+        chain.SetBranchStatus("cluster_tower_e", 1); chain.SetBranchAddress("cluster_tower_e",cluster_tower_e);
+        chain.SetBranchStatus("cluster_tower_calo", 1); chain.SetBranchAddress("cluster_tower_calo",cluster_tower_calo);
+        chain.SetBranchStatus("cluster_tower_ieta", 1); chain.SetBranchAddress("cluster_tower_ieta",cluster_tower_ieta);
+        chain.SetBranchStatus("cluster_tower_iphi", 1); chain.SetBranchAddress("cluster_tower_iphi",cluster_tower_iphi);
     } else {
         chain.SetBranchStatus("emcal_clsmult", 1); chain.SetBranchAddress("emcal_clsmult",&clsmult);
         chain.SetBranchStatus("emcal_cluster_e", 1); chain.SetBranchAddress("emcal_cluster_e",cluster_e);
@@ -208,50 +251,106 @@ void analysis_sim_dijet(std::string runtype = "mb", int start_seg = 0, int end_s
     TH1D* h_truth_xj_record = new TH1D("h_truth_xj_record","",20,0,1);
     TH1D* h_lead_truth_spectra_record = new TH1D("h_lead_truth_spectra_record",";p_{T} [GeV]", 1000, 0, 100);
     TH1D* h_sub_truth_spectra_record = new TH1D("h_sub_truth_spectra_record",";p_{T} [GeV]", 1000, 0, 100);
+    TH2D* h_jes_qa = new TH2D("h_jes_qa",";p^{truth}_{T} [GeV]; p^{reco}_{T}/p^{truth}_{T}", 50, 0, 100, 1000, 0, 10);
+    /* edited for simulation plots 
     TH1D *h_et_transverse_record = new TH1D("h_et_transverse_record", ";#SigmaE_{T} [GeV]", 7000, -20, 50);
     TH1D* h_et_truth_transverse_record = new TH1D("h_et_truth_transverse_record", ";#SigmaE_{T} [GeV]", 7000, -20, 50);
     TH1D *h_nw_et_transverse_record = new TH1D("h_nw_et_transverse_record", ";#SigmaE_{T} [GeV]", 7000, -20, 50);
     TH1D* h_nw_et_truth_transverse_record = new TH1D("h_nw_et_truth_transverse_record", ";#SigmaE_{T} [GeV]", 7000, -20, 50);
     TH2D* h_ue_pt_transverse_record = new TH2D("h_ue_pt_transverse_record","", calibnpt, calibptbins, calibnet, calibetbins);
     TH2D* h_ue_pt_truth_transverse_record = new TH2D("h_ue_pt_truth_transverse_record","",truthnpt, truthptbins, truthnet, truthetbins);
+    TH1D* h_thres_et_truth_transverse_record = new TH1D("h_thres_et_truth_transverse_record", ";#SigmaE_{T} [GeV]", 7000, -20, 50);
+    TH1D* h_thres_nw_et_truth_transverse_record = new TH1D("h_thres_nw_et_truth_transverse_record", ";#SigmaE_{T} [GeV]", 7000, -20, 50);
+    TH2D* h_thres_ue_pt_truth_transverse_record = new TH2D("h_thres_ue_pt_truth_transverse_record","",truthnpt, truthptbins, truthnet, truthetbins);
+    TH1D* h_reco_et_truth_transverse_record = new TH1D("h_reco_et_truth_transverse_record", ";#SigmaE_{T} [GeV]", 7000, -20, 50);
+    TH1D* h_reco_nw_et_truth_transverse_record = new TH1D("h_reco_nw_et_truth_transverse_record", ";#SigmaE_{T} [GeV]", 7000, -20, 50);
+    TH2D* h_reco_ue_pt_truth_transverse_record = new TH2D("h_reco_ue_pt_truth_transverse_record","",truthnpt, truthptbins, truthnet, truthetbins);
+    TH1D* h_reco_thres_et_truth_transverse_record = new TH1D("h_reco_thres_et_truth_transverse_record", ";#SigmaE_{T} [GeV]", 7000, -20, 50);
+    TH1D* h_reco_thres_nw_et_truth_transverse_record = new TH1D("h_reco_thres_nw_et_truth_transverse_record", ";#SigmaE_{T} [GeV]", 7000, -20, 50);
+    TH2D* h_reco_thres_ue_pt_truth_transverse_record = new TH2D("h_reco_thres_ue_pt_truth_transverse_record","",truthnpt, truthptbins, truthnet, truthetbins);
+    */
+    TH1D *h_et_transverse_record = new TH1D("h_et_transverse_record", ";#SigmaE_{T} [GeV]", calibnet, calibetbins);
+    TH1D* h_et_truth_transverse_record = new TH1D("h_et_truth_transverse_record", ";#SigmaE_{T} [GeV]", truthnet, truthetbins);
+    TH1D *h_nw_et_transverse_record = new TH1D("h_nw_et_transverse_record", ";#SigmaE_{T} [GeV]", 7000, -20, 50);
+    TH1D* h_nw_et_truth_transverse_record = new TH1D("h_nw_et_truth_transverse_record", ";#SigmaE_{T} [GeV]", 7000, -20, 50);
+    TH2D* h_ue_pt_transverse_record = new TH2D("h_ue_pt_transverse_record","", calibnpt, calibptbins, calibnet, calibetbins);
+    TH2D* h_ue_pt_truth_transverse_record = new TH2D("h_ue_pt_truth_transverse_record","",truthnpt, truthptbins, truthnet, truthetbins);
+    TH1D* h_thres_et_truth_transverse_record = new TH1D("h_thres_et_truth_transverse_record", ";#SigmaE_{T} [GeV]", truthnet, truthetbins);
+    TH1D* h_thres_nw_et_truth_transverse_record = new TH1D("h_thres_nw_et_truth_transverse_record", ";#SigmaE_{T} [GeV]", 7000, -20, 50);
+    TH2D* h_thres_ue_pt_truth_transverse_record = new TH2D("h_thres_ue_pt_truth_transverse_record","",truthnpt, truthptbins, truthnet, truthetbins);
+    TH1D* h_reco_et_truth_transverse_record = new TH1D("h_reco_et_truth_transverse_record", ";#SigmaE_{T} [GeV]", truthnet, truthetbins);
+    TH1D* h_reco_nw_et_truth_transverse_record = new TH1D("h_reco_nw_et_truth_transverse_record", ";#SigmaE_{T} [GeV]", 7000, -20, 50);
+    TH2D* h_reco_ue_pt_truth_transverse_record = new TH2D("h_reco_ue_pt_truth_transverse_record","",truthnpt, truthptbins, truthnet, truthetbins);
+    TH1D* h_reco_thres_et_truth_transverse_record = new TH1D("h_reco_thres_et_truth_transverse_record", ";#SigmaE_{T} [GeV]", truthnet, truthetbins);
+    TH1D* h_reco_thres_nw_et_truth_transverse_record = new TH1D("h_reco_thres_nw_et_truth_transverse_record", ";#SigmaE_{T} [GeV]", 7000, -20, 50);
+    TH2D* h_reco_thres_ue_pt_truth_transverse_record = new TH2D("h_reco_thres_ue_pt_truth_transverse_record","",truthnpt, truthptbins, truthnet, truthetbins);
+    /*
+    TH2D* h_total_topo_event_display = new TH2D("h_total_topo_event_display","",24,0,24,64,0,64);
+    TH2D* h_total_topo_emcal_event_display = new TH2D("h_total_topo_emcal_event_display","",96,0,96,256,0,256);
+    TH2D* h_total_topo_ihcal_event_display = new TH2D("h_total_topo_ihcal_event_display","",24,0,24,64,0,64);
+    TH2D* h_total_topo_ohcal_event_display = new TH2D("h_total_topo_ohcal_event_display","",24,0,24,64,0,64);   
+    TH2D* h_topo_event_display[30];
+    TH2D* h_topo_emcal_event_display[30];
+    TH2D* h_topo_ihcal_event_display[30];
+    TH2D* h_topo_ohcal_event_display[30];
+    for (int i = 0; i < 30; i++) {
+        h_topo_event_display[i] = new TH2D(Form("h_topo_event_display_%d",i),"",24,0,24,64,0,64);
+        h_topo_emcal_event_display[i] = new TH2D(Form("h_topo_emcal_event_display_%d",i),"",96,0,96,256,0,256);
+        h_topo_ihcal_event_display[i] = new TH2D(Form("h_topo_ihcal_event_display_%d",i),"",24,0,24,64,0,64);
+        h_topo_ohcal_event_display[i] = new TH2D(Form("h_topo_ohcal_event_display_%d",i),"",24,0,24,64,0,64);   
+    }
+    */
 
+    /*
     TH2D* h_truth_calib_dijet = new TH2D("h_truth_calib_dijet", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Truth} [GeV]", truthnpt, truthptbins, truthnet, truthetbins);
     TH2D* h_measure_calib_dijet = new TH2D("h_measure_calib_dijet", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, calibptbins, calibnet, calibetbins);
     TH2D* h_fake_calib_dijet = new TH2D("h_fake_calib_dijet", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, calibptbins, calibnet, calibetbins);
     TH2D* h_miss_calib_dijet = new TH2D("h_miss_calib_dijet", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", truthnpt, truthptbins, calibnet, calibetbins);
     TH2D* h_counts_fake_calib_dijet = new TH2D("h_counts_fake_calib_dijet", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, calibptbins, calibnet, calibetbins);
     TH2D* h_counts_miss_calib_dijet = new TH2D("h_counts_miss_calib_dijet", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", truthnpt, truthptbins, calibnet, calibetbins);
-    TH2D* h_jet_pt_respmatrix_calib_dijet = new TH2D("h_jet_pt_respmatrix_calib_dijet",";p_{T}^{Calib jet} [GeV];p_{T}^{Truth jet} [GeV]", calibnpt, calibptbins, truthnpt, truthptbins);
-    TH2D* h_calo_et_respmatrix_calib_dijet = new TH2D("h_calo_et_respmatrix_calib_dijet",";#SigmaE_{T}^{Reco} [GeV];#SigmaE_{T}^{Truth} [GeV]", calibnet, calibetbins, truthnet, truthetbins);
-    TH2D* h_nw_jet_pt_respmatrix_calib_dijet = new TH2D("h_nw_jet_pt_respmatrix_calib_dijet",";p_{T}^{Calib jet} [GeV];p_{T}^{Truth jet} [GeV]", calibnpt, calibptbins, truthnpt, truthptbins);
-    TH2D* h_nw_calo_et_respmatrix_calib_dijet = new TH2D("h_nw_calo_et_respmatrix_calib_dijet",";#SigmaE_{T}^{Reco} [GeV];#SigmaE_{T}^{Truth} [GeV]", calibnet, calibetbins, truthnet, truthetbins);
-
-    TH2D* h_truth_calib_dijet_jesdown = new TH2D("h_truth_calib_dijet_jesdown", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Truth} [GeV]", truthnpt, truthptbins, truthnet, truthetbins);
-    TH2D* h_measure_calib_dijet_jesdown = new TH2D("h_measure_calib_dijet_jesdown", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, calibptbins, calibnet, calibetbins);
-    TH2D* h_fake_calib_dijet_jesdown = new TH2D("h_fake_calib_dijet_jesdown", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, calibptbins, calibnet, calibetbins);
-    TH2D* h_miss_calib_dijet_jesdown = new TH2D("h_miss_calib_dijet_jesdown", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", truthnpt, truthptbins, calibnet, calibetbins);
-    TH2D* h_truth_calib_dijet_jesup = new TH2D("h_truth_calib_dijet_jesup", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Truth} [GeV]", truthnpt, truthptbins, truthnet, truthetbins);
-    TH2D* h_measure_calib_dijet_jesup = new TH2D("h_measure_calib_dijet_jesup", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, calibptbins, calibnet, calibetbins);
-    TH2D* h_fake_calib_dijet_jesup = new TH2D("h_fake_calib_dijet_jesup", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, calibptbins, calibnet, calibetbins);
-    TH2D* h_miss_calib_dijet_jesup = new TH2D("h_miss_calib_dijet_jesup", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", truthnpt, truthptbins, calibnet, calibetbins);
+    TH1D* h_jetpt_truth = new TH1D("h_jetpt_truth","", truthnpt, truthptbins); 
+    TH1D* h_jetpt_measure = new TH1D("h_jetpt_measure","", calibnpt, calibptbins);
+    TH1D* h_caloet_truth = new TH1D("h_caloet_truth","", truthnet, truthetbins); 
+    TH1D* h_caloet_measure = new TH1D("h_caloet_measure","", calibnet, calibetbins);
+    */
     
-    TH2D* h_truth_calib_dijet_jerdown = new TH2D("h_truth_calib_dijet_jerdown", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Truth} [GeV]", truthnpt, truthptbins, truthnet, truthetbins);
-    TH2D* h_measure_calib_dijet_jerdown = new TH2D("h_measure_calib_dijet_jerdown", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, calibptbins, calibnet, calibetbins);
-    TH2D* h_fake_calib_dijet_jerdown = new TH2D("h_fake_calib_dijet_jerdown", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, calibptbins, calibnet, calibetbins);
-    TH2D* h_miss_calib_dijet_jerdown = new TH2D("h_miss_calib_dijet_jerdown", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", truthnpt, truthptbins, calibnet, calibetbins);
-    TH2D* h_truth_calib_dijet_jerup = new TH2D("h_truth_calib_dijet_jerup", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Truth} [GeV]", truthnpt, truthptbins, truthnet, truthetbins);
-    TH2D* h_measure_calib_dijet_jerup = new TH2D("h_measure_calib_dijet_jerup", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, calibptbins, calibnet, calibetbins);
-    TH2D* h_fake_calib_dijet_jerup = new TH2D("h_fake_calib_dijet_jerup", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, calibptbins, calibnet, calibetbins);
-    TH2D* h_miss_calib_dijet_jerup = new TH2D("h_miss_calib_dijet_jerup", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", truthnpt, truthptbins, calibnet, calibetbins);
+    TH2D* h_truth_calib_dijet = new TH2D("h_truth_calib_dijet", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Truth} [GeV]", truthnpt, 0, 1, truthnet, 0, 1);
+    TH2D* h_measure_calib_dijet = new TH2D("h_measure_calib_dijet", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, 0, 1, calibnet, 0, 1);
+    TH2D* h_fake_calib_dijet = new TH2D("h_fake_calib_dijet", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, 0, 1, calibnet, 0, 1);
+    TH2D* h_miss_calib_dijet = new TH2D("h_miss_calib_dijet", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", truthnpt, 0, 1, calibnet, 0, 1);
+    TH2D* h_counts_fake_calib_dijet = new TH2D("h_counts_fake_calib_dijet", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, 0, 1, calibnet, 0, 1);
+    TH2D* h_counts_miss_calib_dijet = new TH2D("h_counts_miss_calib_dijet", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", truthnpt, 0, 1, calibnet, 0, 1);
+    TH1D* h_jetpt_truth = new TH1D("h_jetpt_truth","", truthnpt, 0, 1); 
+    TH1D* h_jetpt_measure = new TH1D("h_jetpt_measure","", calibnpt, 0, 1);
+    TH1D* h_caloet_truth = new TH1D("h_caloet_truth","", truthnet, 0, 1); 
+    TH1D* h_caloet_measure = new TH1D("h_caloet_measure","", calibnet, 0, 1);
     
-    TH2D* h_truth_calib_dijet_half1 = new TH2D("h_truth_calib_dijet_half1", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Truth} [GeV]", truthnpt, truthptbins, truthnet, truthetbins);
-    TH2D* h_measure_calib_dijet_half1 = new TH2D("h_measure_calib_dijet_half1", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, calibptbins, calibnet, calibetbins);
-    TH2D* h_fake_calib_dijet_half1 = new TH2D("h_fake_calib_dijet_half1", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, calibptbins, calibnet, calibetbins);
-    TH2D* h_miss_calib_dijet_half1 = new TH2D("h_miss_calib_dijet_half1", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", truthnpt, truthptbins, calibnet, calibetbins);
-    TH2D* h_truth_calib_dijet_half2 = new TH2D("h_truth_calib_dijet_half2", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Truth} [GeV]", truthnpt, truthptbins, truthnet, truthetbins);
-    TH2D* h_measure_calib_dijet_half2 = new TH2D("h_measure_calib_dijet_half2", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, calibptbins, calibnet, calibetbins);
-    TH2D* h_fake_calib_dijet_half2 = new TH2D("h_fake_calib_dijet_half2", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, calibptbins, calibnet, calibetbins);
-    TH2D* h_miss_calib_dijet_half2 = new TH2D("h_miss_calib_dijet_half2", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", truthnpt, truthptbins, calibnet, calibetbins);
+    TH2D* h_truth_calib_dijet_jesdown = new TH2D("h_truth_calib_dijet_jesdown", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Truth} [GeV]", truthnpt, 0, 1, truthnet, 0, 1);
+    TH2D* h_measure_calib_dijet_jesdown = new TH2D("h_measure_calib_dijet_jesdown", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, 0, 1, calibnet, 0, 1);
+    TH2D* h_fake_calib_dijet_jesdown = new TH2D("h_fake_calib_dijet_jesdown", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, 0, 1, calibnet, 0, 1);
+    TH2D* h_miss_calib_dijet_jesdown = new TH2D("h_miss_calib_dijet_jesdown", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Truth} [GeV]", truthnpt, 0, 1, truthnet, 0, 1);
+    TH2D* h_truth_calib_dijet_jesup = new TH2D("h_truth_calib_dijet_jesup", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Truth} [GeV]", truthnpt, 0, 1, truthnet, 0, 1);
+    TH2D* h_measure_calib_dijet_jesup = new TH2D("h_measure_calib_dijet_jesup", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, 0, 1, calibnet, 0, 1);
+    TH2D* h_fake_calib_dijet_jesup = new TH2D("h_fake_calib_dijet_jesup", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, 0, 1, calibnet, 0, 1);
+    TH2D* h_miss_calib_dijet_jesup = new TH2D("h_miss_calib_dijet_jesup", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Truth} [GeV]", truthnpt, 0, 1, truthnet, 0, 1);
+    
+    TH2D* h_truth_calib_dijet_jerdown = new TH2D("h_truth_calib_dijet_jerdown", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Truth} [GeV]", truthnpt, 0, 1, truthnet, 0, 1);
+    TH2D* h_measure_calib_dijet_jerdown = new TH2D("h_measure_calib_dijet_jerdown", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, 0, 1, calibnet, 0, 1);
+    TH2D* h_fake_calib_dijet_jerdown = new TH2D("h_fake_calib_dijet_jerdown", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, 0, 1, calibnet, 0, 1);
+    TH2D* h_miss_calib_dijet_jerdown = new TH2D("h_miss_calib_dijet_jerdown", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Truth} [GeV]", truthnpt, 0, 1, truthnet, 0, 1);
+    TH2D* h_truth_calib_dijet_jerup = new TH2D("h_truth_calib_dijet_jerup", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Truth} [GeV]", truthnpt, 0, 1, truthnet, 0, 1);
+    TH2D* h_measure_calib_dijet_jerup = new TH2D("h_measure_calib_dijet_jerup", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, 0, 1, calibnet, 0, 1);
+    TH2D* h_fake_calib_dijet_jerup = new TH2D("h_fake_calib_dijet_jerup", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, 0, 1, calibnet, 0, 1);
+    TH2D* h_miss_calib_dijet_jerup = new TH2D("h_miss_calib_dijet_jerup", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Truth} [GeV]", truthnpt, 0, 1, truthnet, 0, 1);
+    
+    TH2D* h_truth_calib_dijet_half1 = new TH2D("h_truth_calib_dijet_half1", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Truth} [GeV]", truthnpt, 0, 1, truthnet, 0, 1);
+    TH2D* h_measure_calib_dijet_half1 = new TH2D("h_measure_calib_dijet_half1", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, 0, 1, calibnet, 0, 1);
+    TH2D* h_fake_calib_dijet_half1 = new TH2D("h_fake_calib_dijet_half1", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, 0, 1, calibnet, 0, 1);
+    TH2D* h_miss_calib_dijet_half1 = new TH2D("h_miss_calib_dijet_half1", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Truth} [GeV]", truthnpt, 0, 1, truthnet, 0, 1);
+    TH2D* h_truth_calib_dijet_half2 = new TH2D("h_truth_calib_dijet_half2", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Truth} [GeV]", truthnpt, 0, 1, truthnet, 0, 1);
+    TH2D* h_measure_calib_dijet_half2 = new TH2D("h_measure_calib_dijet_half2", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, 0, 1, calibnet, 0, 1);
+    TH2D* h_fake_calib_dijet_half2 = new TH2D("h_fake_calib_dijet_half2", ";p_{T}^{Calib jet} [GeV];#SigmaE_{T}^{Reco} [GeV]", calibnpt, 0, 1, calibnet, 0, 1);
+    TH2D* h_miss_calib_dijet_half2 = new TH2D("h_miss_calib_dijet_half2", ";p_{T}^{Truth jet} [GeV];#SigmaE_{T}^{Truth} [GeV]", truthnpt, 0, 1, truthnet, 0, 1);
 
     std::vector<int> trim_val = {0, 5, 10};
     std::vector<std::string> respmatrix_tags = {"", "_counts", "_trim_5", "_trim_10", "_reweight", "_reweight_trim_5", "_reweight_trim_10"};
@@ -262,6 +361,8 @@ void analysis_sim_dijet(std::string runtype = "mb", int start_seg = 0, int end_s
     RooUnfoldResponse* h_respmatrix_calib_dijet_jerup[7];
     RooUnfoldResponse* h_respmatrix_calib_dijet_half1[7];
     RooUnfoldResponse* h_respmatrix_calib_dijet_half2[7];
+    RooUnfoldResponse* h_jetpt_respmatrix[7];
+    RooUnfoldResponse* h_caloet_respmatrix[7];
 
     for (int i = 0; i < 7; i++) {
         h_respmatrix_calib_dijet[i] = new RooUnfoldResponse(("h_respmatrix_calib_dijet" + respmatrix_tags[i]).c_str(),""); h_respmatrix_calib_dijet[i]->Setup(h_measure_calib_dijet, h_truth_calib_dijet);
@@ -271,6 +372,10 @@ void analysis_sim_dijet(std::string runtype = "mb", int start_seg = 0, int end_s
         h_respmatrix_calib_dijet_jerup[i] = new RooUnfoldResponse(("h_respmatrix_calib_dijet_jerup" + respmatrix_tags[i]).c_str(),""); h_respmatrix_calib_dijet_jerup[i]->Setup(h_measure_calib_dijet_jerup, h_truth_calib_dijet_jerup);
         h_respmatrix_calib_dijet_half1[i] = new RooUnfoldResponse(("h_respmatrix_calib_dijet_half1" + respmatrix_tags[i]).c_str(),""); h_respmatrix_calib_dijet_half1[i]->Setup(h_measure_calib_dijet_half1, h_truth_calib_dijet_half1);
         h_respmatrix_calib_dijet_half2[i] = new RooUnfoldResponse(("h_respmatrix_calib_dijet_half2" + respmatrix_tags[i]).c_str(),""); h_respmatrix_calib_dijet_half2[i]->Setup(h_measure_calib_dijet_half2, h_truth_calib_dijet_half2);
+        //h_jetpt_respmatrix[i] = new RooUnfoldResponse(h_jetpt_measure, h_jetpt_truth,("h_jetpt_respmatrix" + respmatrix_tags[i]).c_str(),"");
+        //h_jetpt_respmatrix[i]->UseDensityStatus();
+        h_jetpt_respmatrix[i] = new RooUnfoldResponse(("h_jetpt_respmatrix" + respmatrix_tags[i]).c_str(),""); h_jetpt_respmatrix[i]->Setup(h_jetpt_measure, h_jetpt_truth);
+        h_caloet_respmatrix[i] = new RooUnfoldResponse(("h_caloet_respmatrix" + respmatrix_tags[i]).c_str(),""); h_caloet_respmatrix[i]->Setup(h_caloet_measure, h_caloet_truth);
     }
     
     
@@ -285,10 +390,10 @@ void analysis_sim_dijet(std::string runtype = "mb", int start_seg = 0, int end_s
     float calibjet_pt_dijet, calibjet_eta_dijet, calibjet_phi_dijet;
     float calibjet_pt_dijet_jesdown, calibjet_eta_dijet_jesdown, calibjet_phi_dijet_jesdown, calibjet_pt_dijet_jesup, calibjet_eta_dijet_jesup, calibjet_phi_dijet_jesup;
     float calibjet_pt_dijet_jerdown, calibjet_eta_dijet_jerdown, calibjet_phi_dijet_jerdown, calibjet_pt_dijet_jerup, calibjet_eta_dijet_jerup, calibjet_phi_dijet_jerup;
-    bool calibjet_matched_dijet, calibjet_matched_dijet_jesdown, calibjet_matched_dijet_jesup, calibjet_matched_dijet_jerdown, calibjet_matched_dijet_jerup;
+    bool calibjet_matched_dijet, calibjet_matched_dijet_jesdown, calibjet_matched_dijet_jesup, calibjet_matched_dijet_jerdown, calibjet_matched_dijet_jerup, qa_matched;
     
     for (Long64_t entry = 0; entry < nEntries; ++entry) {
-    //for (Long64_t entry = 0; entry < 20; ++entry) {
+    //for (Long64_t entry = 0; entry < 2000; ++entry) {
         if (entry % 1000 == 0) cout << "event " << entry << endl;
         chain.GetEntry(entry);
 
@@ -381,6 +486,11 @@ void analysis_sim_dijet(std::string runtype = "mb", int start_seg = 0, int end_s
         match_meas_truth(calibjet_eta_dijet_jerup, calibjet_phi_dijet_jerup, calibjet_matched_dijet_jerup, goodtruthjet_eta, goodtruthjet_phi, jet_radius);
         
         //std::cout << "Match " << calibjet_matched_dijet << std::endl;
+        match_meas_truth(lead.Eta(),lead.Phi(),qa_matched,truthlead.Eta(),truthlead.Phi(),jet_radius);
+        if (truthlead.Pt() >= truthptbins[0] && truthlead.Pt() < truthptbins[truthnpt] && qa_matched) {
+            //std::cout << "matched: " << qa_matched << " respmatrix match: " << calibjet_matched_dijet << " truth pt: " << truthlead.Pt() << " ratio: " << f_corr->Eval(lead.Pt())/truthlead.Pt() << " weight: " << weight_scale << std::endl;
+            h_jes_qa->Fill(truthlead.Pt(), f_corr->Eval(lead.Pt())/truthlead.Pt(), weight_scale);
+        }
     
         //////////////////////////// SETUP UE VARIABLES FOR UNFOLDING //////////////////////////////
 
@@ -405,7 +515,15 @@ void analysis_sim_dijet(std::string runtype = "mb", int start_seg = 0, int end_s
                 if (fabs(dphi) > M_PI/3.0 && fabs(dphi) < (2.0*M_PI)/3.0) { et_transverse += cluster_e[i]/cosh(cluster_eta[i]); }
             }
         }
-
+        /*
+        if (lead.Pt() > 17 && et_transverse == 0) {
+            std::cout << "jet pt " << lead.Pt() << " eta " << lead.Eta() << " phi " << lead.Phi() << std::endl;
+            std::cout << "number of clusters " << clsmult << std::endl;
+            for (int i = 0; i < clsmult; i++) {
+                std::cout << "cluster e " << cluster_e[i] << " phi " << cluster_phi[i] << " delta phi " << get_dphi(lead.Phi(),cluster_phi[i]) << std::endl;
+            }
+        }
+        */
         // find truth ET information
         float truth_et_transverse = 0;
         for (int i = 0; i < truthpar_n; i++) {
@@ -415,7 +533,69 @@ void analysis_sim_dijet(std::string runtype = "mb", int start_seg = 0, int end_s
             float dphi = get_dphi(truthlead.Phi(),truthpar_phi[i]);
             if (fabs(dphi) > M_PI/3.0 && fabs(dphi) < (2.0*M_PI)/3.0) { truth_et_transverse += truthpar_e[i]/cosh(truthpar_eta[i]); } 
         }
+        float thres_truth_et_transverse = 0;
+        for (int i = 0; i < truthpar_n; i++) {
+            if (fabs(truthpar_eta[i]) > 1.1) { continue; }
+            if (fabs(truthpar_e[i]) < 0.4352) { continue; } // edited from 0.5 to 0.2
+            float dphi = get_dphi(truthlead.Phi(),truthpar_phi[i]);
+            if (fabs(dphi) > M_PI/3.0 && fabs(dphi) < (2.0*M_PI)/3.0) { thres_truth_et_transverse += truthpar_e[i]/cosh(truthpar_eta[i]); } 
+        }
+        float reco_truth_et_transverse = 0;
+        for (int i = 0; i < truthpar_n; i++) {
+            if (fabs(truthpar_eta[i]) > 1.1) { continue; }
+            if ((truthpar_pid[i] == 22 || truthpar_pid[i] == 111) && fabs(truthpar_e[i]) > 0.2) {
+                float dphi = get_dphi(truthlead.Phi(),truthpar_phi[i]);
+                if (fabs(dphi) > M_PI/3.0 && fabs(dphi) < (2.0*M_PI)/3.0) { reco_truth_et_transverse += truthpar_e[i]/cosh(truthpar_eta[i]); } 
+            } else if (fabs(truthpar_e[i] > 0.2)) {
+                float dphi = get_dphi(truthlead.Phi(),truthpar_phi[i]);
+                if (fabs(dphi) > M_PI/3.0 && fabs(dphi) < (2.0*M_PI)/3.0) { reco_truth_et_transverse += 0.36*truthpar_e[i]/cosh(truthpar_eta[i]); } 
+            }
+        }
+        float reco_thres_truth_et_transverse = 0;
+        for (int i = 0; i < truthpar_n; i++) {
+            if (fabs(truthpar_eta[i]) > 1.1) { continue; }
+            if ((truthpar_pid[i] == 22 || truthpar_pid[i] == 111) && fabs(truthpar_e[i]) > 0.4352) {
+                float dphi = get_dphi(truthlead.Phi(),truthpar_phi[i]);
+                if (fabs(dphi) > M_PI/3.0 && fabs(dphi) < (2.0*M_PI)/3.0) { reco_thres_truth_et_transverse += truthpar_e[i]/cosh(truthpar_eta[i]); } 
+            } else if (fabs(truthpar_e[i] > 0.4352)) {
+                float dphi = get_dphi(truthlead.Phi(),truthpar_phi[i]);
+                if (fabs(dphi) > M_PI/3.0 && fabs(dphi) < (2.0*M_PI)/3.0) { reco_thres_truth_et_transverse += 0.36*truthpar_e[i]/cosh(truthpar_eta[i]); } 
+            }
+        }
 
+        /*
+        if (entry == 29 && reco_dijet && truth_dijet && calibjet_matched_dijet) {
+            std::cout << "Event: " << entry << " lead PT " << lead.Pt() << " lead phi " << lead.Phi() << " lead eta " << lead.Eta() << " sublead PT " << sub.Pt() << " sublead phi " << sub.Phi() << " sublead eta " << sub.Eta() << " et_transverse " << et_transverse << std::endl;
+            for (int i = 0; i < clsmult; i++) {
+                std::cout << "event " << entry << " cluster id " << i << " e " << cluster_e[i] << " ntowers " << cluster_ntowers[i] << " eta " << cluster_eta[i] << " phi " << cluster_phi[i] << std::endl;
+                for (int n = 0; n < cluster_ntowers[i]; n++) {
+                    if (cluster_tower_calo[i][n] == 1) {
+                        h_total_topo_emcal_event_display->Fill(cluster_tower_ieta[i][n],cluster_tower_iphi[i][n],cluster_tower_e[i][n]);
+                        h_total_topo_event_display->Fill(cluster_tower_ieta[i][n]/4,cluster_tower_iphi[i][n]/4,cluster_tower_e[i][n]);
+                        h_topo_emcal_event_display[i]->Fill(cluster_tower_ieta[i][n],cluster_tower_iphi[i][n]);
+                        h_topo_event_display[i]->Fill(cluster_tower_ieta[i][n]/4,cluster_tower_iphi[i][n]/4);
+                    } else if (cluster_tower_calo[i][n] == 2) {
+                        h_total_topo_ohcal_event_display->Fill(cluster_tower_ieta[i][n],cluster_tower_iphi[i][n],cluster_tower_e[i][n]);
+                        h_total_topo_event_display->Fill(cluster_tower_ieta[i][n],cluster_tower_iphi[i][n],cluster_tower_e[i][n]);
+                        h_topo_ohcal_event_display[i]->Fill(cluster_tower_ieta[i][n],cluster_tower_iphi[i][n]);
+                        h_topo_event_display[i]->Fill(cluster_tower_ieta[i][n],cluster_tower_iphi[i][n]);
+                    } else if (cluster_tower_calo[i][n] == 3) {
+                        h_total_topo_ihcal_event_display->Fill(cluster_tower_ieta[i][n],cluster_tower_iphi[i][n],cluster_tower_e[i][n]);
+                        h_total_topo_event_display->Fill(cluster_tower_ieta[i][n],cluster_tower_iphi[i][n],cluster_tower_e[i][n]);
+                        h_topo_ihcal_event_display[i]->Fill(cluster_tower_ieta[i][n],cluster_tower_iphi[i][n]);
+                        h_topo_event_display[i]->Fill(cluster_tower_ieta[i][n],cluster_tower_iphi[i][n]);
+                    }
+                    std::cout << "cluster tower: calo " << cluster_tower_calo[i][n] << " ieta " << cluster_tower_ieta[i][n] << " iphi " << cluster_tower_iphi[i][n] << " energy " << cluster_tower_e[i][n] << std::endl;
+                }
+                std::cout << std::endl;
+
+            }
+        }
+        */
+
+        //if (lead.Pt() > 17 && et_transverse == 0) {
+        //    std::cout << "truth et " << truth_et_transverse << " thres truth et " << thres_truth_et_transverse << " reco truth et " << reco_truth_et_transverse << std::endl;
+        //}
         //std::cout << "Truth ET " << truth_et_transverse << " Reco ET " << et_transverse << std::endl;
         //std::cout << std::endl;
 
@@ -425,9 +605,11 @@ void analysis_sim_dijet(std::string runtype = "mb", int start_seg = 0, int end_s
             h_xj_record->Fill(sub.Pt()/lead.Pt(), weight_scale);
             h_lead_spectra_record->Fill(lead.Pt(), weight_scale);
             h_sub_spectra_record->Fill(sub.Pt(), weight_scale);
-            h_nw_et_transverse_record->Fill(et_transverse);
-            h_et_transverse_record->Fill(et_transverse, weight_scale);
-            h_ue_pt_transverse_record->Fill(lead.Pt(),et_transverse, weight_scale);
+            if (calibjet_pt_dijet > calibptbins[0]) {
+                h_nw_et_transverse_record->Fill(et_transverse, weight_scale);
+                h_et_transverse_record->Fill(et_transverse, weight_scale);
+                h_ue_pt_transverse_record->Fill(lead.Pt(),et_transverse, weight_scale);
+            }
         }
             
         if (truth_dijet) {
@@ -435,41 +617,72 @@ void analysis_sim_dijet(std::string runtype = "mb", int start_seg = 0, int end_s
             h_truth_xj_record->Fill(truthsub.Pt()/truthlead.Pt(), weight_scale);
             h_lead_truth_spectra_record->Fill(truthlead.Pt(), weight_scale);
             h_sub_truth_spectra_record->Fill(truthsub.Pt(), weight_scale);
-            h_nw_et_truth_transverse_record->Fill(truth_et_transverse);
-            h_et_truth_transverse_record->Fill(truth_et_transverse, weight_scale);
-            h_ue_pt_truth_transverse_record->Fill(truthlead.Pt(),truth_et_transverse, weight_scale);
+            if (goodtruthjet_pt > truthptbins[0]) {
+                h_nw_et_truth_transverse_record->Fill(truth_et_transverse, weight_scale);
+                h_et_truth_transverse_record->Fill(truth_et_transverse, weight_scale);
+                h_ue_pt_truth_transverse_record->Fill(truthlead.Pt(),truth_et_transverse, weight_scale);
+                h_thres_nw_et_truth_transverse_record->Fill(thres_truth_et_transverse, weight_scale);
+                h_thres_et_truth_transverse_record->Fill(thres_truth_et_transverse, weight_scale);
+                h_thres_ue_pt_truth_transverse_record->Fill(truthlead.Pt(),thres_truth_et_transverse, weight_scale);
+                h_reco_nw_et_truth_transverse_record->Fill(reco_truth_et_transverse, weight_scale);
+                h_reco_et_truth_transverse_record->Fill(reco_truth_et_transverse, weight_scale);
+                h_reco_ue_pt_truth_transverse_record->Fill(truthlead.Pt(),reco_truth_et_transverse, weight_scale);
+                h_reco_thres_nw_et_truth_transverse_record->Fill(reco_thres_truth_et_transverse, weight_scale);
+                h_reco_thres_et_truth_transverse_record->Fill(reco_thres_truth_et_transverse, weight_scale);
+                h_reco_thres_ue_pt_truth_transverse_record->Fill(truthlead.Pt(),reco_thres_truth_et_transverse, weight_scale);
+            }
         }
+        //std::cout << entry << std::endl;
+
+        double uni_meas_et = MapToUniform(et_transverse, calibetbins, calibnet);
+        double uni_truth_et = MapToUniform(truth_et_transverse, truthetbins, truthnet);
+        double uni_meas_pt = MapToUniform(calibjet_pt_dijet, calibptbins, calibnpt);
+        double uni_truth_pt = MapToUniform(goodtruthjet_pt, truthptbins, truthnpt);
+        double uni_meas_pt_jesdown = MapToUniform(calibjet_pt_dijet_jesdown, calibptbins, calibnpt);
+        double uni_meas_pt_jesup = MapToUniform(calibjet_pt_dijet_jesup, calibptbins, calibnpt);
+        double uni_meas_pt_jerdown = MapToUniform(calibjet_pt_dijet_jerdown, calibptbins, calibnpt);
+        double uni_meas_pt_jerup = MapToUniform(calibjet_pt_dijet_jerup, calibptbins, calibnpt);
 
         //////////////////////////// FILL RESPONSE MATRICES ////////////////////////////
-        fill_response_matrix_full(h_truth_calib_dijet, h_measure_calib_dijet, h_respmatrix_calib_dijet[0], h_fake_calib_dijet, h_miss_calib_dijet, h_respmatrix_calib_dijet[1], h_counts_fake_calib_dijet, h_counts_miss_calib_dijet, h_jet_pt_respmatrix_calib_dijet, h_calo_et_respmatrix_calib_dijet, h_nw_jet_pt_respmatrix_calib_dijet, h_nw_calo_et_respmatrix_calib_dijet, calibjet_pt_dijet, calibjet_matched_dijet, goodtruthjet_pt, et_transverse, truth_et_transverse, weight_scale);
+        fill_response_matrix_full(h_truth_calib_dijet, h_measure_calib_dijet, h_respmatrix_calib_dijet[0], h_fake_calib_dijet, h_miss_calib_dijet, h_respmatrix_calib_dijet[1], h_counts_fake_calib_dijet, h_counts_miss_calib_dijet, h_jetpt_respmatrix[0], h_caloet_respmatrix[0], h_jetpt_respmatrix[1], h_caloet_respmatrix[1], uni_meas_pt, calibjet_matched_dijet, uni_truth_pt, uni_meas_et, uni_truth_et, weight_scale);
+        fill_response_matrix(h_truth_calib_dijet_jesdown, h_measure_calib_dijet_jesdown, h_respmatrix_calib_dijet_jesdown[0], h_fake_calib_dijet_jesdown, h_miss_calib_dijet_jesdown, h_respmatrix_calib_dijet_jesdown[1], uni_meas_pt_jesdown, calibjet_matched_dijet_jesdown, uni_truth_pt, uni_meas_et, uni_truth_et, weight_scale);
+        fill_response_matrix(h_truth_calib_dijet_jesup, h_measure_calib_dijet_jesup, h_respmatrix_calib_dijet_jesup[0], h_fake_calib_dijet_jesup, h_miss_calib_dijet_jesup, h_respmatrix_calib_dijet_jesup[1], uni_meas_pt_jesup, calibjet_matched_dijet_jesup, uni_truth_pt, uni_meas_et, uni_truth_et, weight_scale);
+        fill_response_matrix(h_truth_calib_dijet_jerdown, h_measure_calib_dijet_jerdown, h_respmatrix_calib_dijet_jerdown[0], h_fake_calib_dijet_jerdown, h_miss_calib_dijet_jerdown, h_respmatrix_calib_dijet_jerdown[1], uni_meas_pt_jerdown, calibjet_matched_dijet_jerdown, uni_truth_pt, uni_meas_et, uni_truth_et, weight_scale);
+        fill_response_matrix(h_truth_calib_dijet_jerup, h_measure_calib_dijet_jerup, h_respmatrix_calib_dijet_jerup[0], h_fake_calib_dijet_jerup, h_miss_calib_dijet_jerup, h_respmatrix_calib_dijet_jerup[1], uni_meas_pt_jerup, calibjet_matched_dijet_jerup, uni_truth_pt, uni_meas_et, uni_truth_et, weight_scale);
+        if (entry % 2 == 0){ fill_response_matrix(h_truth_calib_dijet_half1, h_measure_calib_dijet_half1, h_respmatrix_calib_dijet_half1[0], h_fake_calib_dijet_half1, h_miss_calib_dijet_half1, h_respmatrix_calib_dijet_half1[1], uni_meas_pt, calibjet_matched_dijet, uni_truth_pt, uni_meas_et, uni_truth_et, weight_scale); }   
+        else { fill_response_matrix(h_truth_calib_dijet_half2, h_measure_calib_dijet_half2, h_respmatrix_calib_dijet_half2[0], h_fake_calib_dijet_half2, h_miss_calib_dijet_half2, h_respmatrix_calib_dijet_half2[1], uni_meas_pt, calibjet_matched_dijet, uni_truth_pt, uni_meas_et, uni_truth_et, weight_scale); }
+        /*
+        fill_response_matrix_full(h_truth_calib_dijet, h_measure_calib_dijet, h_respmatrix_calib_dijet[0], h_fake_calib_dijet, h_miss_calib_dijet, h_respmatrix_calib_dijet[1], h_counts_fake_calib_dijet, h_counts_miss_calib_dijet, h_jetpt_respmatrix[0], h_caloet_respmatrix[0], h_jetpt_respmatrix[1], h_caloet_respmatrix[1], calibjet_pt_dijet, calibjet_matched_dijet, goodtruthjet_pt, et_transverse, truth_et_transverse, weight_scale);
         fill_response_matrix(h_truth_calib_dijet_jesdown, h_measure_calib_dijet_jesdown, h_respmatrix_calib_dijet_jesdown[0], h_fake_calib_dijet_jesdown, h_miss_calib_dijet_jesdown, h_respmatrix_calib_dijet_jesdown[1], calibjet_pt_dijet_jesdown, calibjet_matched_dijet_jesdown, goodtruthjet_pt, et_transverse, truth_et_transverse, weight_scale);
         fill_response_matrix(h_truth_calib_dijet_jesup, h_measure_calib_dijet_jesup, h_respmatrix_calib_dijet_jesup[0], h_fake_calib_dijet_jesup, h_miss_calib_dijet_jesup, h_respmatrix_calib_dijet_jesup[1], calibjet_pt_dijet_jesup, calibjet_matched_dijet_jesup, goodtruthjet_pt, et_transverse, truth_et_transverse, weight_scale);
         fill_response_matrix(h_truth_calib_dijet_jerdown, h_measure_calib_dijet_jerdown, h_respmatrix_calib_dijet_jerdown[0], h_fake_calib_dijet_jerdown, h_miss_calib_dijet_jerdown, h_respmatrix_calib_dijet_jerdown[1], calibjet_pt_dijet_jerdown, calibjet_matched_dijet_jerdown, goodtruthjet_pt, et_transverse, truth_et_transverse, weight_scale);
         fill_response_matrix(h_truth_calib_dijet_jerup, h_measure_calib_dijet_jerup, h_respmatrix_calib_dijet_jerup[0], h_fake_calib_dijet_jerup, h_miss_calib_dijet_jerup, h_respmatrix_calib_dijet_jerup[1], calibjet_pt_dijet_jerup, calibjet_matched_dijet_jerup, goodtruthjet_pt, et_transverse, truth_et_transverse, weight_scale);
         if (entry % 2 == 0){ fill_response_matrix(h_truth_calib_dijet_half1, h_measure_calib_dijet_half1, h_respmatrix_calib_dijet_half1[0], h_fake_calib_dijet_half1, h_miss_calib_dijet_half1, h_respmatrix_calib_dijet_half1[1], calibjet_pt_dijet, calibjet_matched_dijet, goodtruthjet_pt, et_transverse, truth_et_transverse, weight_scale); }   
         else { fill_response_matrix(h_truth_calib_dijet_half2, h_measure_calib_dijet_half2, h_respmatrix_calib_dijet_half2[0], h_fake_calib_dijet_half2, h_miss_calib_dijet_half2, h_respmatrix_calib_dijet_half2[1], calibjet_pt_dijet, calibjet_matched_dijet, goodtruthjet_pt, et_transverse, truth_et_transverse, weight_scale); }
-        
+        */
         if (iter > 1) {
             for (int i = 1; i < 3; i++) {
-                fill_trim_response_matrix(h_respmatrix_calib_dijet[i+1], calibjet_pt_dijet, calibjet_matched_dijet, goodtruthjet_pt, et_transverse, truth_et_transverse, weight_scale, counts_matrix[0], counts_measured[0], counts_truth[0], trim_val[i]);
-                fill_trim_response_matrix(h_respmatrix_calib_dijet_jesdown[i+1], calibjet_pt_dijet_jesdown, calibjet_matched_dijet_jesdown, goodtruthjet_pt, et_transverse, truth_et_transverse, weight_scale, counts_matrix[1], counts_measured[1], counts_truth[1], trim_val[i]);
-                fill_trim_response_matrix(h_respmatrix_calib_dijet_jesup[i+1], calibjet_pt_dijet_jesup, calibjet_matched_dijet_jesup, goodtruthjet_pt, et_transverse, truth_et_transverse, weight_scale, counts_matrix[2], counts_measured[2], counts_truth[2], trim_val[i]);
-                fill_trim_response_matrix(h_respmatrix_calib_dijet_jerdown[i+1], calibjet_pt_dijet_jerdown, calibjet_matched_dijet_jerdown, goodtruthjet_pt, et_transverse, truth_et_transverse, weight_scale, counts_matrix[3], counts_measured[3], counts_truth[3], trim_val[i]);
-                fill_trim_response_matrix(h_respmatrix_calib_dijet_jerup[i+1], calibjet_pt_dijet_jerup, calibjet_matched_dijet_jerup, goodtruthjet_pt, et_transverse, truth_et_transverse, weight_scale, counts_matrix[4], counts_measured[4], counts_truth[4], trim_val[i]);
-                if (entry % 2 == 0) { fill_trim_response_matrix(h_respmatrix_calib_dijet_half1[i+1], calibjet_pt_dijet, calibjet_matched_dijet, goodtruthjet_pt, et_transverse, truth_et_transverse, weight_scale, counts_matrix[5], counts_measured[5], counts_truth[5], trim_val[i]); }
-                else { fill_trim_response_matrix(h_respmatrix_calib_dijet_half2[i+1], calibjet_pt_dijet, calibjet_matched_dijet, goodtruthjet_pt, et_transverse, truth_et_transverse, weight_scale, counts_matrix[6], counts_measured[6], counts_truth[6], trim_val[i]); }
+                fill_trim_response_matrix(h_respmatrix_calib_dijet[i+1], uni_meas_pt, calibjet_matched_dijet, uni_truth_pt, uni_meas_et, uni_truth_et, weight_scale, counts_matrix[0], counts_measured[0], counts_truth[0], trim_val[i]);
+                fill_trim_response_matrix(h_respmatrix_calib_dijet_jesdown[i+1], uni_meas_pt_jesdown, calibjet_matched_dijet_jesdown, uni_truth_pt, uni_meas_et, uni_truth_et, weight_scale, counts_matrix[1], counts_measured[1], counts_truth[1], trim_val[i]);
+                fill_trim_response_matrix(h_respmatrix_calib_dijet_jesup[i+1], uni_meas_pt_jesup, calibjet_matched_dijet_jesup, uni_truth_pt, uni_meas_et, uni_truth_et, weight_scale, counts_matrix[2], counts_measured[2], counts_truth[2], trim_val[i]);
+                fill_trim_response_matrix(h_respmatrix_calib_dijet_jerdown[i+1], uni_meas_pt_jerdown, calibjet_matched_dijet_jerdown, uni_truth_pt, uni_meas_et, uni_truth_et, weight_scale, counts_matrix[3], counts_measured[3], counts_truth[3], trim_val[i]);
+                fill_trim_response_matrix(h_respmatrix_calib_dijet_jerup[i+1], uni_meas_pt_jerup, calibjet_matched_dijet_jerup, uni_truth_pt, uni_meas_et, uni_truth_et, weight_scale, counts_matrix[4], counts_measured[4], counts_truth[4], trim_val[i]);
+                if (entry % 2 == 0) { fill_trim_response_matrix(h_respmatrix_calib_dijet_half1[i+1], uni_meas_pt, calibjet_matched_dijet, uni_truth_pt, uni_meas_et, uni_truth_et, weight_scale, counts_matrix[5], counts_measured[5], counts_truth[5], trim_val[i]); }
+                else { fill_trim_response_matrix(h_respmatrix_calib_dijet_half2[i+1], uni_meas_pt, calibjet_matched_dijet, uni_truth_pt, uni_meas_et, uni_truth_et, weight_scale, counts_matrix[6], counts_measured[6], counts_truth[6], trim_val[i]); }
+                fill_trim_1D_response_matrices(h_jetpt_respmatrix[i+1], h_caloet_respmatrix[i+1], uni_meas_pt, calibjet_matched_dijet, uni_truth_pt, uni_meas_et, uni_truth_et, weight_scale, counts_matrix[0], counts_measured[0], counts_truth[0], trim_val[i]);
             }
         }
 
         if (iter > 2) {
             for (int i = 0; i < 3; i++) {
-                fill_reweighted_trim_response_matrix(h_respmatrix_calib_dijet[i+4], calibjet_pt_dijet, calibjet_matched_dijet, goodtruthjet_pt, et_transverse, truth_et_transverse, weight_scale, counts_matrix[0], counts_measured[0], counts_truth[0], trim_val[i], weights[0][i]);
-                fill_reweighted_trim_response_matrix(h_respmatrix_calib_dijet_jesdown[i+4], calibjet_pt_dijet_jesdown, calibjet_matched_dijet_jesdown, goodtruthjet_pt, et_transverse, truth_et_transverse, weight_scale, counts_matrix[1], counts_measured[1], counts_truth[1], trim_val[i], weights[1][i]);
-                fill_reweighted_trim_response_matrix(h_respmatrix_calib_dijet_jesup[i+4], calibjet_pt_dijet_jesup, calibjet_matched_dijet_jesup, goodtruthjet_pt, et_transverse, truth_et_transverse, weight_scale, counts_matrix[2], counts_measured[2], counts_truth[2], trim_val[i], weights[2][i]);
-                fill_reweighted_trim_response_matrix(h_respmatrix_calib_dijet_jerdown[i+4], calibjet_pt_dijet_jerdown, calibjet_matched_dijet_jerdown, goodtruthjet_pt, et_transverse, truth_et_transverse, weight_scale, counts_matrix[3], counts_measured[3], counts_truth[3], trim_val[i], weights[3][i]);
-                fill_reweighted_trim_response_matrix(h_respmatrix_calib_dijet_jerup[i+4], calibjet_pt_dijet_jerup, calibjet_matched_dijet_jerup, goodtruthjet_pt, et_transverse, truth_et_transverse, weight_scale, counts_matrix[4], counts_measured[4], counts_truth[4], trim_val[i], weights[4][i]);
-                if (entry % 2 == 0) { fill_reweighted_trim_response_matrix(h_respmatrix_calib_dijet_half1[i+4], calibjet_pt_dijet, calibjet_matched_dijet, goodtruthjet_pt, et_transverse, truth_et_transverse, weight_scale, counts_matrix[5], counts_measured[5], counts_truth[5], trim_val[i], weights[5][i]); }
-                else { fill_reweighted_trim_response_matrix(h_respmatrix_calib_dijet_half2[i+4], calibjet_pt_dijet, calibjet_matched_dijet, goodtruthjet_pt, et_transverse, truth_et_transverse, weight_scale, counts_matrix[6], counts_measured[6], counts_truth[6], trim_val[i], weights[6][i]); }
+                fill_reweighted_trim_response_matrix(h_respmatrix_calib_dijet[i+4], uni_meas_pt, calibjet_matched_dijet, uni_truth_pt, uni_meas_et, uni_truth_et, weight_scale, counts_matrix[0], counts_measured[0], counts_truth[0], trim_val[i], weights[0][i]);
+                fill_reweighted_trim_response_matrix(h_respmatrix_calib_dijet_jesdown[i+4], uni_meas_pt_jesdown, calibjet_matched_dijet_jesdown, uni_truth_pt, uni_meas_et, uni_truth_et, weight_scale, counts_matrix[1], counts_measured[1], counts_truth[1], trim_val[i], weights[1][i]);
+                fill_reweighted_trim_response_matrix(h_respmatrix_calib_dijet_jesup[i+4], uni_meas_pt_jesup, calibjet_matched_dijet_jesup, uni_truth_pt, uni_meas_et, uni_truth_et, weight_scale, counts_matrix[2], counts_measured[2], counts_truth[2], trim_val[i], weights[2][i]);
+                fill_reweighted_trim_response_matrix(h_respmatrix_calib_dijet_jerdown[i+4], uni_meas_pt_jerdown, calibjet_matched_dijet_jerdown, uni_truth_pt, uni_meas_et, uni_truth_et, weight_scale, counts_matrix[3], counts_measured[3], counts_truth[3], trim_val[i], weights[3][i]);
+                fill_reweighted_trim_response_matrix(h_respmatrix_calib_dijet_jerup[i+4], uni_meas_pt_jerup, calibjet_matched_dijet_jerup, uni_truth_pt, uni_meas_et, uni_truth_et, weight_scale, counts_matrix[4], counts_measured[4], counts_truth[4], trim_val[i], weights[4][i]);
+                if (entry % 2 == 0) { fill_reweighted_trim_response_matrix(h_respmatrix_calib_dijet_half1[i+4], uni_meas_pt, calibjet_matched_dijet, uni_truth_pt, uni_meas_et, uni_truth_et, weight_scale, counts_matrix[5], counts_measured[5], counts_truth[5], trim_val[i], weights[5][i]); }
+                else { fill_reweighted_trim_response_matrix(h_respmatrix_calib_dijet_half2[i+4], uni_meas_pt, calibjet_matched_dijet, uni_truth_pt, uni_meas_et, uni_truth_et, weight_scale, counts_matrix[6], counts_measured[6], counts_truth[6], trim_val[i], weights[6][i]); }
+                fill_reweighted_trim_1D_response_matrices(h_jetpt_respmatrix[i+4], h_caloet_respmatrix[i+4], uni_meas_pt, calibjet_matched_dijet, uni_truth_pt, uni_meas_et, uni_truth_et, weight_scale, counts_matrix[0], counts_measured[0], counts_truth[0], trim_val[i], weights1D[0][i], weights1D[1][i]);
             } 
         }
     }
@@ -477,11 +690,17 @@ void analysis_sim_dijet(std::string runtype = "mb", int start_seg = 0, int end_s
     std::cout << "Writing histograms..." << std::endl;
     f_out->cd();
 
-    h_zvertex->Write();
+    h_zvertex->Write();  h_jes_qa->Write();
+    //h_total_topo_event_display->Write(); h_total_topo_emcal_event_display->Write(); h_total_topo_ihcal_event_display->Write(); h_total_topo_ohcal_event_display->Write();
+    //for (int i = 0; i < 30; i++) {
+    //    h_topo_event_display[i]->Write(); h_topo_emcal_event_display[i]->Write(); h_topo_ihcal_event_display[i]->Write(); h_topo_ohcal_event_display[i]->Write();
+    //}
     h_deltaphi_record->Write(); h_xj_record->Write(); h_lead_spectra_record->Write(); h_sub_spectra_record->Write(); h_et_transverse_record->Write(); h_nw_et_transverse_record->Write(); h_ue_pt_transverse_record->Write(); 
     h_truth_deltaphi_record->Write(); h_truth_xj_record->Write(); h_lead_truth_spectra_record->Write(); h_sub_truth_spectra_record->Write(); h_et_truth_transverse_record->Write(); h_nw_et_truth_transverse_record->Write(); h_ue_pt_truth_transverse_record->Write(); 
+    h_thres_et_truth_transverse_record->Write(); h_thres_nw_et_truth_transverse_record->Write(); h_thres_ue_pt_truth_transverse_record->Write(); 
+    h_reco_et_truth_transverse_record->Write(); h_reco_nw_et_truth_transverse_record->Write(); h_reco_ue_pt_truth_transverse_record->Write(); 
+    h_reco_thres_et_truth_transverse_record->Write(); h_reco_thres_nw_et_truth_transverse_record->Write(); h_reco_thres_ue_pt_truth_transverse_record->Write(); 
     h_truth_calib_dijet->Write(); h_measure_calib_dijet->Write(); h_fake_calib_dijet->Write(); h_miss_calib_dijet->Write(); h_counts_fake_calib_dijet->Write(); h_counts_miss_calib_dijet->Write(); 
-    h_jet_pt_respmatrix_calib_dijet->Write(); h_calo_et_respmatrix_calib_dijet->Write(); h_nw_jet_pt_respmatrix_calib_dijet->Write(); h_nw_calo_et_respmatrix_calib_dijet->Write();
     h_truth_calib_dijet_jesdown->Write(); h_measure_calib_dijet_jesdown->Write(); h_fake_calib_dijet_jesdown->Write(); h_miss_calib_dijet_jesdown->Write();
     h_truth_calib_dijet_jesup->Write(); h_measure_calib_dijet_jesup->Write(); h_fake_calib_dijet_jesup->Write(); h_miss_calib_dijet_jesup->Write();
     h_truth_calib_dijet_jerdown->Write(); h_measure_calib_dijet_jerdown->Write();  h_fake_calib_dijet_jerdown->Write(); h_miss_calib_dijet_jerdown->Write();
@@ -497,6 +716,8 @@ void analysis_sim_dijet(std::string runtype = "mb", int start_seg = 0, int end_s
         h_respmatrix_calib_dijet_jerup[i]->Write();
         h_respmatrix_calib_dijet_half1[i]->Write();
         h_respmatrix_calib_dijet_half2[i]->Write();
+        h_jetpt_respmatrix[i]->Write();
+        h_caloet_respmatrix[i]->Write();
     }
     f_out->Close();
     std::cout << "All done!" << std::endl;
@@ -524,9 +745,8 @@ void get_leading_subleading_jet(int& leadingjet_index, int& subleadingjet_index,
 }
 
 bool match_leading_subleading_jet(float leadingjet_phi, float subleadingjet_phi) {
-  float dijet_min_phi = 3*TMath::Pi()/4.;
   float dphi = get_dphi(leadingjet_phi, subleadingjet_phi);
-  return dphi > dijet_min_phi;
+  return fabs(dphi) > dijet_min_phi;
 }
 
 void get_calibjet(float& calibjet_pt, float& calibjet_eta, float& calibjet_phi, float jet_pt, float jet_eta, float jet_phi, bool dijet, TF1* f_corr, float jes_para, float jer_para) {
@@ -571,7 +791,8 @@ void match_meas_truth(float meas_eta, float meas_phi, bool& matched, float truth
 }
 
 void fill_response_matrix(TH2D*& h_truth, TH2D*& h_meas, RooUnfoldResponse*& h_resp, TH2D*& h_fake, TH2D*& h_miss, RooUnfoldResponse*& h_count, float meas_pt, float matched, float truth_pt, float meas_et, float truth_et, float weight_scale) {
-    if (meas_pt >= calibptbins[0] && meas_et >= calibetbins[0] && meas_et <= calibetbins[calibnet] && truth_pt >= truthptbins[0] && truth_et >= truthetbins[0] && truth_et <= truthetbins[truthnet]) {
+    //if (meas_pt >= calibptbins[0] && meas_et >= calibetbins[0] && meas_et <= calibetbins[calibnet] && truth_pt >= truthptbins[0] && truth_et >= truthetbins[0] && truth_et <= truthetbins[truthnet]) {
+    if (meas_pt >= 0 && meas_et >= 0 && meas_et <= 1 && truth_pt >= 0 && truth_et >= 0 && truth_et <= 1) {
         if (matched) {
             h_meas->Fill(meas_pt, meas_et, weight_scale);
             h_truth->Fill(truth_pt, truth_et, weight_scale);
@@ -587,34 +808,78 @@ void fill_response_matrix(TH2D*& h_truth, TH2D*& h_meas, RooUnfoldResponse*& h_r
             h_count->Fake(meas_pt, meas_et);
             h_count->Miss(truth_pt, truth_et);
         }
-    } else if (meas_pt >= calibptbins[0] && meas_et >= calibetbins[0] && meas_et <= calibetbins[calibnet]) {
+    //} else if (meas_pt >= calibptbins[0] && meas_et >= calibetbins[0] && meas_et <= calibetbins[calibnet]) {
+    } else if (meas_pt >= 0 && meas_et >= 0 && meas_et <= 1) {
         h_meas->Fill(meas_pt, meas_et, weight_scale);
         h_fake->Fill(meas_pt, meas_et, weight_scale);
         h_resp->Fake(meas_pt, meas_et, weight_scale);
         h_count->Fake(meas_pt, meas_et);
 
-    } else if (truth_pt >= truthptbins[0] && truth_et >= truthetbins[0] && truth_et <= truthetbins[truthnet]) {
+    //} else if (truth_pt >= truthptbins[0] && truth_et >= truthetbins[0] && truth_et <= truthetbins[truthnet]) {
+    } else if (truth_pt >= 0 && truth_et >= 0 && truth_et <= 1) {
         h_truth->Fill(truth_pt, truth_et, weight_scale);
         h_miss->Fill(truth_pt, truth_et, weight_scale);
         h_resp->Miss(truth_pt, truth_et, weight_scale);
         h_count->Miss(truth_pt, truth_et);
     }
-}
+    
+}        
 
-void fill_response_matrix_full(TH2D*& h_truth, TH2D*& h_meas, RooUnfoldResponse*& h_resp, TH2D*& h_fake, TH2D*& h_miss, RooUnfoldResponse*& h_count, TH2D*& h_count_fake, TH2D*& h_count_miss, TH2D*& h_jetpt, TH2D*& h_caloet, TH2D*& h_nw_jetpt, TH2D*& h_nw_caloet, float meas_pt, float matched, float truth_pt, float meas_et, float truth_et, float weight_scale) {
-    if (meas_pt >= calibptbins[0] && meas_et >= calibetbins[0] && meas_et <= calibetbins[calibnet] && truth_pt >= truthptbins[0] && truth_et >= truthetbins[0] && truth_et <= truthetbins[truthnet]) {
+void fill_response_matrix_full(TH2D*& h_truth, TH2D*& h_meas, RooUnfoldResponse*& h_resp, TH2D*& h_fake, TH2D*& h_miss, RooUnfoldResponse*& h_count, TH2D*& h_count_fake, TH2D*& h_count_miss, RooUnfoldResponse*& h_jetpt, RooUnfoldResponse*& h_caloet, RooUnfoldResponse*& h_count_jetpt, RooUnfoldResponse*& h_count_caloet, float meas_pt, float matched, float truth_pt, float meas_et, float truth_et, float weight_scale) {
+    //if (meas_pt >= calibptbins[0] && meas_et >= calibetbins[0] && meas_et <= calibetbins[calibnet] && truth_pt >= truthptbins[0] && truth_et >= truthetbins[0] && truth_et <= truthetbins[truthnet]) {
+    if (meas_pt >= 0 && meas_et >= 0 && meas_et <= 1 && truth_pt >= 0 && truth_et >= 0 && truth_et <= 1) {
         if (matched) {
             // measured, truth and response matrix 
             h_meas->Fill(meas_pt, meas_et, weight_scale);
             h_truth->Fill(truth_pt, truth_et, weight_scale);
             h_resp->Fill(meas_pt, meas_et, truth_pt, truth_et, weight_scale);
-            
+                        
             // QA on response matrix 
-            h_jetpt->Fill(meas_pt, truth_pt, weight_scale);
-            h_caloet->Fill(meas_et, truth_et, weight_scale);
-            h_nw_jetpt->Fill(meas_pt, truth_pt);
-            h_nw_caloet->Fill(meas_et, truth_et);
             h_count->Fill(meas_pt, meas_et, truth_pt, truth_et);
+            h_jetpt->Fill(meas_pt, truth_pt, (double)weight_scale);
+            h_count_jetpt->Fill(meas_pt, truth_pt);
+            h_caloet->Fill(meas_et, truth_et, (double)weight_scale);
+            h_count_caloet->Fill(meas_et, truth_et);
+
+            /*
+            std::cout << "meas_pt = " << meas_pt << ", truth_pt = " << truth_pt << ", weight_scale = " << weight_scale << std::endl;
+            std::cout << "meas_hist range: " << h_jetpt->Hmeasured()->GetXaxis()->GetXmin() << " to " << h_jetpt->Hmeasured()->GetXaxis()->GetXmax() << std::endl;
+            std::cout << "truth_hist range: " << h_jetpt->Htruth()->GetXaxis()->GetXmin() << " to " << h_jetpt->Htruth()->GetXaxis()->GetXmax() << std::endl;
+            std::cout << "Filled entries in h_jetpt Hresponse: " << h_jetpt->Hresponse()->GetEntries() << ", integral: " << h_jetpt->Hresponse()->Integral() << std::endl;
+            
+            int xbin = h_jetpt->Hresponse()->GetXaxis()->FindBin(meas_pt);
+            int ybin = h_jetpt->Hresponse()->GetYaxis()->FindBin(truth_pt);
+            double bincontent = h_jetpt->Hresponse()->GetBinContent(xbin, ybin);
+            std::cout << "h_jetpt bin content at (meas_pt, truth_pt): " << bincontent << std::endl;
+
+            std::cout << "meas_et = " << meas_et << ", truth_et = " << truth_et << ", weight_scale = " << weight_scale << std::endl;
+            std::cout << "meas_hist range: " << h_caloet->Hmeasured()->GetXaxis()->GetXmin() << " to " << h_caloet->Hmeasured()->GetXaxis()->GetXmax() << std::endl;
+            std::cout << "truth_hist range: " << h_caloet->Htruth()->GetXaxis()->GetXmin() << " to " << h_caloet->Htruth()->GetXaxis()->GetXmax() << std::endl;
+            std::cout << "Filled entries in h_caloet Hresponse: " << h_caloet->Hresponse()->GetEntries() << ", integral: " << h_caloet->Hresponse()->Integral() << std::endl;
+
+            xbin = h_caloet->Hresponse()->GetXaxis()->FindBin(meas_et);
+            ybin = h_caloet->Hresponse()->GetYaxis()->FindBin(truth_et);
+            bincontent = h_caloet->Hresponse()->GetBinContent(xbin, ybin);
+            std::cout << "h_caloet bin content at (meas_et, truth_et): " << bincontent << std::endl;
+
+            int xbin_meas = h_resp->Hmeasured()->GetXaxis()->FindBin(meas_pt);
+            int ybin_meas = h_resp->Hmeasured()->GetYaxis()->FindBin(meas_et);
+            int xbin_truth = h_resp->Htruth()->GetXaxis()->FindBin(truth_pt);
+            int ybin_truth = h_resp->Htruth()->GetYaxis()->FindBin(truth_et);
+            int nbins_meas_pt = h_resp->Hmeasured()->GetXaxis()->GetNbins();
+            int nbins_truth_pt = h_resp->Htruth()->GetXaxis()->GetNbins();
+            int meas_flat_bin = (ybin_meas - 1) * nbins_meas_pt + xbin_meas;  // 1-based ROOT indexing
+            int truth_flat_bin = (ybin_truth - 1) * nbins_truth_pt + xbin_truth;
+            double bin_content = h_resp->Hresponse()->GetBinContent(meas_flat_bin, truth_flat_bin);
+
+            std::cout << "meas_pt = " << meas_pt << ", meas_et = " << meas_et  << ", truth_pt = " << truth_pt << ", truth_et = " << truth_et  << ", weight_scale = " << weight_scale << std::endl;
+            std::cout << "measured pt axis range: " << h_resp->Hmeasured()->GetXaxis()->GetXmin() << " to " << h_resp->Hmeasured()->GetXaxis()->GetXmax() << std::endl;
+            std::cout << "measured et axis range: " << h_resp->Hmeasured()->GetYaxis()->GetXmin() << " to " << h_resp->Hmeasured()->GetYaxis()->GetXmax() << std::endl;
+            std::cout << "truth pt axis range: " << h_resp->Htruth()->GetXaxis()->GetXmin() << " to " << h_resp->Htruth()->GetXaxis()->GetXmax() << std::endl;
+            std::cout << "truth et axis range: " << h_resp->Htruth()->GetYaxis()->GetXmin() << " to " << h_resp->Htruth()->GetYaxis()->GetXmax() << std::endl;
+            std::cout << "Filled entries in h_resp Hresponse: " << h_resp->Hresponse()->GetEntries() << ", integral: " << h_resp->Hresponse()->Integral() << std::endl;
+            std::cout << "h_resp bin content at ((meas_pt, meas_et), (truth_pt, truth_et)): " << bin_content << std::endl;
+            */
         } else {
             h_meas->Fill(meas_pt, meas_et, weight_scale);
             h_fake->Fill(meas_pt, meas_et, weight_scale);
@@ -628,8 +893,18 @@ void fill_response_matrix_full(TH2D*& h_truth, TH2D*& h_meas, RooUnfoldResponse*
             h_count->Miss(truth_pt, truth_et);
             h_count_fake->Fill(meas_pt, meas_et);
             h_count_miss->Fill(truth_pt, truth_et);
+            h_jetpt->Fake(meas_pt, weight_scale);
+            h_jetpt->Miss(truth_pt, weight_scale);
+            h_count_jetpt->Fake(meas_pt);
+            h_count_jetpt->Miss(truth_pt);
+            h_caloet->Fake(meas_et, weight_scale);
+            h_caloet->Miss(truth_et, weight_scale);
+            h_count_caloet->Fake(meas_et);
+            h_count_caloet->Miss(truth_et);
+
         }
-    } else if (meas_pt >= calibptbins[0] && meas_et >= calibetbins[0] && meas_et <= calibetbins[calibnet]) {
+    //} else if (meas_pt >= calibptbins[0] && meas_et >= calibetbins[0] && meas_et <= calibetbins[calibnet]) {
+    } else if (meas_pt >= 0 && meas_et >= 0 && meas_et <= 1) {
         h_meas->Fill(meas_pt, meas_et, weight_scale);
         h_fake->Fill(meas_pt, meas_et, weight_scale);
         h_resp->Fake(meas_pt, meas_et, weight_scale);
@@ -637,8 +912,12 @@ void fill_response_matrix_full(TH2D*& h_truth, TH2D*& h_meas, RooUnfoldResponse*
         // QA on response matrix 
         h_count->Fake(meas_pt, meas_et);
         h_count_fake->Fill(meas_pt, meas_et);
-
-    } else if (truth_pt >= truthptbins[0] && truth_et >= truthetbins[0] && truth_et <= truthetbins[truthnet]) {
+        h_jetpt->Fake(meas_pt, weight_scale);
+        h_count_jetpt->Fake(meas_pt);
+        h_caloet->Fake(meas_et, weight_scale);
+        h_count_caloet->Fake(meas_et);
+    //} else if (truth_pt >= truthptbins[0] && truth_et >= truthetbins[0] && truth_et <= truthetbins[calibnet]) {
+    } else if (truth_pt >= 0 && truth_et >= 0 && truth_et <= 1) {
         h_truth->Fill(truth_pt, truth_et, weight_scale);
         h_miss->Fill(truth_pt, truth_et, weight_scale);
         h_resp->Miss(truth_pt, truth_et, weight_scale);
@@ -646,13 +925,49 @@ void fill_response_matrix_full(TH2D*& h_truth, TH2D*& h_meas, RooUnfoldResponse*
         // QA on response matrix 
         h_count->Miss(truth_pt, truth_et);
         h_count_miss->Fill(truth_pt, truth_et);
+        h_jetpt->Miss(truth_pt, weight_scale);
+        h_count_jetpt->Miss(truth_pt);
+        h_caloet->Miss(truth_et, weight_scale);
+        h_count_caloet->Miss(truth_et);
     }
+
+    /*
+        // 1D unfolding syst
+    if (meas_pt >= calibptbins[0] && truth_pt >= truthptbins[0]) {
+        if (matched) {
+            h_jetpt->Fill(meas_pt, truth_pt, weight_scale);
+            h_count_jetpt->Fill(meas_pt, truth_pt);
+        } else {
+            h_jetpt->Fake(meas_pt, weight_scale);
+            h_jetpt->Miss(truth_pt, weight_scale);
+            h_count_jetpt->Fake(meas_pt);
+            h_count_jetpt->Miss(truth_pt);
+        }
+    } else if (meas_pt >= calibptbins[0]) {
+        h_jetpt->Fake(meas_pt, weight_scale);
+        h_count_jetpt->Fake(meas_pt);
+    } else if (truth_pt >= truthptbins[0]) {
+        h_jetpt->Miss(truth_pt, weight_scale);
+        h_count_jetpt->Miss(truth_pt);
+    }
+
+    if (meas_et >= calibetbins[0] && meas_et <= calibetbins[calibnet] && truth_et >= truthetbins[0] && truth_et <= truthetbins[truthnet]) {
+        h_caloet->Fill(meas_et, truth_et, weight_scale);
+        h_count_caloet->Fill(meas_et, truth_et);
+    } else if (meas_et >= calibetbins[0] && meas_et <= calibetbins[calibnet]) {
+        h_caloet->Fake(meas_et, weight_scale);
+        h_count_caloet->Fake(meas_et);
+    } else if (truth_et >= truthetbins[0] && truth_et <= truthetbins[truthnet]) {
+        h_caloet->Miss(truth_et, weight_scale);
+        h_count_caloet->Miss(truth_et);
+    }
+    */
 }
 
 void fill_trim_response_matrix(RooUnfoldResponse*& h_resp, float meas_pt, float matched, float truth_pt, float meas_et, float truth_et, float weight_scale, const TMatrixD& counts_matrix, TH2D* h_counts_measured, TH2D* h_counts_truth, float trim_value) { 
-    if (meas_pt >= calibptbins[0] && meas_et >= calibetbins[0] && meas_et <= calibetbins[calibnet] && truth_pt >= truthptbins[0] && truth_et >= truthetbins[0] && truth_et <= truthetbins[truthnet]) {
+    //if (meas_pt >= calibptbins[0] && meas_et >= calibetbins[0] && meas_et <= calibetbins[calibnet] && truth_pt >= truthptbins[0] && truth_et >= truthetbins[0] && truth_et <= truthetbins[truthnet]) {
+    if (meas_pt >= 0 && meas_et >= 0 && meas_et <= 1 && truth_pt >= 0 && truth_et >= 0 && truth_et <= 1) {
         // only fill trimmed bins 
-
         int meas_bin = h_counts_measured->GetNbinsX() * (h_counts_measured->GetYaxis()->FindBin(meas_et) - 1) + (h_counts_measured->GetXaxis()->FindBin(meas_pt) - 1);
         int truth_bin = h_counts_truth->GetNbinsX() * (h_counts_truth->GetYaxis()->FindBin(truth_et) - 1) + (h_counts_truth->GetXaxis()->FindBin(truth_pt) - 1);
         //std::cout << "meas (pt,et) " << meas_pt << " " << meas_et << " meas_bin " << meas_bin << " truth (pt,et) " << truth_pt << " " << truth_et << " truth_bin " << truth_bin << std::endl;
@@ -662,17 +977,20 @@ void fill_trim_response_matrix(RooUnfoldResponse*& h_resp, float meas_pt, float 
             h_resp->Fake(meas_pt, meas_et, weight_scale);
             h_resp->Miss(truth_pt, truth_et, weight_scale);
         }
-    } else if (meas_pt >= calibptbins[0] && meas_et >= calibetbins[0] && meas_et <= calibetbins[calibnet]) {
+    //} else if (meas_pt >= calibptbins[0] && meas_et >= calibetbins[0] && meas_et <= calibetbins[calibnet]) {
+    } else if (meas_pt >= 0 && meas_et >= 0 && meas_et <= 1) {
         h_resp->Fake(meas_pt, meas_et, weight_scale);
 
-    } else if (truth_pt >= truthptbins[0] && truth_et >= truthetbins[0] && truth_et <= truthetbins[truthnet]) {
+    //} else if (truth_pt >= truthptbins[0] && truth_et >= truthetbins[0] && truth_et <= truthetbins[truthnet]) {
+    } else if (truth_pt >= 0 && truth_et >= 0 && truth_et <= 1) {
         h_resp->Miss(truth_pt, truth_et, weight_scale);
     }
 }
 
 void fill_reweighted_trim_response_matrix(RooUnfoldResponse*& h_resp, float meas_pt, float matched, float truth_pt, float meas_et, float truth_et, float weight_scale, const TMatrixD& counts_matrix, TH2D* h_counts_measured, TH2D* h_counts_truth, float trim_value, TH2D* h_prior_weights) { 
     double prior_weight = h_prior_weights->GetBinContent(h_prior_weights->FindBin(truth_pt,truth_et));
-    if (meas_pt >= calibptbins[0] && meas_et >= calibetbins[0] && meas_et <= calibetbins[calibnet] && truth_pt >= truthptbins[0] && truth_et >= truthetbins[0] && truth_et <= truthetbins[truthnet]) {
+    //if (meas_pt >= calibptbins[0] && meas_et >= calibetbins[0] && meas_et <= calibetbins[calibnet] && truth_pt >= truthptbins[0] && truth_et >= truthetbins[0] && truth_et <= truthetbins[truthnet]) {
+    if (meas_pt >= 0 && meas_et >= 0 && meas_et <= 1 && truth_pt >= 0 && truth_et >= 0 && truth_et <= 1) {
         // only fill trimmed bins 
         int meas_bin = h_counts_measured->GetNbinsX() * (h_counts_measured->GetYaxis()->FindBin(meas_et) - 1) + (h_counts_measured->GetXaxis()->FindBin(meas_pt) - 1);
         int truth_bin = h_counts_truth->GetNbinsX() * (h_counts_truth->GetYaxis()->FindBin(truth_et) - 1) + (h_counts_truth->GetXaxis()->FindBin(truth_pt) - 1);
@@ -682,10 +1000,70 @@ void fill_reweighted_trim_response_matrix(RooUnfoldResponse*& h_resp, float meas
             h_resp->Fake(meas_pt, meas_et, weight_scale);
             h_resp->Miss(truth_pt, truth_et, weight_scale*prior_weight);
         }
-    } else if (meas_pt >= calibptbins[0] && meas_et >= calibetbins[0] && meas_et <= calibetbins[calibnet]) {
+    //} else if (meas_pt >= calibptbins[0] && meas_et >= calibetbins[0] && meas_et <= calibetbins[calibnet]) {
+    } else if (meas_pt >= 0 && meas_et >= 0 && meas_et <= 1) {
         h_resp->Fake(meas_pt, meas_et, weight_scale);
 
-    } else if (truth_pt >= truthptbins[0] && truth_et >= truthetbins[0] && truth_et <= truthetbins[truthnet]) {
+    //} else if (truth_pt >= truthptbins[0] && truth_et >= truthetbins[0] && truth_et <= truthetbins[truthnet]) {
+    } else if (truth_pt >= 0 && truth_et >= 0 && truth_et <= 1) {
         h_resp->Miss(truth_pt, truth_et, weight_scale*prior_weight);
+    }
+}
+
+void fill_trim_1D_response_matrices(RooUnfoldResponse*& h_jetpt_resp, RooUnfoldResponse*& h_caloet_resp, float meas_pt, float matched, float truth_pt, float meas_et, float truth_et, float weight_scale, const TMatrixD& counts_matrix, TH2D* h_counts_measured, TH2D* h_counts_truth, float trim_value) { 
+    // JET PT AND CALO ET 1D UNFOLDING
+    //if (meas_pt >= calibptbins[0] && truth_pt >= truthptbins[0] && meas_et >= calibetbins[0] && meas_et <= calibetbins[calibnet] && truth_et >= truthetbins[0] && truth_et <= truthetbins[truthnet]) {
+    if (meas_pt >= 0 && meas_et >= 0 && meas_et <= 1 && truth_pt >= 0 && truth_et >= 0 && truth_et <= 1) {
+        // only fill trimmed bins 
+        int meas_bin = h_counts_measured->GetNbinsX() * (h_counts_measured->GetYaxis()->FindBin(meas_et) - 1) + (h_counts_measured->GetXaxis()->FindBin(meas_pt) - 1);
+        int truth_bin = h_counts_truth->GetNbinsX() * (h_counts_truth->GetYaxis()->FindBin(truth_et) - 1) + (h_counts_truth->GetXaxis()->FindBin(truth_pt) - 1);
+        if (matched && counts_matrix(meas_bin, truth_bin) >= trim_value) {
+            h_jetpt_resp->Fill(meas_pt, truth_pt, weight_scale);
+            h_caloet_resp->Fill(meas_et, truth_et, weight_scale);
+        } else {
+            h_jetpt_resp->Fake(meas_pt, weight_scale);
+            h_jetpt_resp->Miss(truth_pt, weight_scale);
+            h_caloet_resp->Fake(meas_et, weight_scale);
+            h_caloet_resp->Miss(truth_et, weight_scale);
+        }
+    //} else if (meas_pt >= calibptbins[0] && meas_et >= calibetbins[0] && meas_et <= calibetbins[calibnet]) {
+    } else if (meas_pt >= 0 && meas_et >= 0 && meas_et <= 1) {
+        h_jetpt_resp->Fake(meas_pt, weight_scale);
+        h_caloet_resp->Fake(meas_et, weight_scale);
+
+    //} else if (truth_pt >= truthptbins[0] && truth_et >= truthetbins[0] && truth_et <= truthetbins[truthnet]) {
+    } else if (truth_pt >= 0 && truth_et >= 0 && truth_et <= 1) {
+        h_jetpt_resp->Miss(truth_pt, weight_scale);
+        h_caloet_resp->Miss(truth_et, weight_scale);
+    }
+}
+
+void fill_reweighted_trim_1D_response_matrices(RooUnfoldResponse*& h_jetpt_resp, RooUnfoldResponse*& h_caloet_resp, float meas_pt, float matched, float truth_pt, float meas_et, float truth_et, float weight_scale, const TMatrixD& counts_matrix, TH2D* h_counts_measured, TH2D* h_counts_truth, float trim_value, TH1D* h_jetpt_prior_weights, TH1D* h_caloet_prior_weights) { 
+    // 1D UNFOLDING
+    double jetpt_prior_weight = h_jetpt_prior_weights->GetBinContent(h_jetpt_prior_weights->FindBin(truth_pt));
+    double caloet_prior_weight = h_caloet_prior_weights->GetBinContent(h_caloet_prior_weights->FindBin(truth_et));
+    //if (meas_pt >= calibptbins[0] && truth_pt >= truthptbins[0] && meas_et >= calibetbins[0] && meas_et <= calibetbins[calibnet] && truth_et >= truthetbins[0] && truth_et <= truthetbins[truthnet]) {
+    if (meas_pt >= 0 && meas_et >= 0 && meas_et <= 1 && truth_pt >= 0 && truth_et >= 0 && truth_et <= 1) {
+        // only fill trimmed bins 
+        int meas_bin = h_counts_measured->GetNbinsX() * (h_counts_measured->GetYaxis()->FindBin(meas_et) - 1) + (h_counts_measured->GetXaxis()->FindBin(meas_pt) - 1);
+        int truth_bin = h_counts_truth->GetNbinsX() * (h_counts_truth->GetYaxis()->FindBin(truth_et) - 1) + (h_counts_truth->GetXaxis()->FindBin(truth_pt) - 1);
+        if (matched && counts_matrix(meas_bin, truth_bin) >= trim_value) {
+             h_jetpt_resp->Fill(meas_pt, truth_pt, weight_scale*jetpt_prior_weight);
+             h_caloet_resp->Fill(meas_et, truth_et, weight_scale*caloet_prior_weight);
+        } else {
+            h_jetpt_resp->Fake(meas_pt, weight_scale);
+            h_jetpt_resp->Miss(truth_pt, weight_scale*jetpt_prior_weight);
+            h_caloet_resp->Fake(meas_et, weight_scale);
+            h_caloet_resp->Miss(truth_et, weight_scale*caloet_prior_weight);
+        }
+    //} else if (meas_pt >= calibptbins[0] && meas_et >= calibetbins[0] && meas_et <= calibetbins[calibnet]) {
+    } else if (meas_pt >= 0 && meas_et >= 0 && meas_et <= 1) {
+        h_jetpt_resp->Fake(meas_pt, weight_scale);
+        h_caloet_resp->Fake(meas_et, weight_scale);
+
+    //} else if (truth_pt >= truthptbins[0] && truth_et >= truthetbins[0] && truth_et <= truthetbins[truthnet]) {
+    } else if (truth_pt >= 0 && truth_et >= 0 && truth_et <= 1) {
+        h_jetpt_resp->Miss(truth_pt, weight_scale*jetpt_prior_weight);
+        h_caloet_resp->Miss(truth_et, weight_scale*caloet_prior_weight);
     }
 }

@@ -11,6 +11,7 @@
 #include <string>
 #include <sstream>
 #include <iterator>
+#include <unfold_Def.h>
 
 void normalize_hist2D(TH2D* h) {
     const int nX = h->GetNbinsX();
@@ -193,9 +194,9 @@ void draw_unfolded_spectra(TH1D* truth, TH1D* measure, std::vector<TH1D*> unfold
     if (output_name) canvas->SaveAs(output_name);
 }
 
-void draw_iteration_graph(std::vector<TGraph*> graphs, std::vector<std::string> leg_tags, std::string syst_tag, std::string syst) {
+void draw_iteration_graph(std::vector<TGraph*> graphs, std::vector<std::string> leg_tags, std::string syst_tag, std::string syst, string fname = "") {
     TCanvas* c1 = new TCanvas("c1", "Val Diff and Errors", 800, 600);
-    graphs[0]->GetYaxis()->SetRangeUser(0,0.012);
+    graphs[0]->GetYaxis()->SetRangeUser(0,0.2);
     graphs[0]->GetXaxis()->SetTitle("Iteration");
     graphs[0]->GetYaxis()->SetTitle("#sigma");
     graphs[0]->Draw("ALP");
@@ -213,13 +214,13 @@ void draw_iteration_graph(std::vector<TGraph*> graphs, std::vector<std::string> 
     }
     leg1->Draw();
 
-    string outfile = "run21_figure/h_unfolding_iterations_all_respmatrices.png";
-    if (syst != "") outfile = "run21_figure/h_unfolding_iterations_" + syst + ".png";
+    string outfile = fname + "_h_unfolding_iterations_all_respmatrices.png";
+    if (syst != "") outfile = fname + "_h_unfolding_iterations_" + syst + "_.png";
 
     c1->SaveAs(outfile.c_str());
 }
 
-void plot_unfold() {
+void plot_unfold(const char* unfoldfile = "run28_output_files/output_unfolded_data_pu_correct_calib_dijet_run28_iter_3_1000toys.root") {
     gROOT->LoadMacro("/sphenix/u/egm2153/spring_2023/sPhenixStyle.C");
     gROOT->ProcessLine("SetsPhenixStyle()");
 
@@ -229,25 +230,49 @@ void plot_unfold() {
     std::vector<std::string> syst = {"calib_dijet","calib_dijet_jesdown","calib_dijet_jesup","calib_dijet_jerdown","calib_dijet_jerup","calib_dijet_half1","calib_dijet_half2"};
     std::vector<std::string> trim = {"","_trim_5","_trim_10","_reweight","_reweight_trim_5","_reweight_trim_10"};
 
-    TFile* f = TFile::Open("output_unfolded_data_calib_dijet_run21_iter_3_1000toys.root");
+    TFile* f = TFile::Open(unfoldfile);
 
+    std::vector<std::vector<TH2D*>> h_uni_truth_2D(1, std::vector<TH2D*>(6, nullptr));
     std::vector<std::vector<TH2D*>> h_truth_2D(1, std::vector<TH2D*>(6, nullptr));
     std::vector<std::vector<TH1D*>> hj_truth(1, std::vector<TH1D*>(6, nullptr));
     std::vector<std::vector<TH1D*>> hc_truth(1, std::vector<TH1D*>(6, nullptr));
+    std::vector<std::vector<std::vector<TH2D*>>> h_uni_unfold_2D(1, std::vector<std::vector<TH2D*>>(6, std::vector<TH2D*>(20, nullptr)));
     std::vector<std::vector<std::vector<TH2D*>>> h_unfold_2D(1, std::vector<std::vector<TH2D*>>(6, std::vector<TH2D*>(20, nullptr)));
     std::vector<std::vector<std::vector<TH1D*>>> hj_unfold(1, std::vector<std::vector<TH1D*>>(6, std::vector<TH1D*>(20, nullptr)));
     std::vector<std::vector<std::vector<TH1D*>>> hc_unfold(1, std::vector<std::vector<TH1D*>>(6, std::vector<TH1D*>(20, nullptr)));
 
+    //TH2D* h_uni_measure_2D = (TH2D*)f->Get("h_calibjet_pt_dijet_pu_correct_et");
     TH2D* h_measure_2D = (TH2D*)f->Get("h_calibjet_pt_dijet_eff");
+    //TH2D* h_measure_2D = new TH2D("h_var_measure","",calibnpt, calibptbins, calibnet, calibetbins);   
+    //for (int ix = 1; ix < h_uni_measure_2D->GetNbinsX() + 1; ix++) {
+    //    for (int iy = 1; iy < h_uni_measure_2D->GetNbinsY() + 1; iy++) {
+    //        h_measure_2D->SetBinContent(ix,iy,h_uni_measure_2D->GetBinContent(ix,iy));
+    //        h_measure_2D->SetBinError(ix,iy,h_uni_measure_2D->GetBinError(ix,iy));
+    //    }
+    //}
     TH1D* hj_measure = (TH1D*)h_measure_2D->ProjectionX("hj_measure");
     TH1D* hc_measure = (TH1D*)h_measure_2D->ProjectionY("hc_measure");
     for (int i = 0; i < 1; i++) {
-        for (int j = 0; j < 6; j++) {
+        for (int j = 0; j < trim.size(); j++) {
             h_truth_2D[i][j] = (TH2D*)f->Get(("h_truth_"+syst[i]+trim[j]).c_str());
+            //h_truth_2D[i][j] = new TH2D(("h_var_truth_"+syst[i]+trim[j]).c_str(),"",truthnpt, truthptbins, truthnet, truthetbins);
+            //for (int ix = 1; ix < h_uni_truth_2D[i][j]->GetNbinsX() + 1; ix++) {
+            //    for (int iy = 1; iy < h_uni_truth_2D[i][j]->GetNbinsY() + 1; iy++) {
+            //        h_truth_2D[i][j]->SetBinContent(ix,iy,h_uni_truth_2D[i][j]->GetBinContent(ix,iy));
+            //        h_truth_2D[i][j]->SetBinError(ix,iy,h_uni_truth_2D[i][j]->GetBinError(ix,iy));
+            //    }
+            //}
             hj_truth[i][j] = h_truth_2D[i][j]->ProjectionX(("hj_truth_"+syst[i]+trim[j]).c_str());
             hc_truth[i][j] = h_truth_2D[i][j]->ProjectionY(("hc_truth_"+syst[i]+trim[j]).c_str());
             for (int n = 0; n < 20; n++) {
                 h_unfold_2D[i][j][n] = (TH2D*)f->Get(("h_unfold_"+syst[i]+trim[j]+"_"+to_string(n+1)).c_str());
+                //h_unfold_2D[i][j][n] = new TH2D(("h_var_unfold_full_"+syst[i]+trim[j]).c_str(),"",truthnpt, truthptbins, truthnet, truthetbins);
+                //for (int ix = 1; ix < h_uni_unfold_2D[i][j][n]->GetNbinsX() + 1; ix++) {
+                //    for (int iy = 1; iy < h_uni_unfold_2D[i][j][n]->GetNbinsY() + 1; iy++) {
+                //        h_unfold_2D[i][j][n]->SetBinContent(ix,iy,h_uni_unfold_2D[i][j][n]->GetBinContent(ix,iy));
+                //        h_unfold_2D[i][j][n]->SetBinError(ix,iy,h_uni_unfold_2D[i][j][n]->GetBinError(ix,iy));
+                //    }
+                //}
                 hj_unfold[i][j][n] = h_unfold_2D[i][j][n]->ProjectionX(("hj_unfold_"+syst[i]+trim[j]+"_"+to_string(n+1)).c_str());
                 hc_unfold[i][j][n] = h_unfold_2D[i][j][n]->ProjectionY(("hc_unfold_"+syst[i]+trim[j]+"_"+to_string(n+1)).c_str());
             }
@@ -256,18 +281,18 @@ void plot_unfold() {
     /*
     for (int i = 0; i < 1; i++) {
         for (int j = 0; j < 6; j++) {
-            string jet_outfile = "figure/h_unfolded_jet_spectrum_" + syst[i] + trim[j] + "_iter_3_1000toys.png";
-            string et_outfile = "figure/h_unfolded_et_spectrum_" + syst[i] + trim[j] + "_iter_3_1000toys.png";
+            string jet_outfile = "plots_run28/h_unfolded_jet_spectrum_" + syst[i] + trim[j] + "_iter_3_1000toys.png";
+            string et_outfile = "plots_run28/h_unfolded_et_spectrum_" + syst[i] + trim[j] + "_iter_3_1000toys.png";
             draw_unfolded_spectra(hj_truth[i][j], hj_measure, hj_unfold[i][j], true, leg_tags, 6, std::make_pair(14.0, 82.0), jet_outfile.c_str() ,true);
             draw_unfolded_spectra(hc_truth[i][j], hc_measure, hc_unfold[i][j], false, leg_tags, 6, std::make_pair(0.1, 35), et_outfile.c_str() ,true);
         }
     }
-    */  
+    */
     // For iteration optmization need to find: 
     // Sum of the bin error of unfolded distribution 
     // Variation of the sum of bin content between current unfolding distribution and last unfolding distribution 
     for (int it = 0; it < 20; it++) {
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < trim.size(); i++) {
             normalize_hist2D(h_unfold_2D[0][i][it]);
         }
     }
@@ -278,7 +303,7 @@ void plot_unfold() {
     std::vector<std::vector<double>> total_error(6, std::vector<double>(19, 0.0));
     for (int it = 1; it < 20; it++) {
         iteration.push_back(it);
-        for (int i = 0; i < 6; i++) {
+        for (int i = 0; i < trim.size(); i++) {
             for (int x = 2; x < h_unfold_2D[0][i][it]->GetNbinsX(); x++) {
                 for (int y = 1; y < h_unfold_2D[0][i][it]->GetNbinsY(); y++) {
                     sigma_error[i][it-1] += pow(h_unfold_2D[0][i][it]->GetBinError(x,y),2);
@@ -288,20 +313,20 @@ void plot_unfold() {
         }
     }
 
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < trim.size(); i++) {
         for (int it = 0; it < sigma_val_diff[i].size(); it++) {
             total_error[i][it] = std::sqrt(sigma_val_diff[i][it] + sigma_error[i][it]);
         }
     }
 
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < trim.size(); i++) {
         for (int it = 0; it < sigma_val_diff[i].size(); it++) {
             sigma_val_diff[i][it] = sqrt(sigma_val_diff[i][it]);
             sigma_error[i][it] = sqrt(sigma_error[i][it]);
         }
     }    
 
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < trim.size(); i++) {
         std::cout << "it \t val \t error \t total" << std::endl;
         for (int it = 0; it < 19; it++) {
             std::cout << iteration[it] << "\t" << sigma_val_diff[i][it] << "\t" << sigma_error[i][it] << "\t" << total_error[i][it] << std::endl;
@@ -311,7 +336,7 @@ void plot_unfold() {
 
     int n = iteration.size();
     TGraph* g_val_diff[6]; TGraph* g_error[6]; TGraph* g_total[6];
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < trim.size(); i++) {
         g_val_diff[i] = new TGraph(n, &iteration[0], &sigma_val_diff[i][0]);
         g_error[i] = new TGraph(n, &iteration[0], &sigma_error[i][0]);
         g_total[i] = new TGraph(n, &iteration[0], &total_error[i][0]);
@@ -323,17 +348,17 @@ void plot_unfold() {
     std::vector<std::string> iter_leg_tags = {"#Sigma#delta_{it}", "#Sigma(#sigma_{stat}^{2} #oplus #sigma_{unfold}^{2})", "#Sigma#delta_{it} #oplus #Sigma(#sigma_{stat}^{2} #oplus #sigma_{unfold}^{2})"};
     std::vector<std::string> trim_iter_leg_tags = {"Untrimmed resp matrix", "Trim < 5 entries resp matrix", "Trim < 10 entries resp matrix", "Untrimmed reweighted resp matrix", "Trim < 5 entries reweighted resp matrix", "Trim < 10 entries reweighted resp matrix"};
 
-    for (int i = 0; i < 6; i++) {
-        draw_iteration_graph({g_val_diff[i], g_error[i], g_total[i]}, iter_leg_tags, trim_iter_leg_tags[i], trim[i]);
+    for (int i = 0; i < trim.size(); i++) {
+        draw_iteration_graph({g_val_diff[i], g_error[i], g_total[i]}, iter_leg_tags, trim_iter_leg_tags[i], trim[i], unfoldfile);
     }
     std::string total_syst_tag = "#Sigma#delta_{it} #oplus #Sigma(#sigma_{stat}^{2} #oplus #sigma_{unfold}^{2})";
     std::string total_syst = "";
-    for (int i = 0; i < 6; i++) {
+    for (int i = 0; i < trim.size(); i++) {
         if (i < 4) { g_total[i]->SetLineColor(i+1); g_total[i]->SetMarkerColor(i+1); }
         else { g_total[i]->SetLineColor(i+2); g_total[i]->SetMarkerColor(i+2); }
     }
     std::vector<TGraph*> graphs(std::begin(g_total), std::end(g_total));
-    draw_iteration_graph(graphs, trim_iter_leg_tags, total_syst_tag, total_syst);
+    draw_iteration_graph(graphs, trim_iter_leg_tags, total_syst_tag, total_syst, unfoldfile);
 
 
 }

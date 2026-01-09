@@ -28,6 +28,10 @@
 #include <g4main/PHG4Particle.h>
 #include <ffaobjects/EventHeaderv1.h>
 
+#include <mbd/MbdPmtContainer.h>
+#include <mbd/MbdPmtHit.h>
+#include <mbd/MbdOut.h>
+
 #include <calobase/RawCluster.h>
 #include <calobase/RawClusterContainer.h>
 #include <calobase/RawClusterUtility.h>
@@ -37,6 +41,7 @@
 #include <trackbase_historic/SvtxTrack.h>
 #include <trackbase_historic/SvtxTrackMap.h>
 #include <trackbase_historic/SvtxTrackState.h>
+#include <globalvertex/SvtxVertexMap.h>
 #include <trackbase/TrkrCluster.h>
 #include <trackbase/TrkrClusterv3.h>
 #include <trackbase/TrkrClusterv4.h>
@@ -50,6 +55,16 @@
 #include <trackbase/TrkrHitSet.h>
 #include <trackbase/TrkrClusterHitAssoc.h>
 #include <trackbase/TrkrClusterIterationMapv1.h>
+
+// G4 truth includes
+#include <g4eval/SvtxEvalStack.h>
+#include <g4main/PHG4Particle.h>
+#include <g4main/PHG4TruthInfoContainer.h>
+#include <g4main/PHG4Hit.h>
+#include <g4main/PHG4HitContainer.h>
+#include <g4main/PHG4VtxPoint.h>
+
+#include <ffaobjects/RunHeader.h>
 
 #include <TTree.h>
 #include <iostream>
@@ -107,6 +122,7 @@ InclusiveJet::InclusiveJet(const std::string& recojetname, const std::string& tr
   , m_pt_subseed()
   , m_e_subseed()
   , m_subseed_cut()
+  , runnumber(-9999)
 {
   std::cout << "InclusiveJet::InclusiveJet(const std::string &name) Calling ctor" << std::endl;
 }
@@ -130,6 +146,18 @@ int InclusiveJet::Init(PHCompositeNode *topNode)
   m_T->Branch("m_event", &m_event, "event/I");
   m_T->Branch("nJet", &m_nJet, "nJet/I");
   m_T->Branch("zvtx", &m_zvtx);
+  m_T->Branch("mbd_t0",&m_mbd_t0,"mbd_t0/F");
+  m_T->Branch("mbd_ts",&m_mbd_ts,"mbd_ts/F");
+  m_T->Branch("mbd_tn",&m_mbd_tn,"mbd_tn/F");
+  if (m_doMBDeff) {
+    m_T->Branch("zsvtx", &m_zsvtx);
+    m_T->Branch("zsiliconvtx",&m_zsiliconvtx);
+    m_T->Branch("ztruthvtx", &m_ztruthvtx);
+    m_T->Branch("svtxVector",&m_svtxVector);
+    m_T->Branch("svtxBcoVector",&m_svtxBcoVector);
+    m_T->Branch("siliconVector",&m_siliconVector);
+    m_T->Branch("siliconBcoVector",&m_siliconBcoVector);
+  }
   m_T->Branch("nComponent", &m_nComponent);
   m_T->Branch("triggerVector", &m_triggerVector);
 
@@ -141,6 +169,8 @@ int InclusiveJet::Init(PHCompositeNode *topNode)
   m_T->Branch("jetEmcalE", &m_jetEmcalE);
   m_T->Branch("jetIhcalE", &m_jetIhcalE);
   m_T->Branch("jetOhcalE", &m_jetOhcalE);
+  m_T->Branch("jettime", &m_jettime);
+  m_T->Branch("jetunweighttime", &m_jetunweighttime);
 
   if(m_doTruthJets){
     m_T->Branch("nTruthJet", &m_nTruthJet);
@@ -213,6 +243,16 @@ int InclusiveJet::Init(PHCompositeNode *topNode)
     m_T->Branch("cluster_tower_calo",m_cluster_tower_calo,"cluster_tower_calo[clsmult][500]/I");
     m_T->Branch("cluster_tower_ieta",m_cluster_tower_ieta,"cluster_tower_ieta[clsmult][500]/I");
     m_T->Branch("cluster_tower_iphi",m_cluster_tower_iphi,"cluster_tower_iphi[clsmult][500]/I");
+    
+    m_T->Branch("clsmult2",&m_clsmult2,"clsmult2/I");
+    m_T->Branch("cluster2_e",m_cluster2_e,"cluster2_e[clsmult2]/F");
+    m_T->Branch("cluster2_eta",m_cluster2_eta,"cluster2_eta[clsmult2]/F");
+    m_T->Branch("cluster2_phi",m_cluster2_phi,"cluster2_phi[clsmult2]/F");
+    m_T->Branch("cluster2_ntowers",m_cluster2_ntowers,"cluster2_ntowers[clsmult2]/I");
+    m_T->Branch("cluster2_tower_e",m_cluster2_tower_e,"cluster2_tower_e[clsmult2][500]/F");
+    m_T->Branch("cluster2_tower_calo",m_cluster2_tower_calo,"cluster2_tower_calo[clsmult2][500]/I");
+    m_T->Branch("cluster2_tower_ieta",m_cluster2_tower_ieta,"cluster2_tower_ieta[clsmult2][500]/I");
+    m_T->Branch("cluster2_tower_iphi",m_cluster2_tower_iphi,"cluster2_tower_iphi[clsmult2][500]/I");
   }
 
   if(m_doTruth) {
@@ -238,7 +278,7 @@ int InclusiveJet::Init(PHCompositeNode *topNode)
     m_T->Branch("tr_nmaps",m_tr_nmaps,"tr_nmaps[trkmult]/I");
     m_T->Branch("tr_ntpc",m_tr_ntpc,"tr_ntpc[trkmult]/I");
     m_T->Branch("tr_quality",m_tr_quality,"tr_quality[trkmult]/F");
-    m_T->Branch("tr_vertex_id",m_tr_vertex_id,"tr_vertex_id[trkmult]/I");
+    m_T->Branch("tr_crossing",m_tr_crossing,"tr_crossing[trkmult]/I");
     m_T->Branch("tr_cemc_eta",m_tr_cemc_eta,"tr_cemc_eta[trkmult]/F");
     m_T->Branch("tr_cemc_phi",m_tr_cemc_phi,"tr_cemc_phi[trkmult]/F");
     m_T->Branch("tr_ihcal_eta",m_tr_ihcal_eta,"tr_ihcal_eta[trkmult]/F");
@@ -261,6 +301,23 @@ int InclusiveJet::InitRun(PHCompositeNode *topNode)
 {
   std::cout << "InclusiveJet::InitRun(PHCompositeNode *topNode) Initializing for Run XXX" << std::endl;
   
+  runheader = findNode::getClass<RunHeader>(topNode, "RunHeader");
+  if (!runheader) {
+    std::cout << "can't find runheader" << std::endl;
+    return 1;
+  }
+  runnumber = runheader->get_RunNumber();
+  std::ifstream file = std::ifstream("/sphenix/user/samfred/projects/mbdt0/histmaking/MbdOut.corr");
+  std::string line;
+  while (getline(file,line)) {
+    int irunnum;
+    float t0;
+    std::istringstream iss(line);
+    iss >> irunnum >> t0;
+    if (irunnum == runnumber) {m_t0corr = t0; break; }
+  }
+
+
   return Fun4AllReturnCodes::EVENT_OK;
 }
 
@@ -329,27 +386,100 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
     }
   else
     {
-      GlobalVertex *globalVertex = vertexmap->begin()->second;
-      //std::cout << "Event: " << m_event << std::endl;
-      //globalVertex->identify();
+      for (auto giter = vertexmap->begin(); giter != vertexmap->end(); giter++) {
+        GlobalVertex *globalVertex = giter->second;
 
-      auto mbdStartIter = globalVertex->find_vertexes(GlobalVertex::MBD);
-      auto mbdEndIter = globalVertex->end_vertexes();
+        //std::cout << "Event: " << m_event << std::endl;
+        //globalVertex->identify();
 
-      for (auto iter = mbdStartIter; iter != mbdEndIter; ++iter)
-      {
-        const auto &[type, vertexVec] = *iter;
-        if (type != GlobalVertex::MBD) continue;
-        for (const auto *vertex : vertexVec)
+        auto mbdStartIter = globalVertex->find_vertexes(GlobalVertex::MBD);
+        auto mbdEndIter = globalVertex->end_vertexes();
+
+        for (auto iter = mbdStartIter; iter != mbdEndIter; ++iter)
         {
-          if (!vertex) continue; 
-          m_zvtx = vertex->get_z();
+          const auto &[type, vertexVec] = *iter;
+          if (type != GlobalVertex::MBD) continue;
+          for (const auto *vertex : vertexVec)
+          {
+            if (!vertex) continue; 
+            //std::cout << "mbd vertex beam crossing: " << vertex->get_beam_crossing() << std::endl;
+            m_zvtx = vertex->get_z();
+          }
+        }
+        if (m_doMBDeff) {
+          auto svtxStartIter = globalVertex->find_vertexes(GlobalVertex::SVTX);
+          auto svtxEndIter = globalVertex->end_vertexes();
+
+          for (auto iter = svtxStartIter; iter != svtxEndIter; ++iter)
+          {
+            const auto &[type, vertexVec] = *iter;
+            if (type != GlobalVertex::SVTX) continue;
+            for (const auto *vertex : vertexVec)
+            {
+              if (!vertex) continue; 
+              //std::cout << vertex->get_z() << " " << vertex->get_beam_crossing() << std::endl;
+              m_svtxVector.push_back(vertex->get_z());
+              m_svtxBcoVector.push_back(vertex->get_beam_crossing());
+              //std::cout << "svtx vertex beam crossing: " << vertex->get_beam_crossing() << std::endl;
+              if (vertex->get_beam_crossing() != 0) { continue; }
+              m_zsvtx = vertex->get_z();
+            }
+          }
+          auto truthStartIter = globalVertex->find_vertexes(GlobalVertex::TRUTH);
+          auto truthEndIter = globalVertex->end_vertexes();
+
+          for (auto iter = truthStartIter; iter != truthEndIter; ++iter)
+          {
+            const auto &[type, vertexVec] = *iter;
+            if (type != GlobalVertex::TRUTH) continue;
+            for (const auto *vertex : vertexVec)
+            {
+              if (!vertex) continue; 
+              //std::cout << "truth vertex beam crossing: " << vertex->get_beam_crossing() << std::endl;
+              //if (vertex->get_beam_crossing() != 0) { continue; }
+              m_ztruthvtx = vertex->get_z();
+            }
+          }
         }
       }
-
     }
 
-    //std::cout << "using vertex " << m_zvtx << std::endl;
+    if (m_doMBDeff) {
+      SvtxVertexMap *siliconvertexmap = findNode::getClass<SvtxVertexMap>(topNode, "SiliconVertexMap");
+      if (!siliconvertexmap)
+      {
+        std::cout << PHWHERE<< "SiliconVertexMap node is missing, can't collect tracks"<< std::endl;
+        return Fun4AllReturnCodes::EVENT_OK;
+      }
+
+      // note : in one F4A tracker event, the BCO coverage can be up to 500 BCOs, so there can be several vertices in one F4A tracker event, so we loop over them
+      for (auto it = siliconvertexmap->begin(); it != siliconvertexmap->end(); ++it)
+      {
+          auto vertex = it->second;
+          if (!vertex) continue;
+
+          m_siliconVector.push_back(vertex->get_z());
+          m_siliconBcoVector.push_back(vertex->get_beam_crossing());
+
+          if (vertex->get_beam_crossing() == 0) {
+              m_zsiliconvtx = vertex->get_z();
+          }
+      }
+    }
+
+    //if (m_doMBDeff) {
+      //PHG4TruthInfoContainer *truthinfo = findNode::getClass<PHG4TruthInfoContainer>(topNode, "G4TruthInfo");
+      //if (!truthinfo) std::cout << PHWHERE << "PHG4TruthInfoContainer node is missing, can't collect truth vertex"<< std::endl;
+      //PHG4TruthInfoContainer::VtxRange vtxrange = truthinfo->GetVtxRange();
+      //for (PHG4TruthInfoContainer::ConstVtxIterator iter = vtxrange.first; iter != vtxrange.second; ++iter) {
+        //PHG4VtxPoint *vtx = truthinfo->GetPrimaryVtx(truthinfo->GetPrimaryVertexIndex());
+        //if (vtx->get_id() != 0) { continue; }
+        //std::cout << " truth vertex: x = " << vtx->get_x() << " y = " << vtx->get_y() << " z = " << vtx->get_z() << " id = " << vtx->get_id() << std::endl;
+      //}
+    //}
+
+    if (m_doMBDeff) { std::cout << "using vertex " << m_zvtx << " " << m_zsvtx << " " << m_ztruthvtx << " " << m_zsiliconvtx << std::endl; }
+    else { std::cout << "using vertex " << m_zvtx << std::endl; }
 
  /*
   MbdVertexMap *mvertexmap = findNode::getClass<MbdVertexMap>(topNode,"MbdVertexMap");
@@ -373,7 +503,34 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
   }
   */
 
-  if (fabs(m_zvtx) > 30) {
+  MbdOut * mbdout = static_cast<MbdOut*>(findNode::getClass<MbdOut>(topNode,"MbdOut"));
+   if(mbdout){
+     m_mbd_t0 = mbdout->get_t0() - m_t0corr;
+     m_mbd_ts = mbdout->get_time(0) - m_t0corr; // south side
+     m_mbd_tn = mbdout->get_time(1) - m_t0corr; // north side
+   }
+   /*
+  MbdPmtContainer* mbdpmt = findNode::getClass<MbdPmtContainer>(topNode,"MbdPmtContainer");
+  m_mbdavgt[0] = 0;
+  m_mbdavgt[1] = 0;
+  m_mbdhit[0] = 0;
+  m_mbdhit[1] = 0;
+  if(mbdpmt) {
+    for(int i=0; i<128; ++i) {
+      MbdPmtHit* pmt = mbdpmt->get_pmt(i);
+      if(pmt) {
+        if(pmt->get_q() > 0.4) {
+          ++m_mbdhit[i/64];
+          m_mbdavgt[i/64] += pmt->get_time();
+        }
+      }
+      }
+      if (m_mbdhit[0] != 0) m_mbdavgt[0]/=m_mbdhit[0];
+      if (m_mbdhit[1] != 0) m_mbdavgt[1]/=m_mbdhit[1];
+    }
+    */
+
+  if (fabs(m_zvtx) > 60 && !m_doMBDeff) {
     return Fun4AllReturnCodes::EVENT_OK;
   }
 
@@ -406,6 +563,14 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
   if (m_doTopoclusters && !topoclusters) {
         std::cout
     <<"MyJetAnalysis::process_event - Error can not find topoclusters "
+    << std::endl;
+  exit(-1);
+  }
+
+  RawClusterContainer *topoclusters2 = findNode::getClass<RawClusterContainer>(topNode,"TOPOCLUSTER_ALLCALO_2SIGMA"); 
+  if (m_doTopoclusters && !topoclusters2) {
+        std::cout
+    <<"MyJetAnalysis::process_event - Error can not find 2 sigma topoclusters "
     << std::endl;
   exit(-1);
   }
@@ -469,6 +634,9 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
       float emcalE = 0;
       float ihcalE = 0;
       float ohcalE = 0;
+      float jet_time = 0;
+      float jet_unweighttime = 0;
+      float jet_time_count = 0;
       for (auto comp: jet->get_comp_vec())
       {
         TowerInfo *tower;
@@ -477,12 +645,26 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
           tower = towersEM3->get_tower_at_channel(channel);
           if(!tower) { continue; }
           emcalE += tower->get_energy();
+          float jet_tower_e = tower->get_energy();
+          float jet_tower_time = tower->get_time();
+          if (jet_tower_e > 0.1) {
+            jet_time += jet_tower_time * jet_tower_e;
+            jet_unweighttime += jet_tower_time;
+            jet_time_count += jet_tower_e;
+          }
         }    
         if (comp.first == 15 ||  comp.first == 30 || comp.first == 26)
         {
           tower = towersIH3->get_tower_at_channel(channel);
           if(!tower) { continue; }
           ihcalE += tower->get_energy();
+          float jet_tower_e = tower->get_energy();
+          float jet_tower_time = tower->get_time();
+          if (jet_tower_e > 0.1) {
+            jet_time += jet_tower_time * jet_tower_e;
+            jet_unweighttime += jet_tower_time;
+            jet_time_count += jet_tower_e;
+          }
         }
 
         if (comp.first == 16 ||  comp.first == 31 || comp.first == 27)
@@ -490,12 +672,29 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
           tower = towersOH3->get_tower_at_channel(channel);
           if(!tower) { continue; }
           ohcalE += tower->get_energy();
+          float jet_tower_e = tower->get_energy();
+          float jet_tower_time = tower->get_time();
+          if (jet_tower_e > 0.1) {
+            jet_time += jet_tower_time * jet_tower_e;
+            jet_unweighttime += jet_tower_time;
+            jet_time_count += jet_tower_e;
+          }
         }
       }
 
       m_jetEmcalE.push_back(emcalE);
       m_jetIhcalE.push_back(ihcalE);
       m_jetOhcalE.push_back(ohcalE);
+      if (jet_time_count > 0) {
+        jet_time = jet_time / jet_time_count;
+        jet_unweighttime = jet_unweighttime / jet_time_count;
+      }
+      else {
+        jet_time = -9999;
+        jet_unweighttime = -9999;
+      }
+      m_jettime.push_back(jet_time);
+      m_jetunweighttime.push_back(jet_unweighttime);
 
       if (ohcalE/m_e.back() > 0.9) {
         std::cout << "event " << m_event << " emcalE " << emcalE << " ohcalE " << ohcalE << " totalE " << emcalE + ihcalE + ohcalE << " Jet E " << m_e.back() << std::endl;
@@ -554,7 +753,7 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
     }
 
   //grab the gl1 data
-  Gl1Packet *gl1PacketInfo = findNode::getClass<Gl1Packet>(topNode, "GL1Packet");
+  Gl1Packet *gl1PacketInfo = findNode::getClass<Gl1Packet>(topNode, "14001");
   if (m_doTriggerCut && !gl1PacketInfo)
     {
       std::cout << PHWHERE << "caloTreeGen::process_event: GL1Packet node is missing. Output related to this node will be empty" << std::endl;
@@ -595,6 +794,9 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
         RawTowerGeom *geom = tower_geomEM->get_tower_geometry(geomkey); 
         TVector3 tower_pos;
         tower_pos.SetXYZ(geom->get_center_x(),geom->get_center_y(),geom->get_center_z() - m_zvtx);
+        if (m_doMBDeff && fabs(m_zvtx) > 200) {
+          tower_pos.SetXYZ(geom->get_center_x(),geom->get_center_y(),geom->get_center_z() - 0.0); 
+        }
         m_emcaleta[m_emcaln] = tower_pos.Eta();
         m_emcalphi[m_emcaln] = tower_pos.Phi();
         m_emcalieta[m_emcaln] = etabin;
@@ -620,6 +822,9 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
         RawTowerGeom *geom = tower_geom->get_tower_geometry(geomkey); 
         TVector3 tower_pos;
         tower_pos.SetXYZ(geom->get_center_x(),geom->get_center_y(),geom->get_center_z() - m_zvtx);
+        if (m_doMBDeff && fabs(m_zvtx) > 200) {
+          tower_pos.SetXYZ(geom->get_center_x(),geom->get_center_y(),geom->get_center_z() - 0.0); 
+        }
         m_ihcaleta[m_ihcaln] = tower_pos.Eta();
         m_ihcalphi[m_ihcaln] = tower_pos.Phi();
         m_ihcalieta[m_ihcaln] = etabin;
@@ -645,6 +850,9 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
         RawTowerGeom *geom = tower_geomOH->get_tower_geometry(geomkey); 
         TVector3 tower_pos;
         tower_pos.SetXYZ(geom->get_center_x(),geom->get_center_y(),geom->get_center_z() - m_zvtx);
+        if (m_doMBDeff && fabs(m_zvtx) > 200) {
+          tower_pos.SetXYZ(geom->get_center_x(),geom->get_center_y(),geom->get_center_z() - 0.0); 
+        }
         m_ohcaleta[m_ohcaln] = tower_pos.Eta();
         m_ohcalphi[m_ohcaln] = tower_pos.Phi();
         m_ohcalieta[m_ohcaln] = etabin;
@@ -674,9 +882,11 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
     if (topoclusters) {
       RawClusterContainer::Map clusterMap = topoclusters->getClustersMap();
       m_clsmult = 0;
+      float cluster_vertex = m_zvtx;
+      if (m_doMBDeff && fabs(m_zvtx) > 200) { cluster_vertex = 0.0; }
       for(auto entry : clusterMap){
         RawCluster* cluster = entry.second;
-        CLHEP::Hep3Vector origin(0, 0, m_zvtx);
+        CLHEP::Hep3Vector origin(0, 0, cluster_vertex);
         m_cluster_e[m_clsmult] = cluster->get_energy();
         m_cluster_eta[m_clsmult] = RawClusterUtility::GetPseudorapidity(*cluster, origin);
         m_cluster_phi[m_clsmult] = RawClusterUtility::GetAzimuthAngle(*cluster, origin);
@@ -714,6 +924,33 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
         m_clsmult++;
         if (m_clsmult == 10000) { break; }
       } 
+      //std::cout << "number of clusters: " << m_clsmult << std::endl;
+    }
+
+    if (topoclusters2) {
+      RawClusterContainer::Map clusterMap = topoclusters2->getClustersMap();
+      m_clsmult2 = 0;
+      float cluster_vertex = m_zvtx;
+      if (m_doMBDeff && fabs(m_zvtx) > 200) { cluster_vertex = 0.0; }
+      for(auto entry : clusterMap){
+        RawCluster* cluster = entry.second;
+        CLHEP::Hep3Vector origin(0, 0, cluster_vertex);
+        m_cluster2_e[m_clsmult2] = cluster->get_energy();
+        m_cluster2_eta[m_clsmult2] = RawClusterUtility::GetPseudorapidity(*cluster, origin);
+        m_cluster2_phi[m_clsmult2] = RawClusterUtility::GetAzimuthAngle(*cluster, origin);
+        m_cluster2_ntowers[m_clsmult2] = (int)cluster->getNTowers();
+        int m_clstower = 0;
+        for (const auto& [tower_id, tower_e] : cluster->get_towermap())
+        {
+            m_cluster2_tower_calo[m_clsmult2][m_clstower] = static_cast<int>(RawTowerDefs::decode_caloid(tower_id));
+            m_cluster2_tower_ieta[m_clsmult2][m_clstower]  = RawTowerDefs::decode_index1(tower_id);
+            m_cluster2_tower_iphi[m_clsmult2][m_clstower]  = RawTowerDefs::decode_index2(tower_id);
+            m_cluster2_tower_e[m_clsmult2][m_clstower] = tower_e;
+            m_clstower++;
+        }
+        m_clsmult2++;
+        if (m_clsmult2 == 10000) { break; }
+      } 
     }
   }
 
@@ -726,6 +963,8 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
       if (!truth) { std::cout << "missing particle" << std::endl; continue; }
       if (!truthinfo->is_primary(truth)) continue;
       /// Get this particles momentum, etc.
+      float eta = atanh(truth->get_pz() / sqrt(truth->get_px()*truth->get_px()+truth->get_py()*truth->get_py()+truth->get_pz()*truth->get_pz()));
+      if (fabs(eta) > 1.1) { continue; }
       truthpar_pt[truthpar_n] = sqrt(truth->get_px() * truth->get_px() + truth->get_py() * truth->get_py());
       truthpar_pz[truthpar_n] = truth->get_pz();
       truthpar_e[truthpar_n] = truth->get_e();
@@ -778,7 +1017,7 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
       m_tr_chisq[m_trkmult] = track->get_chisq();
       m_tr_ndf[m_trkmult] = track->get_ndf();
       m_tr_quality[m_trkmult] = track->get_quality();
-      m_tr_vertex_id[m_trkmult] = track->get_vertex_id();
+      m_tr_crossing[m_trkmult] = track->get_crossing();
 
       TrackSeed *silseed = track->get_silicon_seed();
       TrackSeed *tpcseed = track->get_tpc_seed();
@@ -944,6 +1183,9 @@ int InclusiveJet::ResetEvent(PHCompositeNode *topNode)
   m_jetIhcalE.clear();
   m_jetOhcalE.clear();
 
+  m_jettime.clear();
+  m_jetunweighttime.clear();
+
   m_truthNComponent.clear();
   m_truthEta.clear();
   m_truthPhi.clear();
@@ -965,13 +1207,25 @@ int InclusiveJet::ResetEvent(PHCompositeNode *topNode)
   
   m_triggerVector.clear();
 
+  m_svtxVector.clear();
+  m_svtxBcoVector.clear();
+  m_siliconVector.clear();
+  m_siliconBcoVector.clear();
+
   m_zvtx = -9999;
+  m_zsvtx = -9999;
+  m_ztruthvtx = -9999;
+  m_zsiliconvtx = -9999;
   m_emcaln = 0;
   m_ihcaln = 0;
   m_ohcaln = 0;
   m_clsmult = 0;
+  m_clsmult2 = 0;
   m_emcal_clsmult = 0;
   m_trkmult = 0;
+  m_mbd_t0 = 0;
+  m_mbd_ts = 0;
+  m_mbd_tn = 0;
 
   for (int i = 0; i < 24576; i++) {
     m_emcale[i] = 0;
@@ -1026,6 +1280,16 @@ int InclusiveJet::ResetEvent(PHCompositeNode *topNode)
       m_cluster_tower_iphi[i][j] = 0;
       m_cluster_tower_e[i][j] = 0;
     }
+    m_cluster2_e[i] = 0;
+    m_cluster2_eta[i] = 0;
+    m_cluster2_phi[i] = 0;
+    m_cluster2_ntowers[i] = 0;
+    for (int j = 0; j < 500; j++) {
+      m_cluster2_tower_calo[i][j] = 0;
+      m_cluster2_tower_ieta[i][j] = 0;
+      m_cluster2_tower_iphi[i][j] = 0;
+      m_cluster2_tower_e[i][j] = 0;
+    }
   }
 
   for (int i = 0; i < 2000; i++) {
@@ -1040,7 +1304,7 @@ int InclusiveJet::ResetEvent(PHCompositeNode *topNode)
     m_tr_nmaps[i] = 0;
     m_tr_ntpc[i] = 0;
     m_tr_quality[i] = 0;
-    m_tr_vertex_id[i] = 0;
+    m_tr_crossing[i] = 0;
     m_tr_cemc_eta[i] = 0; // Projection of track to calorimeters
     m_tr_cemc_phi[i] = 0;
     m_tr_ihcal_eta[i] = 0;

@@ -100,7 +100,7 @@ void dijet_ue_pileup_analysis(bool sim = true, bool clusters = true, bool emcal_
     	string outfilename = "pileup_UE_analysis";
     	if (!clusters) outfilename += "_calo_tower_sum";
     	if (clusters && emcal_clusters) outfilename += "_emcal_clusters";
-    	outfilename += "_leadjet_15_20_GeV_zvtx_lt_10cm_rate_range_" + to_string(pileup_bins[pb-1]) + "_" + to_string(pileup_bins[pb]) + ".root";
+    	outfilename += "_leadjet_15_20_GeV_zvtx_lt_10cm_no_low_ET_towers_rate_range_" + to_string(pileup_bins[pb-1]) + "_" + to_string(pileup_bins[pb]) + ".root";
     	std::cout << "Creating " << outfilename << std::endl;
 		TFile *out = new TFile(outfilename.c_str(),"RECREATE");
  
@@ -237,6 +237,11 @@ void dijet_ue_pileup_analysis(bool sim = true, bool clusters = true, bool emcal_
 		float cluster_e[10000] = {0.0};
 		float cluster_eta[10000] = {0.0};
 		float cluster_phi[10000] = {0.0};
+		int cluster_ntowers[2000];
+	    int cluster_tower_calo[200][500];
+	    int cluster_tower_ieta[200][500];
+	    int cluster_tower_iphi[200][500];
+	    float cluster_tower_e[200][500];
 
 		int truthpar_n = 0;
 		float truthpar_e[100000] = {0};
@@ -317,11 +322,21 @@ void dijet_ue_pileup_analysis(bool sim = true, bool clusters = true, bool emcal_
 			chain.SetBranchStatus("cluster_e", 1);
 			chain.SetBranchStatus("cluster_eta", 1);
 			chain.SetBranchStatus("cluster_phi", 1);
+			chain.SetBranchStatus("cluster_ntowers", 1);
+			chain.SetBranchStatus("cluster_tower_e", 1);
+			chain.SetBranchStatus("cluster_tower_calo", 1);
+			chain.SetBranchStatus("cluster_tower_ieta", 1);
+			chain.SetBranchStatus("cluster_tower_iphi", 1);
 
 			chain.SetBranchAddress("clsmult",&clsmult);
 			chain.SetBranchAddress("cluster_e",cluster_e);
 			chain.SetBranchAddress("cluster_eta",cluster_eta);
 			chain.SetBranchAddress("cluster_phi",cluster_phi);
+			chain.SetBranchAddress("cluster_ntowers",cluster_ntowers);
+			chain.SetBranchAddress("cluster_tower_e",cluster_tower_e);
+			chain.SetBranchAddress("cluster_tower_calo",cluster_tower_calo);
+			chain.SetBranchAddress("cluster_tower_ieta",cluster_tower_ieta);
+			chain.SetBranchAddress("cluster_tower_iphi",cluster_tower_iphi);
 		} else {
 			chain.SetBranchStatus("emcal_clsmult", 1);
 			chain.SetBranchStatus("emcal_cluster_e", 1);
@@ -505,43 +520,51 @@ void dijet_ue_pileup_analysis(bool sim = true, bool clusters = true, bool emcal_
 		  			}
 		  		} else { // using clusters to find total energy in towards, transverse and away regions 
 	  				for (int i = 0; i < clsmult; i++) {
+	  					float cluster_energy = cluster_e[i];
+						for (int n = 0; n < cluster_ntowers[i]; n++) {
+							if (cluster_tower_e[i][n] < -1.4) {
+								cluster_energy -= cluster_tower_e[i][n];
+								std::cout << "cluster with very negative energy tower: calo " << cluster_tower_calo[i][n] << " ieta " << cluster_tower_ieta[i][n] << " iphi " << cluster_tower_iphi[i][n] << " energy " << cluster_tower_e[i][n] << std::endl;
+								
+							}
+						}
 		  				TVector3 cls;
-		  				cls.SetPtEtaPhi(cluster_e[i]/cosh(cluster_eta[i]),cluster_eta[i],cluster_phi[i]); // define cluster vector 
+		  				cls.SetPtEtaPhi(cluster_energy/cosh(cluster_eta[i]),cluster_eta[i],cluster_phi[i]); // define cluster vector 
 		  				float dphi = lead.DeltaPhi(cls); // find the deltaphi between leading jet and cluster 
-		  				h_ue_2D_total->Fill(cluster_eta[i],dphi,cluster_e[i]/cosh(cluster_eta[i]));
+		  				h_ue_2D_total->Fill(cluster_eta[i],dphi,cluster_energy/cosh(cluster_eta[i]));
 		  				if (fabs(dphi) < M_PI/3.0) { // towards region 
-		  					et_towards += cluster_e[i]/cosh(cluster_eta[i]);
+		  					et_towards += cluster_energy/cosh(cluster_eta[i]);
 		  					for (int j = 0; j < 8; j++) {
-		  						if (cluster_e[i] > float(topo_thresholds[j]/1000.0)) {
+		  						if (cluster_energy > float(topo_thresholds[j]/1000.0)) {
 		  							ntopo_towards[j] += 1;
-		  							sume_topo_towards[j] += cluster_e[i]/cosh(cluster_eta[i]);
-		  							h_topo_towards[j]->Fill(cluster_e[i]/cosh(cluster_eta[i]));
-		  							h_2D_topo_towards[j]->Fill(cluster_eta[i],dphi,cluster_e[i]/cosh(cluster_eta[i]));
+		  							sume_topo_towards[j] += cluster_energy/cosh(cluster_eta[i]);
+		  							h_topo_towards[j]->Fill(cluster_energy/cosh(cluster_eta[i]));
+		  							h_2D_topo_towards[j]->Fill(cluster_eta[i],dphi,cluster_energy/cosh(cluster_eta[i]));
 		  						}
 		  					}
-		  					h_ue_2D_towards->Fill(cluster_eta[i],dphi,cluster_e[i]/cosh(cluster_eta[i]));
+		  					h_ue_2D_towards->Fill(cluster_eta[i],dphi,cluster_energy/cosh(cluster_eta[i]));
 		  				} else if (fabs(dphi) > M_PI/3.0 && fabs(dphi) < (2.0*M_PI)/3.0) { // transverse region 
-							et_transverse += cluster_e[i]/cosh(cluster_eta[i]);
+							et_transverse += cluster_energy/cosh(cluster_eta[i]);
 		  					for (int j = 0; j < 8; j++) {
-		  						if (cluster_e[i] > float(topo_thresholds[j]/1000.0)) {
+		  						if (cluster_energy > float(topo_thresholds[j]/1000.0)) {
 		  							ntopo_transverse[j] += 1;
-		  							sume_topo_transverse[j] += cluster_e[i]/cosh(cluster_eta[i]);
-		  							h_topo_transverse[j]->Fill(cluster_e[i]/cosh(cluster_eta[i]));
-		  							h_2D_topo_transverse[j]->Fill(cluster_eta[i],dphi,cluster_e[i]/cosh(cluster_eta[i]));
+		  							sume_topo_transverse[j] += cluster_energy/cosh(cluster_eta[i]);
+		  							h_topo_transverse[j]->Fill(cluster_energy/cosh(cluster_eta[i]));
+		  							h_2D_topo_transverse[j]->Fill(cluster_eta[i],dphi,cluster_energy/cosh(cluster_eta[i]));
 		  						}
 		  					}
-		  					h_ue_2D_transverse->Fill(cluster_eta[i],dphi,cluster_e[i]/cosh(cluster_eta[i]));
+		  					h_ue_2D_transverse->Fill(cluster_eta[i],dphi,cluster_energy/cosh(cluster_eta[i]));
 		  				} else if (fabs(dphi) > (2.0*M_PI)/3.0) { // away region 
-		  					et_away += cluster_e[i]/cosh(cluster_eta[i]);
+		  					et_away += cluster_energy/cosh(cluster_eta[i]);
 		  					for (int j = 0; j < 8; j++) {
-		  						if (cluster_e[i] > float(topo_thresholds[j]/1000.0)) {
+		  						if (cluster_energy > float(topo_thresholds[j]/1000.0)) {
 		  							ntopo_away[j] += 1;
-		  							sume_topo_away[j] += cluster_e[i]/cosh(cluster_eta[i]);
-		  							h_topo_away[j]->Fill(cluster_e[i]/cosh(cluster_eta[i]));
-		  							h_2D_topo_away[j]->Fill(cluster_eta[i],dphi,cluster_e[i]/cosh(cluster_eta[i]));
+		  							sume_topo_away[j] += cluster_energy/cosh(cluster_eta[i]);
+		  							h_topo_away[j]->Fill(cluster_energy/cosh(cluster_eta[i]));
+		  							h_2D_topo_away[j]->Fill(cluster_eta[i],dphi,cluster_energy/cosh(cluster_eta[i]));
 		  						}
 		  					}
-		  					h_ue_2D_away->Fill(cluster_eta[i],dphi,cluster_e[i]/cosh(cluster_eta[i]));
+		  					h_ue_2D_away->Fill(cluster_eta[i],dphi,cluster_energy/cosh(cluster_eta[i]));
 		  				}
 		  			}
 	  			}

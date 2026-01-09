@@ -18,6 +18,7 @@ std::vector<int> run_numbers;
 std::vector<double> collision_rates;
 std::vector<double> pileup_rates;
 std::vector<double> pileup_bins = {0.0,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.1,0.2};
+std::vector<double> pileup_correction = {0.0353,0.0341,0.0379}; // correction determined from both, dijet and efrac cuts 
 
 void get_pileup_rates(const char* infilename) {
   std::ifstream infile(infilename);
@@ -50,6 +51,17 @@ void get_pileup_rates(const char* infilename) {
       pileup_rates.push_back(pileup_rate);
   }
   infile.close();
+}
+
+double MapToUniform(double et, const double* bin_edges, int nbins) {
+    if (et < bin_edges[0] || et >= bin_edges[nbins]) return -1; // out of range
+    for (int i = 0; i < nbins; ++i) {
+        if (et >= bin_edges[i] && et < bin_edges[i + 1]) {
+            double bin_center_fraction = (i + 0.5) / nbins;
+            return bin_center_fraction;
+        }
+    }
+    return -1;
 }
 
 ////////////////////////////////////////// Main Function //////////////////////////////////////////
@@ -142,11 +154,14 @@ void analysis_data_dijet(int runnumber = 51274, bool clusters = true, bool emcal
   TH1D* h_lead_spectra_record = new TH1D("h_lead_spectra_record",";p_{T} [GeV]", 1000, 0, 100);
   TH1D* h_sub_spectra_record = new TH1D("h_sub_spectra_record",";p_{T} [GeV]", 1000, 0, 100);
   TH1D *h_et_transverse_record = new TH1D("h_et_transverse_record", ";#SigmaE_{T} [GeV]", 7000, -20, 50);
-  TH2D* h_ue_pt_transverse_record = new TH2D("h_ue_pt_transverse_record","", calibnpt, calibptbins, calibnet, calibetbins);
-  TH2D *h_calibjet_pt_dijet_eff = new TH2D("h_calibjet_pt_dijet_eff", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, calibptbins, calibnet, calibetbins); // with trigger efficiency + beam background efficiency correction applied
-  TH2D *h_calibjet_pt_dijet_effdown = new TH2D("h_calibjet_pt_dijet_effdown", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, calibptbins, calibnet, calibetbins); // for trigger efficiency uncertainty
-  TH2D *h_calibjet_pt_dijet_effup = new TH2D("h_calibjet_pt_dijet_effup", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, calibptbins, calibnet, calibetbins); // for trigger efficiency uncertainty
-  TH2D *h_calibjet_pt_dijet_pu_correct_et = new TH2D("h_calibjet_pt_dijet_pu_correct_et", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, calibptbins, calibnet, calibetbins); // with pileup correction
+  TH2D* h_ue_pt_transverse_record = new TH2D("h_ue_pt_transverse_record","", calibnpt, 0, 1, calibnet, 0, 1);
+  TH2D *h_calibjet_pt_dijet_eff = new TH2D("h_calibjet_pt_dijet_eff", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, 0, 1, calibnet, 0, 1); // with trigger efficiency + beam background efficiency correction applied
+  TH2D *h_calibjet_pt_dijet_effdown = new TH2D("h_calibjet_pt_dijet_effdown", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, 0, 1, calibnet, 0, 1); // for trigger efficiency uncertainty
+  TH2D *h_calibjet_pt_dijet_effup = new TH2D("h_calibjet_pt_dijet_effup", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, 0, 1, calibnet, 0, 1); // for trigger efficiency uncertainty
+  TH2D *h_calibjet_pt_dijet_pu_correct_et = new TH2D("h_calibjet_pt_dijet_pu_correct_et", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, 0, 1, calibnet, 0, 1); // with pileup correction
+  TH2D *h_calibjet_pt_pu_up_et = new TH2D("h_calibjet_pt_pu_up_et", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, 0, 1, calibnet, 0, 1);
+  TH2D *h_calibjet_pt_pu_down_et = new TH2D("h_calibjet_pt_pu_down_et", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, 0, 1, calibnet, 0, 1);
+  TH1D* h_jetpt = new TH1D("h_jetpt","", calibnpt, 0, 1); TH1D* h_caloet = new TH1D("h_caloet","", calibnet, 0, 1);
 
   /////////////// Event Loop ///////////////
   std::cout << "Data analysis started." << std::endl;
@@ -249,9 +264,14 @@ void analysis_data_dijet(int runnumber = 51274, bool clusters = true, bool emcal
     }
 
     float pu_correct_et_transverse = et_transverse;
+    float pu_up_et_transverse = et_transverse;
+    float pu_down_et_transverse = et_transverse;
     for (int i = 0; i < run_numbers.size(); i++) {
       if (run_numbers[i] == runnumber) {
-        pu_correct_et_transverse -= 0.00378883*100.0*pileup_rates[i];
+        pu_correct_et_transverse -= pileup_correction[0]*100.0*pileup_rates[i];
+        pu_up_et_transverse -= pileup_correction[1]*100.0*pileup_rates[i];
+        pu_down_et_transverse -= pileup_correction[2]*100*pileup_rates[i];
+        //std::cout << "pile up rate: " << pileup_rates[i] << " correction: " << pileup_correction[0]*pileup_rates[i]*100.0 << " " << et_transverse << " " << pu_correct_et_transverse << std::endl;
         break;
       }
     }
@@ -267,15 +287,29 @@ void analysis_data_dijet(int runnumber = 51274, bool clusters = true, bool emcal
     h_et_transverse_record->Fill(et_transverse);
     h_ue_pt_transverse_record->Fill(lead.Pt(),et_transverse);
 
+    double uni_meas_et = MapToUniform(et_transverse, calibetbins, calibnet);
+    double uni_meas_pt = MapToUniform(caliblead.Pt(), calibptbins, calibnpt);
+    double uni_pu_correct_meas_et = MapToUniform(pu_correct_et_transverse, calibetbins, calibnet);
+    double uni_pu_up_meas_et = MapToUniform(pu_up_et_transverse, calibetbins, calibnet);
+    double uni_pu_down_meas_et = MapToUniform(pu_down_et_transverse, calibetbins, calibnet);
+    
     //////////////////////////// FILL HISTOGRAMS FOR UNFOLDING ////////////////////////////
-    if (caliblead.Pt() >= calibptbins[0] && caliblead.Pt() <= calibptbins[calibnpt] && et_transverse >= calibetbins[0] && et_transverse <= calibetbins[calibnet]) {
-      h_calibjet_pt_dijet_eff->Fill(caliblead.Pt(), et_transverse, jettrig_scale);
-      h_calibjet_pt_dijet_effdown->Fill(caliblead.Pt(), et_transverse, jettrig_scale_down);
-      h_calibjet_pt_dijet_effup->Fill(caliblead.Pt(), et_transverse, jettrig_scale_up);
+    //if (caliblead.Pt() >= calibptbins[0] && caliblead.Pt() <= calibptbins[calibnpt] && et_transverse >= calibetbins[0] && et_transverse <= calibetbins[calibnet]) {
+    if (uni_meas_pt >= 0 && uni_meas_pt < 1 && uni_meas_et >= 0 && uni_meas_et < 1) {
+
+      //std::cout << " ET " << et_transverse << " PU corr ET " << pu_correct_et_transverse << " uni_et " << uni_meas_et << " PU corr uni_et " << uni_pu_correct_meas_et << std::endl;
+      //std::cout << "et before correction: " << et_transverse << " et after correction: " << pu_correct_et_transverse << std::endl;
+        
+      h_calibjet_pt_dijet_eff->Fill(uni_meas_pt, uni_meas_et, jettrig_scale);
+      h_calibjet_pt_dijet_effdown->Fill(uni_meas_pt, uni_meas_et, jettrig_scale_down);
+      h_calibjet_pt_dijet_effup->Fill(uni_meas_pt, uni_meas_et, jettrig_scale_up);
+      h_jetpt->Fill(uni_meas_pt, jettrig_scale);
+      h_caloet->Fill(uni_meas_et);
     }
-    if (caliblead.Pt() >= calibptbins[0] && caliblead.Pt() <= calibptbins[calibnpt] && pu_correct_et_transverse >= calibetbins[0] && pu_correct_et_transverse <= calibetbins[calibnet]) {
-      h_calibjet_pt_dijet_pu_correct_et->Fill(caliblead.Pt(), pu_correct_et_transverse, jettrig_scale);
-    }
+    //if (caliblead.Pt() >= calibptbins[0] && caliblead.Pt() <= calibptbins[calibnpt] && pu_correct_et_transverse >= calibetbins[0] && pu_correct_et_transverse <= calibetbins[calibnet]) {
+    if (uni_meas_pt >= 0 && uni_meas_pt < 1 && uni_pu_correct_meas_et >= 0 && uni_pu_correct_meas_et < 1) { h_calibjet_pt_dijet_pu_correct_et->Fill(uni_meas_pt, uni_pu_correct_meas_et, jettrig_scale); }
+    if (uni_meas_pt >= 0 && uni_meas_pt < 1 && uni_pu_up_meas_et >= 0 && uni_pu_up_meas_et < 1) { h_calibjet_pt_pu_up_et->Fill(uni_meas_pt, uni_pu_up_meas_et, jettrig_scale); }
+    if (uni_meas_pt >= 0 && uni_meas_pt < 1 && uni_pu_down_meas_et >= 0 && uni_pu_down_meas_et < 1) { h_calibjet_pt_pu_down_et->Fill(uni_meas_pt, uni_pu_down_meas_et, jettrig_scale); }
   } // event loop end
 
   // Write histograms.
@@ -292,6 +326,10 @@ void analysis_data_dijet(int runnumber = 51274, bool clusters = true, bool emcal
   h_calibjet_pt_dijet_effdown->Write();
   h_calibjet_pt_dijet_effup->Write();
   h_calibjet_pt_dijet_pu_correct_et->Write();
+  h_calibjet_pt_pu_up_et->Write();
+  h_calibjet_pt_pu_down_et->Write();
+  h_jetpt->Write();
+  h_caloet->Write();
   f_out->Close();
   std::cout << "All done!" << std::endl;
 }
@@ -326,5 +364,5 @@ bool match_leading_subleading_jet(float leadingjet_phi, float subleadingjet_phi)
   float dijet_min_phi = 3*TMath::Pi()/4.;
   float dphi = get_dphi(leadingjet_phi, subleadingjet_phi);
   //std::cout << "delta phi: " << dphi << std::endl;
-  return dphi > dijet_min_phi;
+  return fabs(dphi) > dijet_min_phi;
 }
