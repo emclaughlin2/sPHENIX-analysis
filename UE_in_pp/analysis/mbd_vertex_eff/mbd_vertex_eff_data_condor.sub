@@ -1,0 +1,7 @@
+executable = mbd_vertex_eff_data.sh
+arguments = $(run) $(bkg_cut)
+output = output_logs/output_data_$(Process).out
+when_to_transfer_output = ON_EXIT
+error			= output_logs/error_data_$(Process).err
+log = /tmp/egm2153_$(Process).log
+queue run, bkg_cut from mbd_vertex_eff_data_queue.list
