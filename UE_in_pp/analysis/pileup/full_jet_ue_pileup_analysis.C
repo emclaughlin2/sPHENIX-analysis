@@ -26,6 +26,7 @@
 #include <TProfile.h>
 #include <TProfile2D.h>
 #include "TH1D.h"
+#include "../unfolding/unfold_Def.h"
 
 using namespace std;
 
@@ -43,9 +44,9 @@ std::vector<double> pileup_rates;
 //std::vector<double> pileup_bins = {0.0,0.015};
 std::vector<double> pileup_bins = {0.0,0.02,0.03,0.04,0.05,0.06,0.07,0.08,0.09,0.1,0.2};
 
-void full_jet_ue_pileup_analysis(int run, bool is0mrad = true, bool clusters = true, bool emcal_clusters = false, bool applyCorr = false, bool do_bkg_cut = true, bool dijet_bkg_cut = true, bool do_jet_pt_range = true) {
+void full_jet_ue_pileup_analysis(int run, bool clusters = true, bool emcal_clusters = false, bool applyCorr = false, bool do_bkg_cut = true, bool dijet_bkg_cut = true, bool do_jet_pt_range = true) {
 
-    std::ifstream infile("full_collision_rates.txt");
+    std::ifstream infile("mbdliverate_grl100625.txt");
     if (!infile) {
         std::cerr << "Error: Unable to open input file!" << std::endl;
         return;
@@ -99,7 +100,7 @@ void full_jet_ue_pileup_analysis(int run, bool is0mrad = true, bool clusters = t
     float lead_ptmin = 21;
     float deltaphimin = 3.0*M_PI/4.0;
 
-	string outfilename = "full_pileup_analysis/pileup_inclusive_jet_UE_analysis_" + to_string(run);
+	string outfilename = "full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_nombdtimecut_" + to_string(run);
     if (!clusters) outfilename += "_calo_tower_sum";
     if (clusters && emcal_clusters) outfilename += "_emcal_clusters";
 	if (do_jet_pt_range) outfilename += "_leadjet_21_30_GeV";
@@ -206,11 +207,7 @@ void full_jet_ue_pileup_analysis(int run, bool is0mrad = true, bool clusters = t
   	// input datasets from ttrees
  	TChain chain("T");
  	std::string wildcardPath;
- 	if (is0mrad) {
- 		wildcardPath = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/output_0mrad_ana468_" + std::to_string(run) + "_*.root";
- 	} else {
- 		wildcardPath = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/output1.5mrad_ana468_" + std::to_string(run) + "_*.root";
- 	}
+ 	wildcardPath = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/output_ana509_v2_" + std::to_string(run) + "_*.root";
  	chain.Add(wildcardPath.c_str());
 
  	chain.SetBranchStatus("*",0);
@@ -284,6 +281,13 @@ void full_jet_ue_pileup_analysis(int run, bool is0mrad = true, bool clusters = t
 	chain.SetBranchAddress("jetEmcalE", &jetemcale);
 	chain.SetBranchAddress("jetIhcalE", &jetihcale);
 	chain.SetBranchAddress("jetOhcalE", &jetohcale);
+
+	std::vector<float>* jettime = nullptr; 
+	chain.SetBranchStatus("jettime", 1); 
+	chain.SetBranchAddress("jettime", &jettime);
+  	float mbd_t0; 
+  	chain.SetBranchStatus("mbd_t0", 1); 
+  	chain.SetBranchAddress("mbd_t0", &mbd_t0);
 
 	if (!clusters) {
 		chain.SetBranchStatus("emcaln", 1);
@@ -363,6 +367,20 @@ void full_jet_ue_pileup_analysis(int run, bool is0mrad = true, bool clusters = t
 	    return;
 	}
 
+	////////////// Jet Background Timing Cut Efficiency ////////////
+	double f_timingcut_eff = 0.95;
+	double f_timingcut_eff_up = 0.99;
+	double timingcut_scale = 1.0 / f_timingcut_eff;
+	double timingcut_scale_up = 1.0 / f_timingcut_eff_up;
+	double lead_time_cut[2] = {-8.0,4.0}; // leading time cut
+	double lead_time_var[2] = {-9.0,5.0}; // leading time variation
+	double deltat_mbd_cut[2] = {-5.0,1.0}; // delta time cut
+	double deltat_dijet_cut[2] = {-3.0,3.0}; // delta time cut
+	double deltat_mbd_var[2] = {-6.0,2.0}; // delta time variation
+	double deltat_dijet_var[2] = {-4.0,4.0}; // delta timme variation
+
+	bool reco_bkg_cut = true;
+
 	int eventnumber = 0; // number of events in tree (used for showing iteration through ttree)
 	int events = 0; // number of events that pass event cuts (used for event level normalization)
     
@@ -375,11 +393,12 @@ void full_jet_ue_pileup_analysis(int run, bool is0mrad = true, bool clusters = t
         chain.GetEntry(entry);
     	if (eventnumber % 10000 == 0) cout << "event " << eventnumber << endl;
     	eventnumber++;
+    	reco_bkg_cut = true;
 
     	// require jet trigger in data
   		bool jettrig = false;
   		for (auto t : *triggerVector) {
-  			if (t == 18 || (t == 34 && fabs(zvtx) < 10)) {
+  			if (t == 22) {
   				jettrig = true;
   				break;
   			}
@@ -387,25 +406,59 @@ void full_jet_ue_pileup_analysis(int run, bool is0mrad = true, bool clusters = t
 
   		// require no negative energy jets (known jet background)
   		bool negJet = false;
-  		for (int i = 0; i < nJet; i++) {
+  		for (int i = 0; i < e->size(); i++) {
   			if ((*e)[i] < 0) {
   				negJet = true;
   			}
   		}
 
+  		// check number of jets above 5 GeV
+	    int Njet = 0;
+	    for (size_t i = 0; i < pt->size(); i++) {
+	      if (pt->at(i) >= 5.0) {
+	        Njet++;
+	      }
+	    }
+
+	    // get reco jets with eta in calorimeter acceptance
+	    std::vector<float> recoe_new, recopt_new, recoeta_new, recophi_new, recoemcal_new, recoihcal_new, recoohcal_new, recotime_new;
+	    for (size_t i = 0; i < eta->size(); ++i) {
+	      if (!check_bad_jet_eta(eta->at(i), zvtx, jet_radius) && fabs(eta->at(i)) < 0.7 && e->at(i) > 0.0) { 
+	      //if (fabs(unsubjet_eta->at(i)) < 0.7) {
+	        recoe_new.push_back(e->at(i));
+	        recopt_new.push_back(pt->at(i));
+	        recoeta_new.push_back(eta->at(i));
+	        recophi_new.push_back(phi->at(i));
+	        recoemcal_new.push_back(jetemcale->at(i));
+	        recoihcal_new.push_back(jetihcale->at(i));
+	        recoohcal_new.push_back(jetohcale->at(i));
+	        recotime_new.push_back(jettime->at(i));
+	      }
+	    }
+
+	    *e = std::move(recoe_new);
+	    *pt = std::move(recopt_new);
+	    *eta = std::move(recoeta_new);
+	    *phi = std::move(recophi_new);
+	    *jetemcale = std::move(recoemcal_new);
+	    *jetihcale = std::move(recoihcal_new);
+	    *jetohcale = std::move(recoohcal_new);
+	    *jettime = std::move(recotime_new);
+
   		// require at least 2 jets in event and z vertex < 30 cm 
   		if (!jettrig) { continue; }
   		if (isnan(zvtx)) { continue; }
-  		if (zvtx < -30 || zvtx > 30) { continue; }
+  		if (zvtx < -60 || zvtx > 60) { continue; }
   		if (negJet) { continue; }
-  		if (dijet_bkg_cut && nJet < 2) { continue; }		
+  		if (dijet_bkg_cut && e->size() < 2) { continue; }	
+  		if (e->size() < 1) { continue; }	
 
   		// find the leading and subleading jets of the event
   		int ind_lead = 0;
   		int ind_sub = 0;
   		float temp_lead = 0;
   		float temp_sub = 0;
-  		for (int i = 0; i < nJet; i++) {
+  		for (int i = 0; i < pt->size(); i++) {
   			if ((*pt)[i] > temp_lead) {
   				if (temp_lead != 0) {
   					temp_sub = temp_lead;
@@ -429,7 +482,29 @@ void full_jet_ue_pileup_analysis(int run, bool is0mrad = true, bool clusters = t
 	  			float jete = (*e)[ind_lead];
 	  			if ((*jetemcale)[ind_lead]/jete < 0.1 || (*jetemcale)[ind_lead]/jete > 0.9 || (*jetihcale)[ind_lead]/jete > 0.9 || (*jetohcale)[ind_lead]/jete < 0.1 || (*jetohcale)[ind_lead]/jete > 0.9) { continue; }
 	  		}
-  		}	
+  		}
+
+  		// Njet and timing cuts
+	    if (Njet >= 9) {
+	      reco_bkg_cut = false; 
+	    }
+	    float lead_time = jettime->at(ind_lead)*17.6;
+	    if (lead_time < lead_time_cut[0] || lead_time > lead_time_cut[1]) {
+	      reco_bkg_cut = false;
+	    }
+	    float lead_deltat;
+	    if (dijet_bkg_cut) {
+	      lead_deltat = (jettime->at(ind_lead) - jettime->at(ind_sub))*17.6;
+	      if (lead_deltat < deltat_dijet_cut[0] || lead_deltat > deltat_dijet_cut[1]) {
+	        reco_bkg_cut = false;
+	      }
+	  	}
+	    //lead_deltat = jettime->at(ind_lead)*17.6 - mbd_t0;
+	    //if (lead_deltat < deltat_mbd_cut[0] || lead_deltat > deltat_mbd_cut[1]) {
+	     // reco_bkg_cut = false;
+	    //}
+
+	    if (!reco_bkg_cut) { continue; }	
 
   		// create leading and subleading jet vectors and apply JES calibration correction if applicable 
   		TVector3 lead, sub;

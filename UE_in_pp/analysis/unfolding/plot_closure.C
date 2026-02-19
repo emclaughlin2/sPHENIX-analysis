@@ -20,7 +20,7 @@ int colors[] = {kBlue, kGreen+2, kMagenta, kOrange, kCyan+1,
                     kMagenta+1, kOrange+1, 
                     kCyan+2, kViolet+1, kPink+1, kYellow+3};
 
-void draw_unfolded_spectra_one_unfold(TH1D* truth, TH1D* measure, TH1D* unfold, bool jet, std::string leg_tags, int max_iter, std::pair<double, double> x_range, const char* output_name = nullptr)
+void draw_unfolded_spectra_one_unfold(TH1D* truth, TH1D* measure, TH1D* unfold, bool jet, std::string leg_tags, int max_iter, std::pair<double, double> x_range, std::string trim, const char* output_name = nullptr)
 {
     TCanvas* canvas = new TCanvas("canvas", "", 600, 800);
 
@@ -104,6 +104,7 @@ void draw_unfolded_spectra_one_unfold(TH1D* truth, TH1D* measure, TH1D* unfold, 
 
     TLegend* leg = new TLegend(0.55, 0.65, 0.9, 0.9);
     leg->AddEntry("","#bf{#it{sPHENIX}} Simulation Internal","");
+    leg->AddEntry("",trim.c_str(),"");
     leg->AddEntry("","Pythia8 200 GeV p+p","");
     leg->AddEntry(truth, "Truth", "lp");
     leg->AddEntry(measure, "Measured", "lp");
@@ -446,17 +447,18 @@ void plot_closure(const char* closurefile = "output_closure_sim_run28_iter_2_100
         for (int j = 0; j < trim.size(); j++) {
             string jet_outfile = "sim_plots_run28/h_jet_spectrum_" + syst[i] + trim[j]+bkg_cut + "_full_closure_iter_2_1000toys_extended_reco_bin.png";
             string et_outfile = "sim_plots_run28/h_et_spectrum_" + syst[i] + trim[j]+bkg_cut + "_full_closure_iter_2_1000toys_extended_reco_bin.png";
-            draw_unfolded_spectra_one_unfold(hj_truth[i][j], hj_measure[i][j], hj_full_unfold[i][j], true, full_leg_tags[0], 1, std::make_pair(17.0, 82.0), jet_outfile.c_str());
-            draw_unfolded_spectra_one_unfold(hc_truth[i][j], hc_measure[i][j], hc_full_unfold[i][j], false, full_leg_tags[0], 1, std::make_pair(0, 15.0), et_outfile.c_str());
+            draw_unfolded_spectra_one_unfold(hj_truth[i][j], hj_measure[i][j], hj_full_unfold[i][j], true, full_leg_tags[0], 1, std::make_pair(17.0, 82.0), trim[i]+bkg_cut, jet_outfile.c_str());
+            draw_unfolded_spectra_one_unfold(hc_truth[i][j], hc_measure[i][j], hc_full_unfold[i][j], false, full_leg_tags[0], 1, std::make_pair(0, 15.0), trim[i]+bkg_cut, et_outfile.c_str());
         }
     }
     */
     for (int i = 0; i < trim.size(); i++) {
-        string jet_outfile = "sim_plots_run28/h_jet_spectrum" + trim[i]+bkg_cut + "_half_closure_iter_2_1000toys_extended_reco_bin.png";
-        string et_outfile = "sim_plots_run28/h_et_spectrum" + trim[i]+bkg_cut + "_half_closure_iter_2_1000toys_extended_reco_bin.png";
+        string jet_outfile = "sim_plots_run28/h_jet_spectrum" + trim[i]+bkg_cut + "_half_closure_iter_2_1000toys_extended_reco_bin_feb.png";
+        string et_outfile = "sim_plots_run28/h_et_spectrum" + trim[i]+bkg_cut + "_half_closure_iter_2_1000toys_extended_reco_bin_feb.png";
         draw_unfolded_spectra(hj_truth[5][i], hj_measure[6][i], hj_half_unfold[i], true, half_leg_tags, 6, std::make_pair(17.0, 82.0), trim[i]+bkg_cut, jet_outfile.c_str());
         draw_unfolded_spectra(hc_truth[5][i], hc_measure[6][i], hc_half_unfold[i], false, half_leg_tags, 6, std::make_pair(0, 15.0), trim[i]+bkg_cut, et_outfile.c_str());
     }
+    
     /*
     for (int i = 0; i < 6; i++) {
         string jet_outfile = "sim_plots_run21/h_jet_spectrum_1D" + trim[i]+bkg_cut + "_full_closure_iter_3_1000toys.png";

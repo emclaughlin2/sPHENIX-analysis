@@ -216,8 +216,7 @@ void Fun4All_InclusiveJet(int nEvents = 100, int seg = 0, int isSim = 0, const c
     } else if (!strcmp(type,"jetcalo")) {
       //outfilename = "test_output_ana509_" + to_string(runnumber) + "_" + to_string(segment) + ".root";
       //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/output_ana509_v2_" + to_string(runnumber) + "_" + to_string(segment) + ".root"; // edited
-      outfilename = "output_test_systematics_" + to_string(runnumber) + "_" + to_string(segment) + ".root";
-    
+      outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/output_ana509_jet_trig_" + to_string(runnumber) + "_" + to_string(segment) + ".root";
     } else if (!strcmp(type, "mbd_eff")) {
       outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/output_mbd_eff_" + to_string(runnumber) + "_" + to_string(segment) + ".root";
     } else {
@@ -302,11 +301,11 @@ void Fun4All_InclusiveJet(int nEvents = 100, int seg = 0, int isSim = 0, const c
   Process_Calo_Calib();
   se->Print();
 
-  Register_Tower_sys();
-
+  //Register_Tower_sys();
+  
   RawClusterBuilderTopo* ClusterBuilder = new RawClusterBuilderTopo("HcalRawClusterBuilderTopo");
   ClusterBuilder->Verbosity(verbosity);
-  ClusterBuilder->setInputTowerNodePrefix("TOWERINFO_CALIB_SYST1");
+  //ClusterBuilder->setInputTowerNodePrefix("TOWERINFO_CALIB_SYST1");
   ClusterBuilder->set_nodename("TOPOCLUSTER_ALLCALO");
   ClusterBuilder->set_enable_HCal(true);
   ClusterBuilder->set_enable_EMCal(true);
@@ -334,26 +333,36 @@ void Fun4All_InclusiveJet(int nEvents = 100, int seg = 0, int isSim = 0, const c
   ClusterBuilder2->set_use_only_good_towers(true);
   ClusterBuilder2->set_absE(true);
   se->registerSubsystem(ClusterBuilder2);
-  /*
+  
+
   Enable::VERBOSITY = verbosity;
   HIJetReco();
-  
+
+  JetCalib *jetCalib04 = new JetCalib("JetCalib04");
+  jetCalib04->set_InputNode("AntiKt_Tower_r04");
+  jetCalib04->set_OutputNode("AntiKt_Tower_r04_calib");
+  jetCalib04->set_JetRadius(0.4);
+  jetCalib04->set_ZvrtxNode("GlobalVertexMap");
+  jetCalib04->set_ApplyZvrtxDependentCalib(true);
+  jetCalib04->set_ApplyEtaDependentCalib(true);
+  se->registerSubsystem(jetCalib04);
+    
   InclusiveJet *myJetVal = new InclusiveJet("AntiKt_Tower_r04", "AntiKt_Truth_r04", outfilename.c_str());
-  myJetVal->doJetTriggerCut(true);
-  myJetVal->setLeadPtCut(5.0);
+  myJetVal->doJetTriggerCut(false);
+  myJetVal->setLeadPtCut(7.0);
   myJetVal->doJetLeadPtCut(true);
   myJetVal->setPtRange(2, 100);
   myJetVal->setEtaRange(-2.5, 2.5);
   if (isSim) myJetVal->doTruth(1);
   myJetVal->doSeeds(0);
   myJetVal->doTowers(0);
-  if (isSim) myJetVal->doTruthParticles(1);
+  if (isSim) myJetVal->doTruthParticles(0);
   myJetVal->doTracks(0);
-  myJetVal->doTopoclusters(1);
+  myJetVal->doTopoclusters(0);
   myJetVal->doEmcalClusters(0);
   myJetVal->doMBDeff(false);
   se->registerSubsystem(myJetVal);
-  */
+  
   //MDCTreeMaker *tt = new MDCTreeMaker("MDCTreeMaker", outfilename, isSim, 1, 0);
   //tt->set_useMBD(true); 
   //tt->set_useEMCal(false);
@@ -368,7 +377,7 @@ void Fun4All_InclusiveJet(int nEvents = 100, int seg = 0, int isSim = 0, const c
     // uncomment to add additional data files:end
 
     Fun4AllInputManager *in2 = new Fun4AllDstInputManager("DSTcalo");
-    in2->AddListFile(caloline,1);
+    in2->AddListFile(caloline);
     se->registerInputManager(in2);
 
     Fun4AllInputManager *intrue2 = new Fun4AllRunNodeInputManager("DST_GEO");
@@ -376,30 +385,26 @@ void Fun4All_InclusiveJet(int nEvents = 100, int seg = 0, int isSim = 0, const c
     intrue2->AddFile(geoLocation);
     se->registerInputManager(intrue2);
 
-    string dstoutputfile = "output_dst_test_systematics_" + to_string(runnumber) + "_" + to_string(segment) + ".root";
-    Fun4AllDstOutputManager *out = new Fun4AllDstOutputManager("DSTOUT", dstoutputfile);
-    se->registerOutputManager(out);
-
   } else {
     Fun4AllInputManager *in2 = new Fun4AllDstInputManager("DSTcalo");
-    in2->AddListFile(mcfilelistcalo,1);
+    in2->AddListFile(mcfilelistcalo);
     se->registerInputManager(in2);
 
     Fun4AllInputManager *intrue = new Fun4AllDstInputManager("DSTtruth");
-    intrue->AddListFile(filelisttruth,1);
+    intrue->AddListFile(filelisttruth);
     if (strcmp(type, "run21_herwig_jet10") && strcmp(type, "run21_herwig_jet30")) se->registerInputManager(intrue);
 
     Fun4AllInputManager *in3 = new Fun4AllDstInputManager("DSTglobal");
-    in3->AddListFile(filelistglobal,1);
+    in3->AddListFile(filelistglobal);
     se->registerInputManager(in3);
 
     Fun4AllInputManager *in4 = new Fun4AllDstInputManager("DSTtruthparticle");
-    in4->AddListFile(filelisttruthparticle,1);
+    in4->AddListFile(filelisttruthparticle);
     se->registerInputManager(in4);
 
     if(!strcmp(type,"run22_mb")) {
       Fun4AllInputManager *in5 = new Fun4AllDstInputManager("DSTtracks");
-      in5->AddListFile(filelisttracks,1);
+      in5->AddListFile(filelisttracks);
       se->registerInputManager(in5);
     }
 

@@ -68,6 +68,16 @@ double MapToUniform(double et, const double* bin_edges, int nbins) {
     return -1;
 }
 
+void OutputVarBinMapping(TH1D*& h_binning, const double* bins, int nbins) {
+  if (h_binning->GetNbinsX() + 1 != nbins) {
+    std::cout << "Error in uniform to variable binning output, sizes don't match: ";
+    std::cout << h_binning->GetNbinsX() + 1 << " " << nbins << std::endl;
+  }
+  for (int i = 0; i < h_binning->GetNbinsX() + 1; i++) {
+    h_binning->SetBinContent(i,bins[i]);
+  }
+}
+
 void analysis_sim(std::string runtype = "mb", int start_seg = 0, int end_seg = 200, int iter = 1, std::string bkg_cut = "dijet", bool clusters = true, bool emcal_clusters = false)  {
     
     ////////// General Set up //////////
@@ -422,6 +432,11 @@ void analysis_sim(std::string runtype = "mb", int start_seg = 0, int end_seg = 2
     TH1D* h_truth_jet_pt_uni_tight = new TH1D("h_truth_jet_pt_uni_tight","",70,0,1);
     TH1D* h_calib_calo_et_uni_tight = new TH1D("h_calib_calo_et_uni_tight","",110,0,1);
     TH1D* h_truth_calo_et_uni_tight = new TH1D("h_truth_calo_et_uni_tight","",100,0,1);
+
+    TH1D* h_truthptbins = new TH1D("h_truthptbins","",truthnpt, 0, 1);
+    TH1D* h_truthetbins = new TH1D("h_truthetbins","",truthnet, 0, 1);
+    TH1D* h_calibptbins = new TH1D("h_calibptbins","",calibnpt, 0, 1);
+    TH1D* h_calibetbins = new TH1D("h_calibetbins","",calibnet, 0, 1);
     
     ////////// Event Loop //////////
     std::cout << "Data analysis started." << std::endl;
@@ -466,6 +481,18 @@ void analysis_sim(std::string runtype = "mb", int start_seg = 0, int end_seg = 2
 
         //std::cout << "reco jets " << unsubjet_pt->size() << " truth jets " << truthjet_pt->size() << std::endl;
 
+        // check number of jets above 5 GeV
+        int Njet = 0;
+        for (size_t i = 0; i < unsubjet_pt->size(); i++) {
+          if (unsubjet_pt->at(i) >= 5.0) {
+            Njet++;
+          }
+        }
+        if (Njet >= 9) { 
+            std::cout << "EVENT WITH 9 OR MORE JETS" << std::endl;
+            continue; 
+        }
+
         std::vector<float> truthe_new, truthpt_new, trutheta_new, truthphi_new;
         std::vector<float> recoe_new, recopt_new, recoeta_new, recophi_new, recoemcal_new, recoihcal_new, recoohcal_new;
 
@@ -485,7 +512,7 @@ void analysis_sim(std::string runtype = "mb", int start_seg = 0, int end_seg = 2
         *truthjet_phi = std::move(truthphi_new);
 
         for (size_t i = 0; i < unsubjet_eta->size(); ++i) {
-            if (!check_bad_jet_eta(unsubjet_eta->at(i), zvertex, jet_radius) && fabs(unsubjet_eta->at(i)) <= 0.7) {
+            if (!check_bad_jet_eta(unsubjet_eta->at(i), zvertex, jet_radius) && fabs(unsubjet_eta->at(i)) <= 0.7 && unsubjet_e->at(i) > 0.0) {
             //if (fabs(unsubjet_eta->at(i)) <= 0.7) {
                 recoe_new.push_back(unsubjet_e->at(i));
                 recopt_new.push_back(unsubjet_pt->at(i));
@@ -804,6 +831,11 @@ void analysis_sim(std::string runtype = "mb", int start_seg = 0, int end_seg = 2
         }
     }
 
+    OutputVarBinMapping(h_truthptbins, truthptbins, int(sizeof(truthptbins)/sizeof(truthptbins[0])));
+    OutputVarBinMapping(h_truthetbins, truthetbins, int(sizeof(truthetbins)/sizeof(truthetbins[0])));
+    OutputVarBinMapping(h_calibptbins, calibptbins, int(sizeof(calibptbins)/sizeof(calibptbins[0])));
+    OutputVarBinMapping(h_calibetbins, calibetbins, int(sizeof(calibetbins)/sizeof(calibetbins[0])));
+
     std::cout << "Writing histograms..." << std::endl;
     f_out->cd();
 
@@ -837,6 +869,7 @@ void analysis_sim(std::string runtype = "mb", int start_seg = 0, int end_seg = 2
         h_jetpt_respmatrix[i]->Write();
         h_caloet_respmatrix[i]->Write();
     }
+    h_truthptbins->Write(); h_truthetbins->Write(); h_calibptbins->Write(); h_calibetbins->Write();
     f_out->Close();
     std::cout << "All done!" << std::endl;
 

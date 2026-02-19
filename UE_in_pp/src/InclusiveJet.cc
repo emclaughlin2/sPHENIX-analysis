@@ -99,6 +99,7 @@ InclusiveJet::InclusiveJet(const std::string& recojetname, const std::string& tr
   , m_nTruthJet(-1)
   , m_nJet(-1)
   , m_triggerVector()
+  , m_liveTriggerVector()
   , m_nComponent()
   , m_eta()
   , m_phi()
@@ -160,6 +161,7 @@ int InclusiveJet::Init(PHCompositeNode *topNode)
   }
   m_T->Branch("nComponent", &m_nComponent);
   m_T->Branch("triggerVector", &m_triggerVector);
+  m_T->Branch("liveTriggerVector", &m_liveTriggerVector);
 
   m_T->Branch("eta", &m_eta);
   m_T->Branch("phi", &m_phi);
@@ -770,6 +772,14 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
       }
 	    triggervec = triggervec >> 1U;
 	  }
+
+    uint64_t livetriggervec = gl1PacketInfo->getLiveVector();
+    for (int i = 0; i < 64; i++) {
+      bool trig_decision = ((livetriggervec & 0x1U) == 0x1U);
+      if (trig_decision) { m_liveTriggerVector.push_back(i); }
+      livetriggervec = livetriggervec >> 1U;
+    }
+
     if (m_doTriggerCut && !jettrig) {
       return Fun4AllReturnCodes::EVENT_OK;
     }
@@ -1206,6 +1216,7 @@ int InclusiveJet::ResetEvent(PHCompositeNode *topNode)
   m_rawseed_cut.clear();
   
   m_triggerVector.clear();
+  m_liveTriggerVector.clear();
 
   m_svtxVector.clear();
   m_svtxBcoVector.clear();

@@ -67,6 +67,16 @@ double MapToUniform(double et, const double* bin_edges, int nbins) {
     return -1;
 }
 
+void OutputVarBinMapping(TH1D*& h_binning, const double* bins, int nbins) {
+  if (h_binning->GetNbinsX() + 1 != nbins) {
+    std::cout << "Error in uniform to variable binning output, sizes don't match: ";
+    std::cout << h_binning->GetNbinsX() + 1 << " " << nbins << std::endl;
+  }
+  for (int i = 0; i < h_binning->GetNbinsX() + 1; i++) {
+    h_binning->SetBinContent(i,bins[i]);
+  }
+}
+
 ////////////////////////////////////////// Main Function //////////////////////////////////////////
 void analysis_data(int runnumber = 51274, std::string bkg_cut = "dijet", bool clusters = true, bool emcal_clusters = false)  {
   /////////////// General Set up ///////////////
@@ -98,6 +108,8 @@ void analysis_data(int runnumber = 51274, std::string bkg_cut = "dijet", bool cl
   std::vector<float>* unsubjet_emcal_calo_e = nullptr; chain.SetBranchStatus("jetEmcalE", 1); chain.SetBranchAddress("jetEmcalE", &unsubjet_emcal_calo_e);
   std::vector<float>* unsubjet_ihcal_calo_e = nullptr; chain.SetBranchStatus("jetIhcalE", 1); chain.SetBranchAddress("jetIhcalE", &unsubjet_ihcal_calo_e);
   std::vector<float>* unsubjet_ohcal_calo_e = nullptr; chain.SetBranchStatus("jetOhcalE", 1); chain.SetBranchAddress("jetOhcalE", &unsubjet_ohcal_calo_e);
+  std::vector<float>* unsubjet_time = nullptr; chain.SetBranchStatus("jettime", 1); chain.SetBranchAddress("jettime", &unsubjet_time);
+  float mbd_t0; chain.SetBranchStatus("mbd_t0", 1); chain.SetBranchAddress("mbd_t0", &mbd_t0);
 
   int emcaln = 0; float emcale[24576] = {0.0}; float emcaleta[24576] = {0.0}; float emcalphi[24576] = {0.0};
   int ihcaln = 0; float ihcale[1536] = {0.0}; float ihcaleta[1536] = {0.0}; float ihcalphi[1536] = {0.0};
@@ -160,6 +172,18 @@ void analysis_data(int runnumber = 51274, std::string bkg_cut = "dijet", bool cl
   TSpline3* f_bkgcut_eff_down = (TSpline3*)f_bkgcut->Get("fit_minus1");
   TSpline3* f_bkgcut_eff_up = (TSpline3*)f_bkgcut->Get("fit_plus1");
 
+  ////////////// Jet Background Timing Cut Efficiency ////////////
+  double f_timingcut_eff = 0.95;
+  double f_timingcut_eff_up = 0.99;
+  double timingcut_scale = 1.0 / f_timingcut_eff;
+  double timingcut_scale_up = 1.0 / f_timingcut_eff_up;
+  double lead_time_cut[2] = {-8.0,4.0}; // leading time cut
+  double lead_time_var[2] = {-9.0,5.0}; // leading time variation
+  double deltat_mbd_cut[2] = {-5.0,1.0}; // delta time cut
+  double deltat_dijet_cut[2] = {-3.0,3.0}; // delta time cut
+  double deltat_mbd_var[2] = {-6.0,2.0}; // delta time variation
+  double deltat_dijet_var[2] = {-4.0,4.0}; // delta timme variation
+
   /////////////// Histograms ///////////////
   TH1D *h_zvertex = new TH1D("h_zvertex", ";Z-vertex [cm]", 120, -60, 60);
   TH1D* h_deltaphi_record = new TH1D("h_deltaphi_record","",125,-2*M_PI,2*M_PI);
@@ -167,13 +191,14 @@ void analysis_data(int runnumber = 51274, std::string bkg_cut = "dijet", bool cl
   TH1D* h_lead_spectra_record = new TH1D("h_lead_spectra_record",";p_{T} [GeV]", 1000, 0, 100);
   TH1D* h_sub_spectra_record = new TH1D("h_sub_spectra_record",";p_{T} [GeV]", 1000, 0, 100);
   TH1D *h_et_transverse_record = new TH1D("h_et_transverse_record", ";#SigmaE_{T} [GeV]", 7000, -20, 50);
-  TH2D* h_ue_pt_transverse_record = new TH2D("h_ue_pt_transverse_record","", calibnpt, 0, 1, calibnet, 0, 1);
-  TH2D *h_calibjet_pt_dijet_eff = new TH2D("h_calibjet_pt_dijet_eff", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, 0, 1, calibnet, 0, 1); // with trigger efficiency + beam background efficiency correction applied
+  TH2D* h_ue_pt_transverse_record = new TH2D("h_ue_pt_transverse_record","", 100, 0, 100, 700, -20, 50);
+  TH2D *h_calibjet_pt_dijet_eff = new TH2D("h_calibjet_pt_dijet_eff", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, 0, 1, calibnet, 0, 1); // with trigger efficiency + beam background efficiency + timing cut efficiency correction applied
   TH2D *h_calibjet_pt_dijet_effdown = new TH2D("h_calibjet_pt_dijet_effdown", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, 0, 1, calibnet, 0, 1); // for trigger efficiency uncertainty
   TH2D *h_calibjet_pt_dijet_effup = new TH2D("h_calibjet_pt_dijet_effup", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, 0, 1, calibnet, 0, 1); // for trigger efficiency uncertainty
   TH2D *h_calibjet_pt_dijet_pu_correct_et = new TH2D("h_calibjet_pt_dijet_pu_correct_et", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, 0, 1, calibnet, 0, 1); // with pileup correction
   TH2D *h_calibjet_pt_pu_up_et = new TH2D("h_calibjet_pt_pu_up_et", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, 0, 1, calibnet, 0, 1);
   TH2D *h_calibjet_pt_pu_down_et = new TH2D("h_calibjet_pt_pu_down_et", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, 0, 1, calibnet, 0, 1);
+  TH2D *h_calibjet_pt_timingeffup = new TH2D("h_calibjet_pt_timingeffup", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, 0, 1, calibnet, 0, 1); // for timing cut efficiency uncertainty
   TH1D* h_jetpt = new TH1D("h_jetpt","", calibnpt, 0, 1); TH1D* h_caloet = new TH1D("h_caloet","", calibnet, 0, 1);
 
   TH1D* h_calib_jet_pt_tight = new TH1D("h_calib_jet_pt_tight","",50,15,65);
@@ -186,6 +211,10 @@ void analysis_data(int runnumber = 51274, std::string bkg_cut = "dijet", bool cl
   TProfile* h_scale_average_et = new TProfile("h_scale_average_et","", 7000, 47000, 54000);
   TProfile* h_scale_njet = new TProfile("h_scale_njet","", 7000, 47000, 54000);
   TProfile* h_unscale_ejet = new TProfile("h_unscale_ejet","",7000,47000,54000);
+
+  TH1D* h_calibptbins = new TH1D("h_calibptbins","",calibnpt, 0, 1);
+  TH1D* h_calibetbins = new TH1D("h_calibetbins","",calibnet, 0, 1);
+  
   int njets = 0; float ejets = 0.0;
 
   /////////////// Event Loop ///////////////
@@ -224,10 +253,18 @@ void analysis_data(int runnumber = 51274, std::string bkg_cut = "dijet", bool cl
     if (bkg_cut == "dijet") { nJetReq = 2; }
     if (unsubjet_pt->size() < nJetReq) { continue; }
 
+    // check number of jets above 5 GeV
+    int Njet = 0;
+    for (size_t i = 0; i < unsubjet_pt->size(); i++) {
+      if (unsubjet_pt->at(i) >= 5.0) {
+        Njet++;
+      }
+    }
+
     // get reco jets with eta in calorimeter acceptance
-    std::vector<float> recoe_new, recopt_new, recoeta_new, recophi_new, recoemcal_new, recoihcal_new, recoohcal_new;
+    std::vector<float> recoe_new, recopt_new, recoeta_new, recophi_new, recoemcal_new, recoihcal_new, recoohcal_new, recotime_new;
     for (size_t i = 0; i < unsubjet_eta->size(); ++i) {
-      if (!check_bad_jet_eta(unsubjet_eta->at(i), zvertex, jet_radius) && fabs(unsubjet_eta->at(i)) < 0.7) { 
+      if (!check_bad_jet_eta(unsubjet_eta->at(i), zvertex, jet_radius) && fabs(unsubjet_eta->at(i)) < 0.7 && unsubjet_e->at(i) > 0.0) { 
       //if (fabs(unsubjet_eta->at(i)) < 0.7) {
         recoe_new.push_back(unsubjet_e->at(i));
         recopt_new.push_back(unsubjet_pt->at(i));
@@ -236,6 +273,7 @@ void analysis_data(int runnumber = 51274, std::string bkg_cut = "dijet", bool cl
         recoemcal_new.push_back(unsubjet_emcal_calo_e->at(i));
         recoihcal_new.push_back(unsubjet_ihcal_calo_e->at(i));
         recoohcal_new.push_back(unsubjet_ohcal_calo_e->at(i));
+        recotime_new.push_back(unsubjet_time->at(i));
       }
     }
 
@@ -246,6 +284,7 @@ void analysis_data(int runnumber = 51274, std::string bkg_cut = "dijet", bool cl
     *unsubjet_emcal_calo_e = std::move(recoemcal_new);
     *unsubjet_ihcal_calo_e = std::move(recoihcal_new);
     *unsubjet_ohcal_calo_e = std::move(recoohcal_new);
+    *unsubjet_time = std::move(recotime_new);
 
     //std::cout << "reco jets " << unsubjet_pt->size() << std::endl;
 
@@ -273,7 +312,31 @@ void analysis_data(int runnumber = 51274, std::string bkg_cut = "dijet", bool cl
         reco_bkg_cut = false;
       }
     }
+    if (!reco_bkg_cut) { continue; }
 
+    // Njet and timing cuts
+    if (Njet >= 9) {
+      reco_bkg_cut = false; 
+    }
+    float lead_time = unsubjet_time->at(ind_lead)*17.6;
+    if (lead_time < lead_time_cut[0] || lead_time > lead_time_cut[1]) {
+      reco_bkg_cut = false;
+    }
+    float lead_deltat;
+    if (bkg_cut == "dijet") {
+      lead_deltat = (unsubjet_time->at(ind_lead) - unsubjet_time->at(ind_sub))*17.6;
+      if (lead_deltat < deltat_dijet_cut[0] || lead_deltat > deltat_dijet_cut[1]) {
+        reco_bkg_cut = false;
+      }
+    } else {
+      lead_deltat = unsubjet_time->at(ind_lead)*17.6 - mbd_t0;
+      if (lead_deltat < deltat_mbd_cut[0] || lead_deltat > deltat_mbd_cut[1]) {
+        reco_bkg_cut = false;
+      }
+    }
+
+    if (!reco_bkg_cut) { continue; }
+  
     // find leading jet after bkg and calo acceptance cuts
     if (unsubjet_pt->size() < nJetReq) { continue; }
     get_leading_jet(ind_lead, unsubjet_pt);
@@ -300,8 +363,6 @@ void analysis_data(int runnumber = 51274, std::string bkg_cut = "dijet", bool cl
 
     TVector3 caliblead;
     caliblead.SetPtEtaPhi(f_corr->Eval(lead.Pt()), lead.Eta(), lead.Phi());
-
-    if (!reco_bkg_cut) { continue; }
 
     //std::cout << "Good reco lead: pt " << caliblead.Pt() << " eta " << caliblead.Eta() << " phi " << caliblead.Phi() << std::endl;
     //if (bkg_cut == "dijet") { std::cout << "reco sub: pt " << unsubjet_pt->at(ind_sub) << " eta " << unsubjet_eta->at(ind_sub) << " phi " << unsubjet_phi->at(ind_sub) << std::endl; }
@@ -347,9 +408,9 @@ void analysis_data(int runnumber = 51274, std::string bkg_cut = "dijet", bool cl
     //std::cout << std::endl;
 
     //////////////////////////// RECORD QA PLOTS FOR ALL EVENTS IN UNFOLDING PROCEDURE ////////////////////////////
-    h_lead_spectra_record->Fill(lead.Pt());
+    h_lead_spectra_record->Fill(caliblead.Pt());
     h_et_transverse_record->Fill(et_transverse);
-    h_ue_pt_transverse_record->Fill(lead.Pt(),et_transverse);
+    h_ue_pt_transverse_record->Fill(caliblead.Pt(),et_transverse);
 
     pileup = 1.0;
     for (int i = 0; i < run_numbers.size(); i++) {
@@ -385,11 +446,12 @@ void analysis_data(int runnumber = 51274, std::string bkg_cut = "dijet", bool cl
       //std::cout << " ET " << et_transverse << " PU corr ET " << pu_correct_et_transverse << " uni_et " << uni_meas_et << " PU corr uni_et " << uni_pu_correct_meas_et << std::endl;
       //std::cout << "et before correction: " << et_transverse << " et after correction: " << pu_correct_et_transverse << std::endl;
       //if (bkg_cut == "dijet") {  removed for testing 11/14/25
-        h_calibjet_pt_dijet_eff->Fill(uni_meas_pt, uni_meas_et, jettrig_scale);
-        h_calibjet_pt_dijet_effdown->Fill(uni_meas_pt, uni_meas_et, jettrig_scale_down);
-        h_calibjet_pt_dijet_effup->Fill(uni_meas_pt, uni_meas_et, jettrig_scale_up);
-        h_jetpt->Fill(uni_meas_pt, jettrig_scale);
-        h_caloet->Fill(uni_meas_et, jettrig_scale);
+        h_calibjet_pt_dijet_eff->Fill(uni_meas_pt, uni_meas_et, jettrig_scale*timingcut_scale);
+        h_calibjet_pt_dijet_effdown->Fill(uni_meas_pt, uni_meas_et, jettrig_scale_down*timingcut_scale);
+        h_calibjet_pt_dijet_effup->Fill(uni_meas_pt, uni_meas_et, jettrig_scale_up*timingcut_scale);
+        h_calibjet_pt_timingeffup->Fill(uni_meas_pt, uni_meas_et, jettrig_scale*timingcut_scale_up);
+        h_jetpt->Fill(uni_meas_pt, jettrig_scale*timingcut_scale);
+        h_caloet->Fill(uni_meas_et, jettrig_scale*timingcut_scale);
         /* removed for testing 11/14/25
       } else {
         // Jet background cut efficiency 
@@ -400,21 +462,24 @@ void analysis_data(int runnumber = 51274, std::string bkg_cut = "dijet", bool cl
         double jetbkgeff_up = f_bkgcut_eff_up->Eval(caliblead.Pt());
         double jetbkgeff_scale_up = 1.0 / jetbkgeff_up;  
         //std::cout << " pt: " << caliblead.Pt() << " jettrig_scale: " << jettrig_scale << " jetbkgeff_scale: " << jetbkgeff_scale << std::endl;
-        h_calibjet_pt_dijet_eff->Fill(uni_meas_pt, uni_meas_et, jettrig_scale*jetbkgeff_scale);
-        h_calibjet_pt_dijet_effdown->Fill(uni_meas_pt, uni_meas_et, jettrig_scale_down*jetbkgeff_scale);
-        h_calibjet_pt_dijet_effup->Fill(uni_meas_pt, uni_meas_et, jettrig_scale_up*jetbkgeff_scale);
-        h_jetpt->Fill(uni_meas_pt, jettrig_scale*jetbkgeff_scale);
-        h_caloet->Fill(uni_meas_et, jettrig_scale*jetbkgeff_scale);
+        h_calibjet_pt_dijet_eff->Fill(uni_meas_pt, uni_meas_et, jettrig_scale*jetbkgeff_scale*timingcut_scale);
+        h_calibjet_pt_dijet_effdown->Fill(uni_meas_pt, uni_meas_et, jettrig_scale_down*jetbkgeff_scale*timingcut_scale);
+        h_calibjet_pt_dijet_effup->Fill(uni_meas_pt, uni_meas_et, jettrig_scale_up*jetbkgeff_scale*timingcut_scale);
+        h_jetpt->Fill(uni_meas_pt, jettrig_scale*jetbkgeff_scale*timingcut_scale);
+        h_caloet->Fill(uni_meas_et, jettrig_scale*jetbkgeff_scale*timingcut_scale);
       } */ //removed for testing 11/14/25
     }
     //if (caliblead.Pt() >= calibptbins[0] && caliblead.Pt() <= calibptbins[calibnpt] && pu_correct_et_transverse >= calibetbins[0] && pu_correct_et_transverse <= calibetbins[calibnet]) {
-    if (uni_meas_pt >= 0 && uni_meas_pt < 1 && uni_pu_correct_meas_et >= 0 && uni_pu_correct_meas_et < 1) { h_calibjet_pt_dijet_pu_correct_et->Fill(uni_meas_pt, uni_pu_correct_meas_et, jettrig_scale); }
-    if (uni_meas_pt >= 0 && uni_meas_pt < 1 && uni_pu_up_meas_et >= 0 && uni_pu_up_meas_et < 1) { h_calibjet_pt_pu_up_et->Fill(uni_meas_pt, uni_pu_up_meas_et, jettrig_scale); }
-    if (uni_meas_pt >= 0 && uni_meas_pt < 1 && uni_pu_down_meas_et >= 0 && uni_pu_down_meas_et < 1) { h_calibjet_pt_pu_down_et->Fill(uni_meas_pt, uni_pu_down_meas_et, jettrig_scale); }
+    if (uni_meas_pt >= 0 && uni_meas_pt < 1 && uni_pu_correct_meas_et >= 0 && uni_pu_correct_meas_et < 1) { h_calibjet_pt_dijet_pu_correct_et->Fill(uni_meas_pt, uni_pu_correct_meas_et, jettrig_scale*timingcut_scale); }
+    if (uni_meas_pt >= 0 && uni_meas_pt < 1 && uni_pu_up_meas_et >= 0 && uni_pu_up_meas_et < 1) { h_calibjet_pt_pu_up_et->Fill(uni_meas_pt, uni_pu_up_meas_et, jettrig_scale*timingcut_scale); }
+    if (uni_meas_pt >= 0 && uni_meas_pt < 1 && uni_pu_down_meas_et >= 0 && uni_pu_down_meas_et < 1) { h_calibjet_pt_pu_down_et->Fill(uni_meas_pt, uni_pu_down_meas_et, jettrig_scale*timingcut_scale); }
   } // event loop end
 
   h_scale_njet->Fill(runnumber, njets/pileup);
   h_unscale_ejet->Fill(runnumber, ejets/njets);
+
+  OutputVarBinMapping(h_calibptbins, calibptbins, int(sizeof(calibptbins)/sizeof(calibptbins[0])));
+  OutputVarBinMapping(h_calibetbins, calibetbins, int(sizeof(calibetbins)/sizeof(calibetbins[0])));
 
   // Write histograms.
   std::cout << "Writing histograms..." << std::endl;
@@ -429,6 +494,7 @@ void analysis_data(int runnumber = 51274, std::string bkg_cut = "dijet", bool cl
   h_calibjet_pt_dijet_pu_correct_et->Write();
   h_calibjet_pt_pu_up_et->Write();
   h_calibjet_pt_pu_down_et->Write();
+  h_calibjet_pt_timingeffup->Write();
   h_jetpt->Write();
   h_caloet->Write();
   h_unscale_average_et->Write();
@@ -439,6 +505,8 @@ void analysis_data(int runnumber = 51274, std::string bkg_cut = "dijet", bool cl
   h_calib_calo_et_tight->Write();
   h_calib_jet_pt_uni_tight->Write();
   h_calib_calo_et_uni_tight->Write();
+  h_calibptbins->Write();
+  h_calibetbins->Write();
   f_out->Close();
   std::cout << "All done!" << std::endl;
 }

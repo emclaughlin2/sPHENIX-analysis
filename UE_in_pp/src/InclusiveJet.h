@@ -159,6 +159,7 @@ class InclusiveJet : public SubsysReco
 
   //!trigger info
   std::vector<int> m_triggerVector;
+  std::vector<int> m_liveTriggerVector;
 
   //! reconstructed jets
   std::vector<int> m_nComponent;

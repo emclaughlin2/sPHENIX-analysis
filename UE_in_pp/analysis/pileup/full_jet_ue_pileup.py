@@ -18,44 +18,44 @@ if sys.argv[1] == "dijet" or sys.argv[1] == "efrac":
 rgb = [[230, 25, 75], [60, 180, 75], [255, 225, 25], [0, 130, 200], [245, 130, 48], [145, 30, 180], [70, 240, 240], [240, 50, 230], [210, 245, 60], [250, 190, 212], [0, 128, 128], [220, 190, 255], [170, 110, 40], [128, 128, 128], [128, 0, 0], [0, 0, 0], [128, 128, 0], [255, 215, 180], [0, 0, 128], [34, 139, 34]]
 colors = [TColor.GetColor(rgb[i][0],rgb[i][1],rgb[i][2]) for i in range(len(rgb))]
 
-dijetfiles = ['full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_dijet_bkg_cut_rate_range_0.020000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_dijet_bkg_cut_rate_range_0.030000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_dijet_bkg_cut_rate_range_0.040000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_dijet_bkg_cut_rate_range_0.050000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_dijet_bkg_cut_rate_range_0.060000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_dijet_bkg_cut_rate_range_0.070000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_dijet_bkg_cut_rate_range_0.080000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_dijet_bkg_cut_rate_range_0.090000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_dijet_bkg_cut_rate_range_0.100000.root']
+dijetfiles = ['full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_dijet_bkg_cut_rate_range_0.020000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_dijet_bkg_cut_rate_range_0.030000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_dijet_bkg_cut_rate_range_0.040000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_dijet_bkg_cut_rate_range_0.050000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_dijet_bkg_cut_rate_range_0.060000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_dijet_bkg_cut_rate_range_0.070000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_dijet_bkg_cut_rate_range_0.080000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_dijet_bkg_cut_rate_range_0.090000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_dijet_bkg_cut_rate_range_0.100000.root']
 
-efracfiles = ['full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_efrac_bkg_cut_rate_range_0.020000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_efrac_bkg_cut_rate_range_0.030000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_efrac_bkg_cut_rate_range_0.040000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_efrac_bkg_cut_rate_range_0.050000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_efrac_bkg_cut_rate_range_0.060000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_efrac_bkg_cut_rate_range_0.070000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_efrac_bkg_cut_rate_range_0.080000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_efrac_bkg_cut_rate_range_0.090000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_efrac_bkg_cut_rate_range_0.100000.root']
+efracfiles = ['full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_efrac_bkg_cut_rate_range_0.020000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_efrac_bkg_cut_rate_range_0.030000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_efrac_bkg_cut_rate_range_0.040000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_efrac_bkg_cut_rate_range_0.050000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_efrac_bkg_cut_rate_range_0.060000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_efrac_bkg_cut_rate_range_0.070000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_efrac_bkg_cut_rate_range_0.080000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_efrac_bkg_cut_rate_range_0.090000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_efrac_bkg_cut_rate_range_0.100000.root']
 
-bothfiles = ['full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_dijet_bkg_cut_rate_range_0.020000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_dijet_bkg_cut_rate_range_0.030000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_dijet_bkg_cut_rate_range_0.040000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_dijet_bkg_cut_rate_range_0.050000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_dijet_bkg_cut_rate_range_0.060000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_dijet_bkg_cut_rate_range_0.070000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_dijet_bkg_cut_rate_range_0.080000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_dijet_bkg_cut_rate_range_0.090000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_dijet_bkg_cut_rate_range_0.100000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_efrac_bkg_cut_rate_range_0.020000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_efrac_bkg_cut_rate_range_0.030000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_efrac_bkg_cut_rate_range_0.040000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_efrac_bkg_cut_rate_range_0.050000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_efrac_bkg_cut_rate_range_0.060000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_efrac_bkg_cut_rate_range_0.070000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_efrac_bkg_cut_rate_range_0.080000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_efrac_bkg_cut_rate_range_0.090000.root',
-         'full_pileup_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_63_GeV_efrac_bkg_cut_rate_range_0.100000.root']
+bothfiles = ['full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_dijet_bkg_cut_rate_range_0.020000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_dijet_bkg_cut_rate_range_0.030000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_dijet_bkg_cut_rate_range_0.040000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_dijet_bkg_cut_rate_range_0.050000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_dijet_bkg_cut_rate_range_0.060000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_dijet_bkg_cut_rate_range_0.070000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_dijet_bkg_cut_rate_range_0.080000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_dijet_bkg_cut_rate_range_0.090000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_dijet_bkg_cut_rate_range_0.100000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_efrac_bkg_cut_rate_range_0.020000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_efrac_bkg_cut_rate_range_0.030000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_efrac_bkg_cut_rate_range_0.040000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_efrac_bkg_cut_rate_range_0.050000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_efrac_bkg_cut_rate_range_0.060000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_efrac_bkg_cut_rate_range_0.070000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_efrac_bkg_cut_rate_range_0.080000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_efrac_bkg_cut_rate_range_0.090000.root',
+         'full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_leadjet_21_30_GeV_efrac_bkg_cut_rate_range_0.100000.root']
 
 filetag = "bothcuts"
 
@@ -253,7 +253,7 @@ legend.Draw()
 
 c.Update()
 c.Draw()
-c.SaveAs(f"full_jet_pileup_plots/h_ue_pileup_towards_topoclusters_{filetag}.png")
+c.SaveAs(f"full_jet_pileup_wbkgcut_plots/h_ue_pileup_towards_topoclusters_{filetag}.png")
 # Draw the graphs
 c = ROOT.TCanvas("c6", "TGraphErrors Example", 800, 600)
 
@@ -272,7 +272,7 @@ e0 = f_linear.GetParError(0)
 e1 = f_linear.GetParError(1)
 
 # Add legend
-legend = ROOT.TLegend(0.27, 0.17, 0.5, 0.3)
+legend = ROOT.TLegend(0.17, 0.77, 0.5, 0.92)
 legend.AddEntry(g_trm, "Transverse Region 0mrad + 1.5mrad", "lp")
 legend.AddEntry("",f"Fit: {p1:.4f}+/-{e1:.4f}*<PU> + {p0:.4f}+/-{e0:.4f}","")
 legend.SetTextSize(0.04)
@@ -280,7 +280,7 @@ legend.Draw()
 
 c.Update()
 c.Draw()
-c.SaveAs(f"full_jet_pileup_plots/h_ue_pileup_transverse_topoclusters_{filetag}.png")
+c.SaveAs(f"full_jet_pileup_wbkgcut_plots/h_ue_pileup_transverse_topoclusters_{filetag}.png")
 
 # Draw the graphs
 c = ROOT.TCanvas("c11", "TGraphErrors Example", 800, 600)
@@ -298,7 +298,7 @@ legend.Draw()
 
 c.Update()
 c.Draw()
-c.SaveAs(f"full_jet_pileup_plots/h_ue_pileup_away_topoclusters_{filetag}.png")
+c.SaveAs(f"full_jet_pileup_wbkgcut_plots/h_ue_pileup_away_topoclusters_{filetag}.png")
 
 '''
 

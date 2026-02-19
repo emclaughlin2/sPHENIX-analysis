@@ -14,7 +14,7 @@ load_sphenix_style()
 
 colors = [ROOT.kRed+1, ROOT.kBlue+1, ROOT.kGreen+2, ROOT.kMagenta+1, ROOT.kOrange+7, ROOT.kCyan+1, ROOT.kGray+1, ROOT.kBlack, ROOT.kPink+1, ROOT.kRed+3, ROOT.kBlue+3, ROOT.kGreen]
 cut_name = ["dijet","none"]
-legend_entries = ['dijet','dijet','none','none']
+legend_entries = ['Dijet bkg cut','Dijet bkg cut','No bkg cut','No bkg cut']
 
 new_files = [
     "analysis_sim_run28_output/output_sim_dijet_bkg_cut.root"
@@ -30,7 +30,7 @@ new_hist_names = ["h_pass_cut_measure_tight", "h_total_measure_tight"]
 old_hist_names = ["h_ue_pt_transverse","h_et_transverse"]
 
 old_profx = []
-'''
+
 files = [ROOT.TFile.Open(path) for path in old_files]
 hists = [[f.Get(hname) for hname in old_hist_names] for f in files]   
 for file_idx, (f, hlist) in enumerate(zip(files, hists)):
@@ -53,7 +53,7 @@ for file_idx, (f, hlist) in enumerate(zip(files, hists)):
         old_profx[-1].SetDirectory(0)
         old_profx.append(projy)
         old_profx[-1].SetDirectory(0)
-
+'''
 old_profx_hist = []
 for i, prof in enumerate(old_profx):
     if i % 2 != 0: 
@@ -83,7 +83,7 @@ pad2.Draw()
 # --- Top pad: draw profiles ---
 pad1.cd()
 legend = ROOT.TLegend(0.6, 0.2, 0.9, 0.35)
-legend.SetTextSize(0.03)
+#legend.SetTextSize(0.03)
 
 for i, prof in enumerate(old_profx):
     if i % 2 != 0:
@@ -122,7 +122,7 @@ line = ROOT.TLine(old_profx_hist[0].GetXaxis().GetXmin(), 1.0,
 line.SetLineStyle(2)
 line.SetLineColor(ROOT.kGray + 2)
 line.Draw("SAME")
-canvas.SaveAs(f"jet_bkgeff_comparison_binned_dijet.png")
+canvas.SaveAs(f"jet_bkgeff_comparison_dijet.png")
 
 canvas = ROOT.TCanvas("c_etprof_ratio", "Profiles + Ratio", 800, 900)
 pad1 = ROOT.TPad("pad1", "Top pad", 0, 0.35, 1, 1.0)
@@ -136,7 +136,7 @@ pad2.Draw()
 # --- Top pad: draw profiles ---
 pad1.cd()
 legend = ROOT.TLegend(0.6, 0.2, 0.9, 0.35)
-legend.SetTextSize(0.03)
+#legend.SetTextSize(0.03)
 
 for i, prof in enumerate(old_profx):
     if i % 2 == 0: 
@@ -175,7 +175,7 @@ line = ROOT.TLine(ratio.GetXaxis().GetXmin(), 1.0,
 line.SetLineStyle(2)
 line.SetLineColor(ROOT.kGray + 2)
 line.Draw("SAME")
-canvas.SaveAs(f"etdist_bkgeff_comparison_binned_dijet.png")
+canvas.SaveAs(f"etdist_bkgeff_comparison_dijet.png")
 
 # Separate lists for pass_cut and total histograms
 projx_pass_cut = []
