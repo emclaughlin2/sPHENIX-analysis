@@ -40,7 +40,7 @@ void analysis_data_backupemmattree(int runnumber, string trig, int nseg, int ise
 
   /////////////// General Set up ///////////////
   int jet_radius_index = (int)(10 * jet_radius);
-  TFile *f_out = new TFile(Form("output/emma_%s_output_r0%d_%d_%d_%d.root", trig.c_str(), jet_radius_index, runnumber, nseg, iseg),"RECREATE");
+  TFile *f_out = new TFile(Form("output_after_bug_fix/emma_%s_output_r0%d_%d_%d_%d.root", trig.c_str(), jet_radius_index, runnumber, nseg, iseg),"RECREATE");
   //TFile *f_out = new TFile(Form("emma_%s_output_r0%d_%d_%d_%d.root", trig.c_str(), jet_radius_index, runnumber, nseg, iseg),"RECREATE");
 
   /////////////// Read Files ///////////////
@@ -81,14 +81,14 @@ void analysis_data_backupemmattree(int runnumber, string trig, int nseg, int ise
     if (runnumber > 30) {
       if (std::find(gl1_trigger_vector_scaled->begin(), gl1_trigger_vector_scaled->end(), 22) == gl1_trigger_vector_scaled->end()) { continue; } 
     }
-    if (zvertex > 60 || zvertex < -60) continue; 
+    if (zvertex > 30 || zvertex < -30) continue; 
 
     // Get leading and subleading jets.
     int leadjet_index = -1;
     float leadjet_e = -9999;
     for (int ij = 0; ij < unsubjet_pt->size(); ++ij) {
       float jete = unsubjet_pt->at(ij);
-      if (fabs(unsubjet_eta->at(ij)) > 2.5) { continue; }
+      if (fabs(unsubjet_eta->at(ij)) > 0.7) { continue; }
       if (jete > leadjet_e) {
         leadjet_e = jete;
         leadjet_index = ij;
@@ -96,14 +96,14 @@ void analysis_data_backupemmattree(int runnumber, string trig, int nseg, int ise
     }
 
     if (leadjet_index < 0) continue;
-    if (unsubjet_pt->at(leadjet_index) < 5.0) { continue; }
+    if (unsubjet_pt->at(leadjet_index) < 15.75) { continue; }
 
     // Get leading and subleading jets.
     int leadingtruthjet_index = -1;
     float leadingtruthjet_e = -9999;
     for (int ij = 0; ij < truthjet_e->size(); ++ij) {
       float jete = truthjet_e->at(ij);
-      if (fabs(truthjet_eta->at(ij)) > 2.0) { continue; }
+      if (fabs(truthjet_eta->at(ij)) > 0.7) { continue; }
       if (truthjet_pt->at(ij) <= 5) { continue; }
       if (jete > leadingtruthjet_e) {
         leadingtruthjet_e = jete;
@@ -125,7 +125,7 @@ void analysis_data_backupemmattree(int runnumber, string trig, int nseg, int ise
             leadingtruthjet_index = ij;
           }
         }
-        if (leadingtruthjet_index >= 0 && truthjet_pt->at(leadingtruthjet_index) > 8) { 
+        if (leadingtruthjet_index >= 0 && truthjet_pt->at(leadingtruthjet_index) > 17.0) { 
           h_leadingtruthjet_pt->Fill(truthjet_pt->at(leadingtruthjet_index)); 
           std::cout << "zvertex: " << zvertex << " truth leading jet pt: " << truthjet_pt->at(leadingtruthjet_index) << std::endl;
           // fill in with debug if necessary
@@ -158,7 +158,7 @@ void analysis_data_backupemmattree(int runnumber, string trig, int nseg, int ise
     }
     
     if (leadingunsubjet_index < 0 || subleadingunsubjet_index < 0) continue;
-    if (unsubjet_pt->at(leadingunsubjet_index) < 8) { continue; }
+    if (unsubjet_pt->at(leadingunsubjet_index) < 15.75) { continue; }
 
     // Dijet cut
     bool match_dijet = false;

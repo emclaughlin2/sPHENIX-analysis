@@ -4,4 +4,4 @@ output = output_logs/output_emma_$(Process).out
 when_to_transfer_output = ON_EXIT
 error			= output_logs/error_emma_$(Process).err
 log = /tmp/egm2153_$(Process).log
-queue run, start, end from analyze_sim_emma_queue.list
+queue run, start, end from new_analyze_sim_emma_queue.list

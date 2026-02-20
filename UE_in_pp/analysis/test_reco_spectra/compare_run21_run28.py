@@ -1,31 +1,32 @@
 import ROOT
 ROOT.gROOT.SetBatch(True)
 
-types = ["10", "15", "20", "30", "50"]
+#types = ["10", "15", "20", "30", "50"]
+types = ["jet20", "jet30", "jet50"]
 labels = ["21", "28"]
 
 hist_names = [
     "h_leadingunsubjet_pt",
     "h_leadingtruthjet_pt",
     "h_zvertex",
-    "h_leadingunsubjet_eta",
-    "h_leadingtruthjet_eta",
-    "h_leadingtruthjet_zvertex",
-    "h_leadingunsubjet_phi",
-    "h_leadingtruthjet_phi",
+    #"h_leadingunsubjet_eta",
+    #"h_leadingtruthjet_eta",
+    #"h_leadingtruthjet_zvertex",
+    #"h_leadingunsubjet_phi",
+    #"h_leadingtruthjet_phi",
 ]
 
 cross_sections = {
     "10": 3.997,
     "15": 4.073e-1,
-    "20": 6.218e-2,
-    "30": 2.502e-3,
-    "50": 7.2695e-6,
+    "jet20": 6.218e-2,
+    "jet30": 2.502e-3,
+    "jet50": 7.2695e-6,
 }
 
 # ------------------------------------------------------
 def open_file(jet_type, label):
-    fname = f"output/test_hanpu_{jet_type}_output_r04_{label}.root"
+    fname = f"output_after_bug_fix/emma_{jet_type}_output_r04_{label}.root"
     f = ROOT.TFile.Open(fname)
     if not f or f.IsZombie():
         raise RuntimeError(f"Could not open {fname}")
@@ -64,7 +65,7 @@ def plot_overlay(h21, h28, title, outname):
     leg.AddEntry(h28, "r04_28", "l")
     leg.Draw()
 
-    c.SaveAs("compare_run21_run28_plots/test_" + outname + ".pdf")
+    c.SaveAs("compare_run21_run28_plots/bug_fix_test_" + outname + ".pdf")
 
 def plot_ratio(h21, h28, title, outname):
     # Clone to avoid modifying originals
@@ -94,7 +95,7 @@ def plot_ratio(h21, h28, title, outname):
     line.SetLineStyle(2)
     line.Draw()
 
-    c.SaveAs("compare_run21_run28_plots/test_" + outname + "_ratio.pdf")
+    c.SaveAs("compare_run21_run28_plots/bug_fix_test_" + outname + "_ratio.pdf")
 
 # ======================================================
 # 1) Plot 21 vs 28 for each type

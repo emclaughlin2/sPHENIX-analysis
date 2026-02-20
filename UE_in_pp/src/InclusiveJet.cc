@@ -105,6 +105,7 @@ InclusiveJet::InclusiveJet(const std::string& recojetname, const std::string& tr
   , m_phi()
   , m_e()
   , m_pt()
+  , m_calibpt()
   , m_jetEmcalE()
   , m_jetIhcalE()
   , m_jetOhcalE()
@@ -167,6 +168,9 @@ int InclusiveJet::Init(PHCompositeNode *topNode)
   m_T->Branch("phi", &m_phi);
   m_T->Branch("e", &m_e);
   m_T->Branch("pt", &m_pt);
+  if (m_doCalibJet) {
+    m_T->Branch("calibpt", &m_calibpt);
+  }
 
   m_T->Branch("jetEmcalE", &m_jetEmcalE);
   m_T->Branch("jetIhcalE", &m_jetIhcalE);
@@ -336,6 +340,15 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
       std::cout
 	<< "MyJetAnalysis::process_event - Error can not find DST Reco JetContainer node "
 	<< m_recoJetName << std::endl;
+      exit(-1);
+    }
+
+  JetContainer* calibjets = findNode::getClass<JetContainer>(topNode, "AntiKt_Tower_r04_calib");
+  if (m_doCalibJet && !calibjets)
+    {
+      std::cout
+  << "MyJetAnalysis::process_event - Error can not find DST Reco Calib JetContainer node: AntiKt_Tower_r04_calib"
+  << std::endl;
       exit(-1);
     }
 
@@ -617,21 +630,32 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
   //get reco jets
   m_nJet = 0;
   float leadpt = 0;
-  for (auto jet : *jets)
-    {
+  if (m_doCalibJet && jets->size() != calibjets->size())
+  {
+    std::cout << "Jet containers have different sizes!" << std::endl;
+    return Fun4AllReturnCodes::ABORTEVENT;
+  }
+
+  for (unsigned int i = 0; i < jets->size(); ++i)
+  {
+      Jet* jet = jets->get_jet(i);
+      Jet* calibjet = calibjets->get_jet(i);
+
+      if (!jet || !calibjet) continue;
       bool eta_cut = (jet->get_eta() >= m_etaRange.first) and (jet->get_eta() <= m_etaRange.second);
       bool pt_cut = (jet->get_pt() >= m_ptRange.first) and (jet->get_pt() <= m_ptRange.second);
       if ((not eta_cut) or (not pt_cut)) continue;
-      //if(jet->get_e() < 0) {
-      //  return Fun4AllReturnCodes::EVENT_OK; // currently applied to deal with cold EMCal IB
-      //}
+      if(jet->get_e() < 0) {
+        return Fun4AllReturnCodes::EVENT_OK; // currently applied to deal with cold EMCal IB
+      }
       m_nComponent.push_back(jet->size_comp());
       m_eta.push_back(jet->get_eta());
       m_phi.push_back(jet->get_phi());
       m_e.push_back(jet->get_e());
       m_pt.push_back(jet->get_pt());
+      m_calibpt.push_back(calibjet->get_pt());
 
-      if (m_pt.back() > leadpt) { leadpt = m_pt.back(); }
+      if (m_calibpt.back() > leadpt) { leadpt = m_calibpt.back(); }
 
       float emcalE = 0;
       float ihcalE = 0;
@@ -705,11 +729,8 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
       m_nJet++;
     }
 
-    if (m_doLeadPtCut && leadpt < m_leadPtCut) { 
-      return Fun4AllReturnCodes::EVENT_OK; 
-    }
-
   //get truth jets
+  float truthleadpt = 0;
   if(m_doTruthJets)
     {
       m_nTruthJet = 0;
@@ -726,9 +747,14 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
 	  m_truthPhi.push_back(truthjet->get_phi());
 	  m_truthE.push_back(truthjet->get_e());
 	  m_truthPt.push_back(truthjet->get_pt());
+    if (m_truthPt.back() > truthleadpt) { truthleadpt = m_truthPt.back(); }
 	  m_nTruthJet++;
 	}
     }
+
+  if ((m_doTruthJets && m_doTruthLeadPtCut && truthleadpt < m_truthLeadPtCut) && (m_doLeadPtCut && leadpt < m_leadPtCut)) {
+    return Fun4AllReturnCodes::EVENT_OK; 
+  }
   
   //get seed jets
   if(m_doSeeds)
@@ -1188,6 +1214,7 @@ int InclusiveJet::ResetEvent(PHCompositeNode *topNode)
   m_phi.clear();
   m_e.clear();
   m_pt.clear();
+  m_calibpt.clear();
 
   m_jetEmcalE.clear();
   m_jetIhcalE.clear();

@@ -94,9 +94,20 @@ class InclusiveJet : public SubsysReco
     m_leadPtCut = leadpt;
   }
   void
+  setTruthLeadPtCut(float leadpt) 
+  {
+    m_doTruthLeadPtCut = true;
+    m_truthLeadPtCut = leadpt;
+  }
+  void
   doMBDeff(int flag) 
   {
     m_doMBDeff = flag;
+  }
+  void
+  doCalibJet(int flag)
+  {
+    m_doCalibJet = flag;
   }
 
   float calculateProjectionEta(SvtxTrackState* projectedState);
@@ -167,6 +178,7 @@ class InclusiveJet : public SubsysReco
   std::vector<float> m_phi;
   std::vector<float> m_e;
   std::vector<float> m_pt;
+  std::vector<float> m_calibpt;
   std::vector<float> m_jetEmcalE;
   std::vector<float> m_jetIhcalE;
   std::vector<float> m_jetOhcalE;
@@ -195,7 +207,9 @@ class InclusiveJet : public SubsysReco
 
   bool m_doTriggerCut = false;
   bool m_doLeadPtCut = true;
+  bool m_doTruthLeadPtCut = false;
   bool m_doMBDeff = false;
+  bool m_doCalibJet = true;
   
   float m_totalCalo;
   float m_zvtx = -9999;
@@ -217,6 +231,7 @@ class InclusiveJet : public SubsysReco
   float m_t0corr = 0;
 
   float m_leadPtCut = 10.0;
+  float m_truthLeadPtCut = 17.0;
 
   int m_emcaln = 0;
   float m_emcale[24576] = {0}; 

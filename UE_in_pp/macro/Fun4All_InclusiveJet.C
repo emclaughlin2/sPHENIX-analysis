@@ -42,6 +42,7 @@
 #include <jetbase/TowerJetInput.h>
 #include <g4jets/TruthJetInput.h>
 #include <jetbase/ClusterJetInput.h>
+#include <jetbase/JetCalib.h>
 
 #include <jetbackground/CopyAndSubtractJets.h>
 #include <jetbackground/DetermineTowerBackground.h>
@@ -184,6 +185,21 @@ void Fun4All_InclusiveJet(int nEvents = 100, int seg = 0, int isSim = 0, const c
       filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run28_jet70_dst_truth_jet_" + sseg.str() + ".list";
       filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run28_jet70_dst_mbd_epd_" + sseg.str() + ".list"; 
       filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run28_jet70_g4hits_" + sseg.str() + ".list";
+    } else if (!strcmp(type,"run28_jet12")) {
+      mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run28_jet12_dst_calo_cluster_" + sseg.str() + ".list";
+      filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run28_jet12_dst_truth_jet_" + sseg.str() + ".list";
+      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run28_jet12_dst_mbd_epd_" + sseg.str() + ".list"; 
+      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run28_jet12_g4hits_" + sseg.str() + ".list";
+    } else if (!strcmp(type,"run28_jet40")) {
+      mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run28_jet40_dst_calo_cluster_" + sseg.str() + ".list";
+      filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run28_jet40_dst_truth_jet_" + sseg.str() + ".list";
+      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run28_jet40_dst_mbd_epd_" + sseg.str() + ".list"; 
+      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run28_jet40_g4hits_" + sseg.str() + ".list";
+    } else if (!strcmp(type,"run28_jet60")) {
+      mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run28_jet60_dst_calo_cluster_" + sseg.str() + ".list";
+      filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run28_jet60_dst_truth_jet_" + sseg.str() + ".list";
+      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run28_jet60_dst_mbd_epd_" + sseg.str() + ".list"; 
+      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run28_jet60_g4hits_" + sseg.str() + ".list";
     } else if (!strcmp(type,"run21_herwig_jet10")) {
       mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_herwig_jet10_dst_calo_cluster_" + sseg.str() + ".list";
       filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run21_herwig_jet10_dst_truth_jet_" + sseg.str() + ".list";
@@ -262,6 +278,15 @@ void Fun4All_InclusiveJet(int nEvents = 100, int seg = 0, int isSim = 0, const c
     } else if (!strcmp(type, "run28_jet70")) {
       outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run28_jet70_3sigma_output_" + to_string(seg) + ".root";
       //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run28_jet70_total_events_zvtx_lt_60_output_" + to_string(seg) + ".root";
+    } else if (!strcmp(type, "run28_jet12")) {
+      outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run28_jet12_3sigma_output_" + to_string(seg) + ".root";
+      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run28_jet12_total_events_zvtx_lt_60_output_" + to_string(seg) + ".root";
+    } else if (!strcmp(type, "run28_jet40")) {
+      outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run28_jet40_3sigma_output_" + to_string(seg) + ".root";
+      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run28_jet40_total_events_zvtx_lt_60_output_" + to_string(seg) + ".root";
+    } else if (!strcmp(type, "run28_jet60")) {
+      outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run28_jet60_3sigma_output_" + to_string(seg) + ".root";
+      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run28_jet60_total_events_zvtx_lt_60_output_" + to_string(seg) + ".root";
     } else if (!strcmp(type,"run21_mb")) { 
       outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run21_mb_3sigma_output_" + to_string(seg) + ".root";
       //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run21_mb_total_events_zvtx_lt_30_output_" + to_string(seg) + ".root";
@@ -349,16 +374,18 @@ void Fun4All_InclusiveJet(int nEvents = 100, int seg = 0, int isSim = 0, const c
     
   InclusiveJet *myJetVal = new InclusiveJet("AntiKt_Tower_r04", "AntiKt_Truth_r04", outfilename.c_str());
   myJetVal->doJetTriggerCut(false);
-  myJetVal->setLeadPtCut(7.0);
+  myJetVal->setLeadPtCut(21.0);
   myJetVal->doJetLeadPtCut(true);
   myJetVal->setPtRange(2, 100);
   myJetVal->setEtaRange(-2.5, 2.5);
   if (isSim) myJetVal->doTruth(1);
+  if (isSim) myJetVal->setTruthLeadPtCut(17.0);
+  myJetVal->doCalibJet(true);
   myJetVal->doSeeds(0);
   myJetVal->doTowers(0);
-  if (isSim) myJetVal->doTruthParticles(0);
+  if (isSim) myJetVal->doTruthParticles(1);
   myJetVal->doTracks(0);
-  myJetVal->doTopoclusters(0);
+  myJetVal->doTopoclusters(1);
   myJetVal->doEmcalClusters(0);
   myJetVal->doMBDeff(false);
   se->registerSubsystem(myJetVal);
