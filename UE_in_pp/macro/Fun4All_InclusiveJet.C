@@ -190,6 +190,11 @@ void Fun4All_InclusiveJet(int nEvents = 100, int seg = 0, int isSim = 0, const c
       filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run28_jet12_dst_truth_jet_" + sseg.str() + ".list";
       filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run28_jet12_dst_mbd_epd_" + sseg.str() + ".list"; 
       filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run28_jet12_g4hits_" + sseg.str() + ".list";
+    } else if (!strcmp(type,"run28_jet5")) {
+      mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run28_jet5_dst_calo_cluster_" + sseg.str() + ".list";
+      filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run28_jet5_dst_truth_jet_" + sseg.str() + ".list";
+      filelistglobal = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run28_jet5_dst_mbd_epd_" + sseg.str() + ".list"; 
+      filelisttruthparticle = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run28_jet5_g4hits_" + sseg.str() + ".list";
     } else if (!strcmp(type,"run28_jet40")) {
       mcfilelistcalo = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run28_jet40_dst_calo_cluster_" + sseg.str() + ".list";
       filelisttruth = "/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/macro/mc_list_files/run28_jet40_dst_truth_jet_" + sseg.str() + ".list";
@@ -232,7 +237,7 @@ void Fun4All_InclusiveJet(int nEvents = 100, int seg = 0, int isSim = 0, const c
     } else if (!strcmp(type,"jetcalo")) {
       //outfilename = "test_output_ana509_" + to_string(runnumber) + "_" + to_string(segment) + ".root";
       //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/output_ana509_v2_" + to_string(runnumber) + "_" + to_string(segment) + ".root"; // edited
-      outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/output_ana509_jet_trig_" + to_string(runnumber) + "_" + to_string(segment) + ".root";
+      outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/mbd_eff_output_ana509_" + to_string(runnumber) + "_" + to_string(segment) + ".root";
     } else if (!strcmp(type, "mbd_eff")) {
       outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/output_mbd_eff_" + to_string(runnumber) + "_" + to_string(segment) + ".root";
     } else {
@@ -268,25 +273,28 @@ void Fun4All_InclusiveJet(int nEvents = 100, int seg = 0, int isSim = 0, const c
       //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run28_jet15_total_events_zvtx_lt_60_output_" + to_string(seg) + ".root";
     } else if (!strcmp(type, "run28_jet20")) {
       outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run28_jet20_3sigma_output_" + to_string(seg) + ".root";
-      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run28_jet20_total_events_zvtx_lt_60_output_" + to_string(seg) + ".root";
+      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/mbd_eff_sim_run28_jet20_output_" + to_string(seg) + ".root";
     }  else if (!strcmp(type,"run28_jet30")) {
       outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run28_jet30_3sigma_output_" + to_string(seg) + ".root";
-      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run28_jet30_total_events_zvtx_lt_60_output_" + to_string(seg) + ".root";
+      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/mbd_eff_sim_run28_jet30_output_" + to_string(seg) + ".root";
     } else if (!strcmp(type, "run28_jet50")) {
       outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run28_jet50_3sigma_output_" + to_string(seg) + ".root";
-      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run28_jet50_total_events_zvtx_lt_60_output_" + to_string(seg) + ".root";
+      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/mbd_eff_sim_run28_jet50_output_" + to_string(seg) + ".root";
     } else if (!strcmp(type, "run28_jet70")) {
       outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run28_jet70_3sigma_output_" + to_string(seg) + ".root";
       //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run28_jet70_total_events_zvtx_lt_60_output_" + to_string(seg) + ".root";
     } else if (!strcmp(type, "run28_jet12")) {
       outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run28_jet12_3sigma_output_" + to_string(seg) + ".root";
-      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run28_jet12_total_events_zvtx_lt_60_output_" + to_string(seg) + ".root";
+      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/mbd_eff_sim_run28_jet12_output_" + to_string(seg) + ".root";
+    } else if (!strcmp(type, "run28_jet5")) {
+      outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run28_jet5_3sigma_output_" + to_string(seg) + ".root";
+      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/mbd_eff_sim_run28_jet5_output_" + to_string(seg) + ".root";
     } else if (!strcmp(type, "run28_jet40")) {
       outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run28_jet40_3sigma_output_" + to_string(seg) + ".root";
-      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run28_jet40_total_events_zvtx_lt_60_output_" + to_string(seg) + ".root";
+      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/mbd_eff_sim_run28_jet40_output_" + to_string(seg) + ".root";
     } else if (!strcmp(type, "run28_jet60")) {
       outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run28_jet60_3sigma_output_" + to_string(seg) + ".root";
-      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run28_jet60_total_events_zvtx_lt_60_output_" + to_string(seg) + ".root";
+      //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/mbd_eff_sim_run28_jet60_output_" + to_string(seg) + ".root";
     } else if (!strcmp(type,"run21_mb")) { 
       outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run21_mb_3sigma_output_" + to_string(seg) + ".root";
       //outfilename = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput/sim_run21_mb_total_events_zvtx_lt_30_output_" + to_string(seg) + ".root";
@@ -373,8 +381,8 @@ void Fun4All_InclusiveJet(int nEvents = 100, int seg = 0, int isSim = 0, const c
   se->registerSubsystem(jetCalib04);
     
   InclusiveJet *myJetVal = new InclusiveJet("AntiKt_Tower_r04", "AntiKt_Truth_r04", outfilename.c_str());
-  myJetVal->doJetTriggerCut(false);
-  myJetVal->setLeadPtCut(21.0);
+  myJetVal->doJetTriggerCut(true);
+  myJetVal->setLeadPtCut(10.0);
   myJetVal->doJetLeadPtCut(true);
   myJetVal->setPtRange(2, 100);
   myJetVal->setEtaRange(-2.5, 2.5);
@@ -388,6 +396,7 @@ void Fun4All_InclusiveJet(int nEvents = 100, int seg = 0, int isSim = 0, const c
   myJetVal->doTopoclusters(1);
   myJetVal->doEmcalClusters(0);
   myJetVal->doMBDeff(false);
+  myJetVal->doMBDeffsyst(false);
   se->registerSubsystem(myJetVal);
   
   //MDCTreeMaker *tt = new MDCTreeMaker("MDCTreeMaker", outfilename, isSim, 1, 0);

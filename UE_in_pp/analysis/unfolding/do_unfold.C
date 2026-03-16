@@ -128,8 +128,9 @@ void do_unfold(const char* simfile = "analysis_sim_run21_output/output_dijet_sim
     int ntoys = 1000;
     std::vector<std::string> syst = {"calib_dijet","calib_dijet_jesdown","calib_dijet_jesup","calib_dijet_jerdown","calib_dijet_jerup","calib_dijet_half1","calib_dijet_half2","jetpt_respmatrix","caloet_respmatrix"};;
     std::vector<std::string> trim = {"","_trim_5","_trim_10","_reweight","_reweight_trim_5","_reweight_trim_10"};
-    TH2D* h_measure = (TH2D*)f_data->Get("h_calibjet_pt_dijet_eff");
-    //TH2D* h_measure = (TH2D*)f_data->Get("h_calibjet_pt_dijet_pu_correct_et");
+    std::vector<std::string> data_var = {"h_calibjet_pt_dijet_eff","h_calibjet_pt_dijet_effdown","h_calibjet_pt_dijet_effup","h_calibjet_pt_dijet_pu_correct_et","h_calibjet_pt_timingeffup"};
+    TH2D* h_measure[5];
+    for (int i = 0; i < data_var.size(); i++) { h_measure[i] = (TH2D*)f_data->Get(data_var[i].c_str()); }
 
     for (int i = 0; i < variations; i++) {
         std::string outfilename = outfileroot + syst[i] + "_run28_iter_3_1000toys.root";
@@ -146,12 +147,27 @@ void do_unfold(const char* simfile = "analysis_sim_run21_output/output_dijet_sim
         TH2D* h_unfold[6][20];
         for (int j = 0; j < trim.size(); j++) {
             for (int n = 0; n < 20; n++) {
-                unfold[j][n] = RooUnfoldBayes(h_respmatrix[j], h_measure);
+                unfold[j][n] = RooUnfoldBayes(h_respmatrix[j], h_measure[0]);
                 unfold[j][n].SetIterations(n+1);
                 unfold[j][n].HandleFakes(true);
                 h_unfold[j][n] = (TH2D*)unfold[j][n].Hunfold(RooUnfolding::kErrors); 
                 h_unfold[j][n]->SetName(("h_unfold_"+syst[i]+trim[j]+"_"+to_string(n+1)).c_str());
                 //toy_errors(unfold[j][n], h_unfold[j][n], ntoys);
+            }
+        }
+
+        RooUnfoldBayes unfold_var[4][20];
+        TH2D* h_unfold_var[4][20];
+        if (i == 0) {
+            for (int k = 0; k < 4; k++) {
+                for (int n = 0; n < 20; n++) {
+                    unfold_var[k][n] = RooUnfoldBayes(h_respmatrix[5], h_measure[k+1]);
+                    unfold_var[k][n].SetIterations(n+1);
+                    unfold_var[k][n].HandleFakes(true);
+                    h_unfold_var[k][n] = (TH2D*)unfold_var[k][n].Hunfold(RooUnfolding::kErrors);
+                    h_unfold_var[k][n]->SetName(("h_unfold_" + data_var[k+1] + "_" + syst[i] + trim[5] + "_" + to_string(n + 1)).c_str());
+                    //toy_errors(unfold_var[k][n], h_unfold_var[k][n], ntoys);
+                }
             }
         }
         
@@ -184,7 +200,16 @@ void do_unfold(const char* simfile = "analysis_sim_run21_output/output_dijet_sim
         // Write histograms.
         std::cout << "Writing histograms... iter " << i << std::endl;
         f_out->cd();
-        if (i == 0) h_measure->Write();
+        if (i == 0) {
+            for (int k = 0; k < data_var.size(); k++) {
+                h_measure[k]->Write();
+            }
+            for (int k = 0; k < 4; k++) {
+                for (int n = 0; n < 20; n++) {
+                    h_unfold_var[k][n]->Write();
+                }
+            }   
+        }
         
         for (int j = 0; j < trim.size(); j++) {
             h_truth[j]->Write();

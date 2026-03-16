@@ -168,7 +168,7 @@ void plot_1D_unfold(const char* unfoldfile = "run28_output_files/output_unfolded
     std::vector<std::vector<double>> sigma_error(2, std::vector<double>(19, 0.0));
     std::vector<std::vector<double>> sigma_val_diff(2, std::vector<double>(19, 0.0));
     std::vector<std::vector<double>> total_error(2, std::vector<double>(19, 0.0));
-    /*
+    
     // absolute difference and error calcuation 
     for (int it = 1; it < 20; it++) {
         iteration.push_back(it);
@@ -181,7 +181,8 @@ void plot_1D_unfold(const char* unfoldfile = "run28_output_files/output_unfolded
             }
         }
     }
-    */
+    
+    /*
     // relative difference and error calculation 
     for (int it = 1; it < 20; it++) {
         iteration.push_back(it);
@@ -194,7 +195,7 @@ void plot_1D_unfold(const char* unfoldfile = "run28_output_files/output_unfolded
             }
         }
     }
-    
+    */
     for (int i = 0; i < syst.size(); i++) {
         for (int it = 0; it < sigma_val_diff[i].size(); it++) {
             total_error[i][it] = std::sqrt(sigma_val_diff[i][it] + sigma_error[i][it]);

@@ -151,7 +151,7 @@ int InclusiveJet::Init(PHCompositeNode *topNode)
   m_T->Branch("mbd_t0",&m_mbd_t0,"mbd_t0/F");
   m_T->Branch("mbd_ts",&m_mbd_ts,"mbd_ts/F");
   m_T->Branch("mbd_tn",&m_mbd_tn,"mbd_tn/F");
-  if (m_doMBDeff) {
+  if (m_doMBDeff && m_doTruth) {
     m_T->Branch("zsvtx", &m_zsvtx);
     m_T->Branch("zsiliconvtx",&m_zsiliconvtx);
     m_T->Branch("ztruthvtx", &m_ztruthvtx);
@@ -159,6 +159,9 @@ int InclusiveJet::Init(PHCompositeNode *topNode)
     m_T->Branch("svtxBcoVector",&m_svtxBcoVector);
     m_T->Branch("siliconVector",&m_siliconVector);
     m_T->Branch("siliconBcoVector",&m_siliconBcoVector);
+  }
+  else if (m_doMBDeffsyst && m_doTruth) {
+    m_T->Branch("ztruthvtx", &m_ztruthvtx);
   }
   m_T->Branch("nComponent", &m_nComponent);
   m_T->Branch("triggerVector", &m_triggerVector);
@@ -269,6 +272,13 @@ int InclusiveJet::Init(PHCompositeNode *topNode)
     m_T->Branch("truthpar_eta",truthpar_eta,"truthpar_eta[truthpar_n]/F");
     m_T->Branch("truthpar_phi",truthpar_phi,"truthpar_phi[truthpar_n]/F");
     m_T->Branch("truthpar_pid",truthpar_pid,"truthpar_pid[truthpar_n]/I");
+    m_T->Branch("old_truthpar_n",&old_truthpar_n,"old_truthpar_n/I");
+    m_T->Branch("old_truthpar_pz",old_truthpar_pz,"old_truthpar_pz[old_truthpar_n]/F");
+    m_T->Branch("old_truthpar_pt",old_truthpar_pt,"old_truthpar_pt[old_truthpar_n]/F");
+    m_T->Branch("old_truthpar_e",old_truthpar_e,"old_truthpar_e[old_truthpar_n]/F");
+    m_T->Branch("old_truthpar_eta",old_truthpar_eta,"old_truthpar_eta[old_truthpar_n]/F");
+    m_T->Branch("old_truthpar_phi",old_truthpar_phi,"old_truthpar_phi[old_truthpar_n]/F");
+    m_T->Branch("old_truthpar_pid",old_truthpar_pid,"old_truthpar_pid[old_truthpar_n]/I");
   }
 
   if(m_doTracks) {
@@ -397,7 +407,8 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
       std::cout
         << "MyJetAnalysis::process_event - global vertex node is empty "
         << std::endl;
-      return Fun4AllReturnCodes::ABORTEVENT;
+        m_zvtx = -9999;
+      //return Fun4AllReturnCodes::ABORTEVENT;
     }
   else
     {
@@ -440,6 +451,8 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
               m_zsvtx = vertex->get_z();
             }
           }
+        }
+        if ((m_doMBDeff || m_doMBDeffsyst) && m_doTruth) {
           auto truthStartIter = globalVertex->find_vertexes(GlobalVertex::TRUTH);
           auto truthEndIter = globalVertex->end_vertexes();
 
@@ -545,7 +558,10 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
     }
     */
 
-  if (fabs(m_zvtx) > 60 && !m_doMBDeff) {
+  if (fabs(m_zvtx) > 60 && !m_doMBDeff && !m_doMBDeffsyst) {
+    return Fun4AllReturnCodes::EVENT_OK;
+  }
+  if (m_doMBDeffsyst && m_doTruth && fabs(m_ztruthvtx) > 60) {
     return Fun4AllReturnCodes::EVENT_OK;
   }
 
@@ -655,7 +671,8 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
       m_pt.push_back(jet->get_pt());
       m_calibpt.push_back(calibjet->get_pt());
 
-      if (m_calibpt.back() > leadpt) { leadpt = m_calibpt.back(); }
+      //if (m_calibpt.back() > leadpt) { leadpt = m_calibpt.back(); }
+      if (m_pt.back() > leadpt) { leadpt = m_pt.back(); }
 
       float emcalE = 0;
       float ihcalE = 0;
@@ -752,7 +769,7 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
 	}
     }
 
-  if ((m_doTruthJets && m_doTruthLeadPtCut && truthleadpt < m_truthLeadPtCut) && (m_doLeadPtCut && leadpt < m_leadPtCut)) {
+  if (((m_doTruthJets && m_doTruthLeadPtCut && truthleadpt < m_truthLeadPtCut) || !m_doTruthJets) && (m_doLeadPtCut && leadpt < m_leadPtCut)) {
     return Fun4AllReturnCodes::EVENT_OK; 
   }
   
@@ -830,7 +847,7 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
         RawTowerGeom *geom = tower_geomEM->get_tower_geometry(geomkey); 
         TVector3 tower_pos;
         tower_pos.SetXYZ(geom->get_center_x(),geom->get_center_y(),geom->get_center_z() - m_zvtx);
-        if (m_doMBDeff && fabs(m_zvtx) > 200) {
+        if ((m_doMBDeff || m_doMBDeffsyst) && fabs(m_zvtx) > 200) {
           tower_pos.SetXYZ(geom->get_center_x(),geom->get_center_y(),geom->get_center_z() - 0.0); 
         }
         m_emcaleta[m_emcaln] = tower_pos.Eta();
@@ -858,7 +875,7 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
         RawTowerGeom *geom = tower_geom->get_tower_geometry(geomkey); 
         TVector3 tower_pos;
         tower_pos.SetXYZ(geom->get_center_x(),geom->get_center_y(),geom->get_center_z() - m_zvtx);
-        if (m_doMBDeff && fabs(m_zvtx) > 200) {
+        if ((m_doMBDeff || m_doMBDeffsyst) && fabs(m_zvtx) > 200) {
           tower_pos.SetXYZ(geom->get_center_x(),geom->get_center_y(),geom->get_center_z() - 0.0); 
         }
         m_ihcaleta[m_ihcaln] = tower_pos.Eta();
@@ -886,7 +903,7 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
         RawTowerGeom *geom = tower_geomOH->get_tower_geometry(geomkey); 
         TVector3 tower_pos;
         tower_pos.SetXYZ(geom->get_center_x(),geom->get_center_y(),geom->get_center_z() - m_zvtx);
-        if (m_doMBDeff && fabs(m_zvtx) > 200) {
+        if ((m_doMBDeff || m_doMBDeffsyst) && fabs(m_zvtx) > 200) {
           tower_pos.SetXYZ(geom->get_center_x(),geom->get_center_y(),geom->get_center_z() - 0.0); 
         }
         m_ohcaleta[m_ohcaln] = tower_pos.Eta();
@@ -919,7 +936,7 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
       RawClusterContainer::Map clusterMap = topoclusters->getClustersMap();
       m_clsmult = 0;
       float cluster_vertex = m_zvtx;
-      if (m_doMBDeff && fabs(m_zvtx) > 200) { cluster_vertex = 0.0; }
+      if ((m_doMBDeff || m_doMBDeffsyst) && fabs(m_zvtx) > 200) { cluster_vertex = 0.0; }
       for(auto entry : clusterMap){
         RawCluster* cluster = entry.second;
         CLHEP::Hep3Vector origin(0, 0, cluster_vertex);
@@ -967,7 +984,7 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
       RawClusterContainer::Map clusterMap = topoclusters2->getClustersMap();
       m_clsmult2 = 0;
       float cluster_vertex = m_zvtx;
-      if (m_doMBDeff && fabs(m_zvtx) > 200) { cluster_vertex = 0.0; }
+      if ((m_doMBDeff || m_doMBDeffsyst) && fabs(m_zvtx) > 200) { cluster_vertex = 0.0; }
       for(auto entry : clusterMap){
         RawCluster* cluster = entry.second;
         CLHEP::Hep3Vector origin(0, 0, cluster_vertex);
@@ -991,7 +1008,7 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
   }
 
   if (m_doTruth) {
-    PHG4TruthInfoContainer::Range range = truthinfo->GetPrimaryParticleRange();
+    PHG4TruthInfoContainer::Range range = truthinfo->GetSPHENIXPrimaryParticleRange();
     truthpar_n = 0;
     for (PHG4TruthInfoContainer::ConstIterator iter = range.first; iter != range.second; ++iter) {
       // Get truth particle
@@ -1010,6 +1027,30 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
       truthpar_pid[truthpar_n] = truth->get_pid();
       truthpar_n++;
       if(truthpar_n > 99999)
+      {
+        return Fun4AllReturnCodes::EVENT_OK;
+      }
+    }
+
+    PHG4TruthInfoContainer::Range range2 = truthinfo->GetPrimaryParticleRange();
+    old_truthpar_n = 0;
+    for (PHG4TruthInfoContainer::ConstIterator iter2 = range2.first; iter2 != range2.second; ++iter2) {
+      // Get truth particle
+      const PHG4Particle *truth = iter2->second;
+      if (!truth) { std::cout << "missing particle" << std::endl; continue; }
+      if (!truthinfo->is_primary(truth)) continue;
+      /// Get this particles momentum, etc.
+      float eta = atanh(truth->get_pz() / sqrt(truth->get_px()*truth->get_px()+truth->get_py()*truth->get_py()+truth->get_pz()*truth->get_pz()));
+      if (fabs(eta) > 1.1) { continue; }
+      old_truthpar_pt[old_truthpar_n] = sqrt(truth->get_px() * truth->get_px() + truth->get_py() * truth->get_py());
+      old_truthpar_pz[old_truthpar_n] = truth->get_pz();
+      old_truthpar_e[old_truthpar_n] = truth->get_e();
+      old_truthpar_phi[old_truthpar_n] = atan2(truth->get_py(), truth->get_px());
+      old_truthpar_eta[old_truthpar_n] = atanh(truth->get_pz() / sqrt(truth->get_px()*truth->get_px()+truth->get_py()*truth->get_py()+truth->get_pz()*truth->get_pz()));
+      if (old_truthpar_eta[old_truthpar_n] != old_truthpar_eta[old_truthpar_n]) old_truthpar_eta[old_truthpar_n] = -999; // check for nans
+      old_truthpar_pid[old_truthpar_n] = truth->get_pid();
+      old_truthpar_n++;
+      if(old_truthpar_n > 99999)
       {
         return Fun4AllReturnCodes::EVENT_OK;
       }
@@ -1302,6 +1343,15 @@ int InclusiveJet::ResetEvent(PHCompositeNode *topNode)
     truthpar_phi[i] = 0;
     truthpar_eta[i] = 0;
     truthpar_pid[i] = 0;
+  }
+
+  for (int i = 0; i < 100000; i++) {
+    old_truthpar_pt[i] = 0;
+    old_truthpar_pz[i] = 0;
+    old_truthpar_e[i] = 0;
+    old_truthpar_phi[i] = 0;
+    old_truthpar_eta[i] = 0;
+    old_truthpar_pid[i] = 0;
   }
 
   for (int i = 0; i < 2000; i++) {

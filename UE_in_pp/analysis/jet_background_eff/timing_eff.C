@@ -5,7 +5,7 @@ ROOT::Math::MinimizerOptions::SetDefaultMaxFunctionCalls(500000);
 ROOT::Math::MinimizerOptions::SetDefaultMaxIterations(500000);
 ROOT::Math::MinimizerOptions::SetDefaultTolerance(1e-6);
 ROOT::Math::MinimizerOptions::SetDefaultStrategy(2);
-
+ 
 double background(double* x, double* par)
 {
   return par[0];
@@ -50,7 +50,7 @@ double fitf2(double* val, double*par)
   return num;
 }
 
-int timing_eff()
+int timing_eff(bool doEff = true)
 {
   const int nbincheck = 4;
   gStyle->SetPadTickX(1);
@@ -133,7 +133,7 @@ int timing_eff()
 	      fitsnom1[i][j]->SetParameters(lt_background,nomcuts[i][j]->GetMaximum(),nomcuts[i][j]->GetXaxis()->GetBinCenter(nomcuts[i][j]->GetMaximumBin()),nomcuts[i][j]->GetStdDev());
 	      nomcuts[i][j]->Fit(fitsnom1[i][j],"LIMR");
 	      
-	      fitsnom2[j] = new TF2(("f2nom"+to_string(j)).c_str(),fitf2,-30,30,-30,30,6);
+	      fitsnom2[j] = new TF2(("f2nom"+to_string(j)).c_str(),fitf2,-6,6,-3,3,6);
 	      fitsnom2[j]->SetParLimits(0,1e-30,999999);
 	      fitsnom2[j]->SetParLimits(1,0.00001,99999999);
 	      fitsnom2[j]->SetParLimits(4,0.00001,999999);
@@ -150,11 +150,42 @@ int timing_eff()
 	      usegaus->SetParameters(thefit->GetParameter(1),thefit->GetParameter(2),thefit->GetParameter(3));
 	      higaus->SetParameters(thefit->GetParameter(1)+thefit->GetParError(1),thefit->GetParameter(2)+thefit->GetParError(2),thefit->GetParameter(3)+thefit->GetParError(3));
 	      logaus->SetParameters(thefit->GetParameter(1)-thefit->GetParError(1),thefit->GetParameter(2)+thefit->GetParError(2),thefit->GetParameter(3)+thefit->GetParError(3));
-	      double errshi[3] = {higaus->Integral(ltc[0],ltc[1])/higaus->Integral(-30,30)-usegaus->Integral(ltc[0],ltc[1])/usegaus->Integral(-30,30),higaus->Integral(ltv[0],ltv[1])/higaus->Integral(-30,30)-usegaus->Integral(ltv[0],ltv[1])/usegaus->Integral(-30,30),higaus->Integral(ltc[0],ltc[1])/higaus->Integral(-30,30)-usegaus->Integral(ltc[0],ltc[1])/usegaus->Integral(-30,30)};
-	      double errslo[3] = {logaus->Integral(ltc[0],ltc[1])/logaus->Integral(-30,30)-usegaus->Integral(ltc[0],ltc[1])/usegaus->Integral(-30,30),logaus->Integral(ltv[0],ltv[1])/logaus->Integral(-30,30)-usegaus->Integral(ltv[0],ltv[1])/usegaus->Integral(-30,30),logaus->Integral(ltc[0],ltc[1])/logaus->Integral(-30,30)-usegaus->Integral(ltc[0],ltc[1])/usegaus->Integral(-30,30)};
-	      effs[0][0]->SetBinContent(j+1,usegaus->Integral(ltc[0],ltc[1])/usegaus->Integral(-30,30));
-	      effs[0][1]->SetBinContent(j+1,usegaus->Integral(ltv[0],ltv[1])/usegaus->Integral(-30,30));
-	      effs[0][2]->SetBinContent(j+1,usegaus->Integral(ltc[0],ltc[1])/usegaus->Integral(-30,30));
+	      double fit_purity_lt_nom = usegaus->Integral(ltc[0],ltc[1]) / thefit->Integral(ltc[0],ltc[1]);
+	      double nwin_lt_nom = 0.0;
+	      int nwin_lt_bins = 0;
+	      double nside_lt = 0.0;
+	      int nside_lt_bins = 0;
+	      for(int b = 1; b <= nomcuts[i][j]->GetNbinsX(); ++b)
+		{
+		  double x = nomcuts[i][j]->GetXaxis()->GetBinCenter(b);
+		  double v = nomcuts[i][j]->GetBinContent(b);
+		  if(x >= ltc[0] && x <= ltc[1])
+		    {
+		      nwin_lt_nom += v;
+		      ++nwin_lt_bins;
+		    }
+		  if((x >= 15.0 && x <= 30.0) || (x <= -15.0 && x >= -30.0))
+		    {
+		      nside_lt += v;
+		      ++nside_lt_bins;
+		    }
+		}
+	      double bg_lt_per_bin = (nside_lt_bins > 0) ? nside_lt / nside_lt_bins : 0.0;
+	      double raw_purity_lt_nom = 0.0;
+	      if(nwin_lt_nom > 0.0)
+		{
+		  double sig_lt = nwin_lt_nom - bg_lt_per_bin * nwin_lt_bins;
+		  if(sig_lt < 0.0) sig_lt = 0.0;
+		  raw_purity_lt_nom = sig_lt / nwin_lt_nom;
+		}
+	      cout << "[DIAG] j=" << j << " lead-time nominal purity: fit="
+		   << fit_purity_lt_nom << " raw(sideband-subtracted)="
+		   << raw_purity_lt_nom << endl;
+	      double errshi[3] = {higaus->Integral(ltc[0],ltc[1])/(doEff?higaus->Integral(-30,30):thefit->Integral(ltc[0],ltc[1]))-usegaus->Integral(ltc[0],ltc[1])/(doEff?usegaus->Integral(-30,30):thefit->Integral(ltc[0],ltc[1])),higaus->Integral(ltv[0],ltv[1])/(doEff?higaus->Integral(-30,30):thefit->Integral(ltc[0],ltc[1]))-usegaus->Integral(ltv[0],ltv[1])/(doEff?usegaus->Integral(-30,30):thefit->Integral(ltc[0],ltc[1])),higaus->Integral(-7,3)/(doEff?higaus->Integral(-30,30):thefit->Integral(ltc[0],ltc[1]))-usegaus->Integral(-7,3)/(doEff?usegaus->Integral(-30,30):thefit->Integral(ltc[0],ltc[1]))};
+	      double errslo[3] = {logaus->Integral(ltc[0],ltc[1])/logaus->Integral(-30,30)-usegaus->Integral(ltc[0],ltc[1])/(doEff?usegaus->Integral(-30,30):thefit->Integral(ltc[0],ltc[1])),logaus->Integral(ltv[0],ltv[1])/logaus->Integral(-30,30)-usegaus->Integral(ltv[0],ltv[1])/(doEff?usegaus->Integral(-30,30):thefit->Integral(ltc[0],ltc[1])),logaus->Integral(-7,3)/logaus->Integral(-30,30)-usegaus->Integral(-7,3)/(doEff?usegaus->Integral(-30,30):thefit->Integral(ltc[0],ltc[1]))};
+	      effs[0][0]->SetBinContent(j+1,usegaus->Integral(ltc[0],ltc[1])/(doEff?usegaus->Integral(-30,30):thefit->Integral(ltc[0],ltc[1])));
+	      effs[0][1]->SetBinContent(j+1,usegaus->Integral(ltv[0],ltv[1])/(doEff?usegaus->Integral(-30,30):thefit->Integral(ltv[0],ltv[1])));
+	      effs[0][2]->SetBinContent(j+1,usegaus->Integral(-7,3)/(doEff?usegaus->Integral(-30,30):thefit->Integral(-7,3)));
 	      double errs[3] = {(abs(errshi[0])+abs(errslo[0]))/2,(abs(errshi[1])+abs(errslo[1]))/2,(abs(errshi[2])+abs(errslo[2]))/2};
 	      for(int k=0; k<3; ++k)
 		{
@@ -256,14 +287,57 @@ int timing_eff()
 		}
 	      cout << usegaus2->Integral(ltc[0],ltc[1],dtc[0],dtc[1]) << endl;
 	      cout << usegaus2->Integral(-30,30,-30,30) << endl;
-
+	      cout << "Purity: " << usegaus2->Integral(ltc[0],ltc[1],dtc[0],dtc[1])/fit2gaus->Integral(ltc[0],ltc[1],dtc[0],dtc[1]) << endl;
+	      double nbox_2d = 0.0;
+	      int nbox_2d_bins = 0;
+	      double nside_2d = 0.0;
+	      int nside_2d_bins = 0;
+	      for(int bx2 = 1; bx2 <= nomcuts2[j]->GetNbinsX(); ++bx2)
+		{
+		  double x = nomcuts2[j]->GetXaxis()->GetBinCenter(bx2);
+		  for(int by2 = 1; by2 <= nomcuts2[j]->GetNbinsY(); ++by2)
+		    {
+		      double y = nomcuts2[j]->GetYaxis()->GetBinCenter(by2);
+		      double v = nomcuts2[j]->GetBinContent(bx2,by2);
+		      if(x >= ltc[0] && x <= ltc[1] && y >= dtc[0] && y <= dtc[1])
+			{
+			  nbox_2d += v;
+			  ++nbox_2d_bins;
+			}
+		      bool x_side = ((x >= 15.0 && x <= 30.0) || (x <= -15.0 && x >= -30.0));
+		      bool y_side = ((y >= 15.0 && y <= 30.0) || (y <= -15.0 && y >= -30.0));
+		      if(x_side && y_side)
+			{
+			  nside_2d += v;
+			  ++nside_2d_bins;
+			}
+		    }
+		}
+	      double bg2d_per_bin = (nside_2d_bins > 0) ? nside_2d / nside_2d_bins : 0.0;
+	      double raw_purity_2d_nom = 0.0;
+	      if(nbox_2d > 0.0)
+		{
+		  double sig2d = nbox_2d - bg2d_per_bin * nbox_2d_bins;
+		  if(sig2d < 0.0) sig2d = 0.0;
+		  raw_purity_2d_nom = sig2d / nbox_2d;
+		}
+	      double fit_purity_2d_nom = usegaus2->Integral(ltc[0],ltc[1],dtc[0],dtc[1]) / fit2gaus->Integral(ltc[0],ltc[1],dtc[0],dtc[1]);
+	      cout << "[DIAG] j=" << j << " both-dim nominal purity: fit="
+		   << fit_purity_2d_nom << " raw(sideband-subtracted)="
+		   << raw_purity_2d_nom << endl;
 	      double errshi2[3] = {higaus2->Integral(ltc[0],ltc[1],dtc[0],dtc[1])/higaus2->Integral(-30,30,-30,30)-usegaus2->Integral(ltc[0],ltc[1],dtc[0],dtc[1])/usegaus2->Integral(-30,30,-30,30),higaus2->Integral(ltv[0],ltv[1],dtv[0],4)/higaus2->Integral(-30,30,-30,30)-usegaus2->Integral(ltv[0],ltv[1],dtv[0],4)/usegaus2->Integral(-30,30,-30,30),higaus2->Integral(ltc[0],ltc[1],-2,2)/higaus2->Integral(-30,30,-30,30)-usegaus2->Integral(ltc[0],ltc[1],-2,2)/usegaus2->Integral(-30,30,-30,30)};
 	      double errslo2[3] = {logaus2->Integral(ltc[0],ltc[1],dtc[0],dtc[1])/logaus2->Integral(-30,30,-30,30)-usegaus2->Integral(ltc[0],ltc[1],dtc[0],dtc[1])/usegaus2->Integral(-30,30,-30,30),logaus2->Integral(ltv[0],ltv[1],dtv[0],4)/logaus2->Integral(-30,30,-30,30)-usegaus2->Integral(ltv[0],ltv[1],dtv[0],4)/usegaus2->Integral(-30,30,-30,30),logaus2->Integral(ltc[0],ltc[1],-2,2)/logaus2->Integral(-30,30,-30,30)-usegaus2->Integral(ltc[0],ltc[1],-2,2)/usegaus2->Integral(-30,30,-30,30)};
 	      
+	      double effval2[3] = {usegaus2->Integral(ltc[0],ltc[1],dtc[0],dtc[1])/(doEff?usegaus2->Integral(-30,30,-30,30):fit2gaus->Integral(ltc[0],ltc[1],dtc[0],dtc[1])),usegaus2->Integral(ltv[0],ltv[1],dtv[0],dtv[1])/(doEff?usegaus2->Integral(-30,30,-30,30):fit2gaus->Integral(ltv[0],ltv[1],dtv[0],dtv[1])),usegaus2->Integral(-7,3,-2,2)/(doEff?usegaus2->Integral(-30,30,-30,30):fit2gaus->Integral(-7,3,-2,2))};
 	      
-	      effs[2][0]->SetBinContent(j+1,usegaus2->Integral(ltc[0],ltc[1],dtc[0],dtc[1])/usegaus2->Integral(-30,30,-30,30));
-	      effs[2][1]->SetBinContent(j+1,usegaus2->Integral(ltv[0],ltv[1],dtv[0],dtv[1])/usegaus2->Integral(-30,30,-30,30));
-	      effs[2][2]->SetBinContent(j+1,usegaus2->Integral(ltc[0],ltc[1],-2,2)/usegaus2->Integral(-30,30,-30,30));
+	      for(int k=0; k<3; ++k)
+				{
+		  		if(std::isfinite(effval2[k])) effs[2][k]->SetBinContent(j+1,effval2[k]);
+				}
+
+	      //effs[2][0]->SetBinContent(j+1,usegaus2->Integral(ltc[0],ltc[1],dtc[0],dtc[1])/usegaus2->Integral(-30,30,-30,30));
+	      //effs[2][1]->SetBinContent(j+1,usegaus2->Integral(ltv[0],ltv[1],dtv[0],dtv[1])/usegaus2->Integral(-30,30,-30,30));
+	      //effs[2][2]->SetBinContent(j+1,usegaus2->Integral(ltc[0],ltc[1],-2,2)/usegaus2->Integral(-30,30,-30,30));
 
 	      double errs2[3] = {(abs(errshi2[0])+abs(errslo2[0]))/2,(abs(errshi2[1])+abs(errslo2[1]))/2,(abs(errshi2[2])+abs(errslo2[2]))/2};
 	      for(int k=0; k<3; ++k)
@@ -272,10 +346,12 @@ int timing_eff()
 		    {
 		      errs2[k] = 1-effs[2][k]->GetBinContent(j+1);
 		    }
+		  if(std::isfinite(errs2[k])) effs[2][k]->SetBinError(j+1,errs2[k]);
+		  else effs[2][k]->SetBinError(j+1,1-effs[2][k]->GetBinContent(j+1));
 		}
-	      effs[2][0]->SetBinError(j+1,errs2[0]);
-	      effs[2][1]->SetBinError(j+1,errs2[1]);
-	      effs[2][2]->SetBinError(j+1,errs2[2]);
+	      //effs[2][0]->SetBinError(j+1,errs2[0]);
+	      //effs[2][1]->SetBinError(j+1,errs2[1]);
+	      //effs[2][2]->SetBinError(j+1,errs2[2]);
 
 
 
@@ -308,11 +384,42 @@ int timing_eff()
 	      usegaus->SetParameters(thefit->GetParameter(1),thefit->GetParameter(2),thefit->GetParameter(3));
 	      higaus->SetParameters(thefit->GetParameter(1)+thefit->GetParError(1),thefit->GetParameter(2)+thefit->GetParError(2),thefit->GetParameter(3)+thefit->GetParError(3));
 	      logaus->SetParameters(thefit->GetParameter(1)-thefit->GetParError(1),thefit->GetParameter(2)+thefit->GetParError(2),thefit->GetParameter(3)+thefit->GetParError(3));
-	      double errshi[3] = {higaus->Integral(dtc[0],dtc[1])/higaus->Integral(-30,30)-usegaus->Integral(dtc[0],dtc[1])/usegaus->Integral(-30,30),higaus->Integral(dtv[0],dtv[1])/higaus->Integral(-30,30)-usegaus->Integral(dtv[0],dtv[1])/usegaus->Integral(-30,30),higaus->Integral(ltc[0],ltc[1])/higaus->Integral(-30,30)-usegaus->Integral(ltc[0],ltc[1])/usegaus->Integral(-30,30)};
-	      double errslo[3] = {logaus->Integral(dtc[0],dtc[1])/logaus->Integral(-30,30)-usegaus->Integral(dtc[0],dtc[1])/usegaus->Integral(-30,30),logaus->Integral(dtv[0],dtv[1])/logaus->Integral(-30,30)-usegaus->Integral(dtv[0],dtv[1])/usegaus->Integral(-30,30),logaus->Integral(ltc[0],ltc[1])/logaus->Integral(-30,30)-usegaus->Integral(ltc[0],ltc[1])/usegaus->Integral(-30,30)};
-	      effs[1][0]->SetBinContent(j+1,usegaus->Integral(dtc[0],dtc[1])/usegaus->Integral(-30,30));
-	      effs[1][1]->SetBinContent(j+1,usegaus->Integral(dtv[0],dtv[1])/usegaus->Integral(-30,30));
-	      effs[1][2]->SetBinContent(j+1,usegaus->Integral(ltc[0],ltc[1])/usegaus->Integral(-30,30));
+	      double fit_purity_dt_nom = usegaus->Integral(dtc[0],dtc[1]) / thefit->Integral(dtc[0],dtc[1]);
+	      double nwin_dt_nom = 0.0;
+	      int nwin_dt_bins = 0;
+	      double nside_dt = 0.0;
+	      int nside_dt_bins = 0;
+	      for(int b = 1; b <= nomcuts[i][j]->GetNbinsX(); ++b)
+		{
+		  double x = nomcuts[i][j]->GetXaxis()->GetBinCenter(b);
+		  double v = nomcuts[i][j]->GetBinContent(b);
+		  if(x >= dtc[0] && x <= dtc[1])
+		    {
+		      nwin_dt_nom += v;
+		      ++nwin_dt_bins;
+		    }
+		  if((x >= 15.0 && x <= 30.0) || (x <= -15.0 && x >= -30.0))
+		    {
+		      nside_dt += v;
+		      ++nside_dt_bins;
+		    }
+		}
+	      double bg_dt_per_bin = (nside_dt_bins > 0) ? nside_dt / nside_dt_bins : 0.0;
+	      double raw_purity_dt_nom = 0.0;
+	      if(nwin_dt_nom > 0.0)
+		{
+		  double sig_dt = nwin_dt_nom - bg_dt_per_bin * nwin_dt_bins;
+		  if(sig_dt < 0.0) sig_dt = 0.0;
+		  raw_purity_dt_nom = sig_dt / nwin_dt_nom;
+		}
+	      cout << "[DIAG] j=" << j << " delta-time nominal purity: fit="
+		   << fit_purity_dt_nom << " raw(sideband-subtracted)="
+		   << raw_purity_dt_nom << endl;
+	      double errshi[3] = {higaus->Integral(dtc[0],dtc[1])/(doEff?higaus->Integral(-30,30):thefit->Integral(dtc[0],dtc[1]))-usegaus->Integral(dtc[0],dtc[1])/(doEff?usegaus->Integral(-30,30):thefit->Integral(dtc[0],dtc[1])),higaus->Integral(dtv[0],dtv[1])/(doEff?higaus->Integral(-30,30):thefit->Integral(dtc[0],dtc[1]))-usegaus->Integral(dtv[0],dtv[1])/(doEff?usegaus->Integral(-30,30):thefit->Integral(dtc[0],dtc[1])),higaus->Integral(-7,3)/(doEff?higaus->Integral(-30,30):thefit->Integral(dtc[0],dtc[1]))-usegaus->Integral(-7,3)/(doEff?usegaus->Integral(-30,30):thefit->Integral(dtc[0],dtc[1]))};
+	      double errslo[3] = {logaus->Integral(dtc[0],dtc[1])/logaus->Integral(-30,30)-usegaus->Integral(dtc[0],dtc[1])/(doEff?usegaus->Integral(-30,30):thefit->Integral(dtc[0],dtc[1])),logaus->Integral(dtv[0],dtv[1])/logaus->Integral(-30,30)-usegaus->Integral(dtv[0],dtv[1])/(doEff?usegaus->Integral(-30,30):thefit->Integral(dtc[0],dtc[1])),logaus->Integral(-7,3)/logaus->Integral(-30,30)-usegaus->Integral(-7,3)/(doEff?usegaus->Integral(-30,30):thefit->Integral(dtc[0],dtc[1]))};
+	      effs[1][0]->SetBinContent(j+1,usegaus->Integral(dtc[0],dtc[1])/(doEff?usegaus->Integral(-30,30):thefit->Integral(dtc[0],dtc[1])));
+	      effs[1][1]->SetBinContent(j+1,usegaus->Integral(dtv[0],dtv[1])/(doEff?usegaus->Integral(-30,30):thefit->Integral(dtc[0],dtc[1])));
+	      effs[1][2]->SetBinContent(j+1,usegaus->Integral(-7,3)/(doEff?usegaus->Integral(-30,30):thefit->Integral(dtc[0],dtc[1])));
 	      double errs[3] = {(abs(errshi[0])+abs(errslo[0]))/2,(abs(errshi[1])+abs(errslo[1]))/2,(abs(errshi[2])+abs(errslo[2]))/2};
 	      for(int k=0; k<3; ++k)
 		{
@@ -409,7 +516,7 @@ int timing_eff()
   file->cd();
   int colors[3] = {kRed+2, kAzure+2, kSpring+2};
   string labels[3] = {"Nominal cut","Widened by 1 ns","Narrowed by 1 ns"};
-  string type[3] = {"t_{lead} Cut Efficiency","#Delta-t Cut Efficiency","Both Timing Cuts Efficiency"};
+  string type[3] = {std::string("t_{lead} Cut ")+(doEff?"Efficiency":"Purity"),std::string("#Delta t Cut ")+(doEff?"Efficiency":"Purity"),std::string("Both Timing Cuts ")+(doEff?"Efficiency":"Purity")};
   TLegend* leg = new TLegend(0.6,0.62,0.9,0.74);
   leg->SetFillStyle(0);
   leg->SetBorderSize(0);
@@ -445,7 +552,8 @@ int timing_eff()
       leg->Draw();
       maintexts(0.9,0.6);
       //drawText(type[i].c_str(),0.6,0.78,0,kBlack,0.03);
-      c->SaveAs(("eff_plots/effstype"+to_string(i)+".pdf").c_str());
+      c->SaveAs((std::string("eff_plots/")+(doEff?"eff":"pur")+"stype"+to_string(i)+".pdf").c_str());
+    
     }
   return 0;
 }

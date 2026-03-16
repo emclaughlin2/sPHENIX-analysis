@@ -62,11 +62,11 @@ void mbd_vertex_eff_sim(std::string runtype = "mb", int start_seg = 0, int end_s
         //truthjet_pt_min = 0;
         //truthjet_pt_max = 14;
     } else if (runtype == "jet10") {
-        weight_scale = Jet10GeV_scale;
+        weight_scale = 1.0; // 3.997e+06 pb
         truthjet_pt_min = 14;
         truthjet_pt_max = 35;
     } else if (runtype == "jet30") {
-        weight_scale = Jet30GeV_scale;
+        weight_scale = (2.502e-9)/(3.997e-6); // 2.502e+03 pb
         truthjet_pt_min = 35;
         truthjet_pt_max = 3000;
     } else {

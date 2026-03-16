@@ -1,4 +1,12 @@
-#include "unfold_Def.h"
+double calibptbins[] = {21, 26, 32.5, 40.5, 63.5}; // 52.0
+double truthptbins[] = {17, 21, 26, 32.5, 40.5, 63.5, 82}; // 72
+double calibetbins[] = {-1.08, -0.1, 0.0, 0.1, 1.08, 1.97, 3.05, 4.68, 6.2, 15.0}; // calib bins set 1
+double truthetbins[] = {0.0, 0.5, 1.08, 1.97, 3.05, 4.68, 6.2, 15.0, 35.0};
+int calibnet = sizeof(calibetbins) / sizeof(calibetbins[0]) - 1;
+int truthnet = sizeof(truthetbins) / sizeof(truthetbins[0]) - 1;
+int calibnpt = sizeof(calibptbins) / sizeof(calibptbins[0]) - 1;
+int truthnpt = sizeof(truthptbins) / sizeof(truthptbins[0]) - 1;
+//#include "unfold_Def.h"
 
 void plot_calibet(const char* infile = "input.root") 
 {
@@ -12,11 +20,11 @@ void plot_calibet(const char* infile = "input.root")
 
     // Input histogram names
     std::vector<std::string> names = {
-        "h_calibjet_pt_dijet_eff" }; /*,
+        "h_calibjet_pt_dijet_eff",
         "h_calibjet_pt_dijet_pu_correct_et",
         "h_calibjet_pt_pu_up_et",
         "h_calibjet_pt_pu_down_et"
-    };*/
+    };
 
     // Labels
     std::vector<std::string> labels = {
@@ -28,6 +36,7 @@ void plot_calibet(const char* infile = "input.root")
 
     std::vector<TH1D*> projY_hists;
     std::vector<TLine*> mean_lines;
+    std::vector<float> means;
 
     for (size_t i = 0; i < names.size(); i++) {
         TH2D* h_uni = (TH2D*)f->Get(names[i].c_str());
@@ -55,6 +64,9 @@ void plot_calibet(const char* infile = "input.root")
 
         // Projection on Y (variable-binned axis)
         TH1D* py = h_var->ProjectionY((names[i] + "_py").c_str());
+        double mean = py->GetMean();
+        double ymax = py->GetBinContent(py->FindBin(py->GetMean()));
+        means.push_back(mean);
 
         // Scale by bin width
         for (int b = 1; b <= py->GetNbinsX(); b++) {
@@ -79,9 +91,7 @@ void plot_calibet(const char* infile = "input.root")
         projY_hists.push_back(py);
 
         // Compute mean and draw vertical line
-        double mean = py->GetMean();
-        double ymax = py->GetBinContent(py->FindBin(py->GetMean()));
-        TLine* line = new TLine(mean, 0, mean, ymax);
+        TLine* line = new TLine(mean, 0, mean, 1);
         line->SetLineColor(i+1);
         line->SetLineStyle(2); // dashed
         line->SetLineWidth(2);
@@ -92,13 +102,14 @@ void plot_calibet(const char* infile = "input.root")
     TCanvas* c = new TCanvas("c","PU corrections",600,500);
     gStyle->SetOptStat(0);
 
-    TLegend* leg = new TLegend(0.6,0.75,0.88,0.88);
+    TLegend* leg = new TLegend(0.3,0.75,0.88,0.88);
     bool first = true;
     for (size_t i = 0; i < projY_hists.size(); i++) {
         if (!projY_hists[i]) continue;
         if (first) {
             projY_hists[i]->GetXaxis()->SetTitle("#SigmaE_{T} [GeV]");
             projY_hists[i]->GetYaxis()->SetTitle("1/N dN/d#SigmaE_{T} [GeV^{-1}]");
+            projY_hists[i]->GetYaxis()->SetRangeUser(0,1);
             //projY_hists[i]->GetXaxis()->SetRangeUser(-1.08,6.2);
             projY_hists[i]->SetMarkerStyle(20);
             projY_hists[i]->Draw();
@@ -109,10 +120,10 @@ void plot_calibet(const char* infile = "input.root")
             projY_hists[i]->Draw("SAME"); 
         }
         mean_lines[i]->Draw("SAME");
-        leg->AddEntry(projY_hists[i], labels[i].c_str(), "lpe");
+        leg->AddEntry(projY_hists[i], (labels[i]+" mean = "+to_string(means[i])).c_str(), "lpe");
     }
     leg->Draw();
 
-    c->SaveAs("uniform_bin_run21_figure/calibet_et_binning_comparison.pdf");
-    c->SaveAs("uniform_bin_run21_figure/calibet_et_binning_comparison.png");
+    c->SaveAs("plots_run28/calibet_et_binning_comparison.pdf");
+    c->SaveAs("plots_run28/calibet_et_binning_comparison.png");
 }

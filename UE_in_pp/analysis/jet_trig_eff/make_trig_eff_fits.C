@@ -20,23 +20,40 @@ int color[4] = {1,2,4,6};
 int eff_color[5] = {1,2,4,6,8}; // Colors for efficiency comparison
 int quad_color[4] = {1,2,4,6}; // Colors for quadrant comparison
 
-int make_trig_eff_fits() {
+int make_trig_eff_fits(std::string time_cut, bool do_quad = false) {
 
     gROOT->LoadMacro("/sphenix/u/egm2153/spring_2023/sPhenixStyle.C");
     gROOT->ProcessLine("SetsPhenixStyle()");
 
     // --- Load TEfficiency ---
-    TFile* f2 = TFile::Open("ana509_analysis_output/1.5mrad_only_dijet_output.root");  // replace with your file
+    // options: 0mrad_early_dijet_output.root, 0mrad_mid_dijet_output.root, 1.5mrad_only_dijet_output.root
+    TFile* f2 = TFile::Open(Form("ana509_analysis_output/%s_dijet_output.root", time_cut.c_str()));  // replace with your file
+
     TH1D* h_jets[4];
-    std::vector<std::string> hist_name = {"h_leadjet_zcut_mb","h_leadjet_zcut_jet8","h_leadjet_zcut_jet10","h_leadjet_zcut_jet12"};
-    std::vector<std::string> leg_tags = {"MB (trig12)","Jet8 (trig33)","Jet10 (trig 34)","Jet12 (trig35)"};
-    //std::vector<std::string> hist_name = {"h_leadjet_mb","h_leadjet_jet8","h_leadjet_jet10","h_leadjet_jet12"};
-    //std::vector<std::string> leg_tags = {"MB (trig10)","Jet8 (trig17)","Jet10 (trig 18)","Jet12 (trig19)"};
-    for (int i = 0; i < 4; i++) {
+    std::vector<std::string> hist_name;
+    std::vector<std::string> leg_tags;
+    if (time_cut == "0mrad_early") {
+        hist_name = {"h_leadjet_mb","h_leadjet_jet8","h_leadjet_jet10","h_leadjet_jet12"};
+        leg_tags = {"MB (trig10)","Jet8 (trig17)","Jet10 (trig 18)","Jet12 (trig19)"};
+    } else if (time_cut == "0mrad_mid") {
+        hist_name = {"h_leadjet_mb","h_leadjet_jet8","h_leadjet_jet10","h_leadjet_jet12"};
+        leg_tags = {"MB (trig12)","Jet8 (trig19)","Jet10 (trig 20)","Jet12 (trig21)"};
+    } else if (time_cut == "1.5mrad_only") {
+        hist_name = {"h_leadjet_zcut_mb","h_leadjet_zcut_jet8","h_leadjet_zcut_jet10","h_leadjet_zcut_jet12"};
+        leg_tags = {"MB (trig12)","Jet8 (trig33)","Jet10 (trig 34)","Jet12 (trig35)"};
+    }
+
+    for (int i = 0; i < hist_name.size(); i++) {
         h_jets[i] = (TH1D*) f2->Get(hist_name[i].c_str());
     }
-    TEfficiency* jet10 = (TEfficiency*) f2->Get("eff_h_leadjet_zcut_jet10");
-    //TEfficiency* jet10 = (TEfficiency*) f2->Get("eff_h_leadjet_jet10");
+    TEfficiency* jet10;
+    if (time_cut == "0mrad_early") {
+        jet10 = (TEfficiency*) f2->Get("eff_h_leadjet_jet10");
+    } else if (time_cut == "0mrad_mid") {
+        jet10 = (TEfficiency*) f2->Get("eff_h_leadjet_jet10");
+    } else if (time_cut == "1.5mrad_only") {
+        jet10 = (TEfficiency*) f2->Get("eff_h_leadjet_zcut_jet10");
+    }
     TH1D* passedHisto = (TH1D*)jet10->GetPassedHistogram();
     TH1D* totalHisto = (TH1D*)jet10->GetTotalHistogram();
     TH1D* eff_hist = new TH1D(); // Or other appropriate TH1 type
@@ -49,13 +66,12 @@ int make_trig_eff_fits() {
 
     TF1* fit_func0 = new TF1(
         "fit_func",
-        "[0] + [1]/pow(1+exp(-[3]*(x-[2])),[4])",
-        6, 30
+        "[0] + (1.0 - [0])/pow(1+exp(-[2]*(x-[1])),[3])",
+        6, 40
     );
     fit_func0->SetLineColor(6);
     fit_func0->SetParameters(
         0.0022,   // [0] baseline
-        0.98,   // [1] plateau height
         10.87,   // [2] turn-on location
         0.85,    // [3] slope
         1.0    // [4] sharpness
@@ -65,30 +81,38 @@ int make_trig_eff_fits() {
 
     TF1* fit_func = new TF1(
         "fit_func",
-        "[0] + [1]/pow(1+exp(-[3]*(x-[2])),[4]) + [5]*pow(x,[6])",
-        6, 30
-    );
+        "[0] + (1.0 - [0])/pow(1+exp(-[2]*(x-[1])),[3])",
+        6, 100);
     fit_func->SetLineColor(3);
-    fit_func->SetParameters(
-        0.0022,   // [0] baseline
-        0.98,   // [1] plateau height
-        10.87,   // [2] turn-on location
-        0.85,    // [3] slope
-        1.0,     // [4] sharpness
-        0.002,
-        0.8
-    );
-    fit_func->FixParameter(0, fit_func0->GetParameter(0));
-    fit_func->FixParameter(1, fit_func0->GetParameter(1));
-    fit_func->FixParameter(2, fit_func0->GetParameter(2));
-    fit_func->FixParameter(3, fit_func0->GetParameter(3));
-
-    //TF1* fit_func = new TF1("fit_func", "[0] + [1]/pow(1+exp(-[3]*(x-[2])),[4]) + [5]*pow(x,[6])", 6, 100);
-    //fit_func->SetParameters(0.0022, 0.965, 7.36, 0.467, 5.801, 0.0019, 0.8);
+    fit_func->SetParameter(0, fit_func0->GetParameter(0));
+    fit_func->SetParameter(1, fit_func0->GetParameter(1));
+    fit_func->SetParameter(2, fit_func0->GetParameter(2));
+    fit_func->SetParameter(3, fit_func0->GetParameter(3));
 
     // --- Binomial likelihood fit ---
-    jet10->Fit(fit_func,"RLS"); // likelihood fit
+    TFitResultPtr fitRes = jet10->Fit(fit_func,"RLS"); // likelihood fit
 
+    const int nPoints = 1000;
+    double xMin = 8, xMax = 100;
+    std::vector<double> xvals(nPoints), yvals(nPoints), ci(nPoints);
+    TGraph* gr_plus1 = new TGraph(nPoints);
+    TGraph* gr_minus1 = new TGraph(nPoints);
+    for (int i = 0; i < nPoints; ++i)
+    {
+        double x = xMin + i * (xMax - xMin) / (nPoints - 1);
+        xvals[i] = x;
+        yvals[i] = fit_func->Eval(x);
+    }
+    // 68.3% ~ 1 sigma band
+    // last arg: set to false if you do NOT want chi2 scaling of errors
+    fitRes->GetConfidenceIntervals(nPoints, 1, 1, xvals.data(), ci.data(), 0.683, false);
+    for (int i = 0; i < nPoints; ++i)
+    {
+        gr_plus1->SetPoint(i, xvals[i], yvals[i] + ci[i]);
+        gr_minus1->SetPoint(i, xvals[i], yvals[i] - ci[i]);
+    }
+
+    /*
     // --- Extract fit parameters and errors ---
     int npar = fit_func->GetNpar();
     std::vector<double> p(npar), ep(npar);
@@ -100,7 +124,7 @@ int make_trig_eff_fits() {
     // --- Toy MC for ±1σ bands ---
     const int nToys = 1000;
     const int nPoints = 500;
-    double xMin = 6, xMax = 30;
+    double xMin = 8, xMax = 25;
 
     TGraph* gr_plus1   = new TGraph(nPoints);
     TGraph* gr_minus1  = new TGraph(nPoints);
@@ -126,6 +150,8 @@ int make_trig_eff_fits() {
         gr_minus1->SetPoint(i, x, y_low);
     }
 
+    */
+
     // --- Wrap TGraphs with TSpline3 for smooth ±1σ curves ---
     TSpline3* spline_plus1   = new TSpline3("spline_plus1",   gr_plus1);
     TSpline3* spline_minus1  = new TSpline3("spline_minus1",  gr_minus1);
@@ -136,7 +162,7 @@ int make_trig_eff_fits() {
     spline_minus1->SetLineColor(kBlue);
 
     // --- Save to ROOT file ---
-    TFile outFile("1.5mrad_tefficiency_fits.root","RECREATE");
+    TFile outFile(Form("%s_tefficiency_fits.root", time_cut.c_str()),"RECREATE");
     fit_func->Write("fit_nominal");        // nominal curve
     spline_plus1->Write("fit_plus1");      // upper 1σ
     spline_minus1->Write("fit_minus1");    // lower 1σ
@@ -157,7 +183,7 @@ int make_trig_eff_fits() {
     spline_plus1->Draw("L SAME");
     spline_minus1->Draw("L SAME");
     c->Update();
-    c->SaveAs("1.5mrad_tefficiency_fit.png");
+    c->SaveAs(Form("%s_tefficiency_fit.png", time_cut.c_str()));
 
         // --- Optional: draw ---
     TCanvas* c2 = new TCanvas("c2","TEfficiency fit with smooth ±1σ",800,600);
@@ -177,7 +203,7 @@ int make_trig_eff_fits() {
         }
     }
     leg->Draw("same");
-    c2->SaveAs("1.5mrad_all_jet_events.png");
+    c2->SaveAs(Form("%s_all_jet_events.png", time_cut.c_str()));
 
     // --- Efficiency Comparison ---
     std::vector<std::string> eff_names = {
@@ -229,9 +255,10 @@ int make_trig_eff_fits() {
     }
     leg_eff->Draw("same");
     c3->Update();
-    c3->SaveAs("1.5mrad_efficiency_comparison.png");
+    c3->SaveAs(Form("%s_efficiency_comparison.png", time_cut.c_str()));
     std::cout << "Saved efficiency comparison to efficiency_comparison.png" << std::endl;
 
+    if (do_quad) {
     // --- Quadrant Efficiency Comparisons ---
     // Define efficiency base names (without quadrant suffix) and their labels
     // Base names are like "eff_h_leadjet_zcut_jet12", quadrants are _0, _1, _2, _3
@@ -313,7 +340,7 @@ int make_trig_eff_fits() {
         c_quad->Update();
         
         // Save the plot
-        std::string out_name = "1.5mrad_quadrant_comparison_" + quad_eff_labels[eff_idx] + ".png";
+        std::string out_name = Form("%s_quadrant_comparison_%s.png", time_cut.c_str(), quad_eff_labels[eff_idx].c_str());
         c_quad->SaveAs(out_name.c_str());
         std::cout << "Saved quadrant comparison to " << out_name << std::endl;
         
@@ -434,11 +461,12 @@ int make_trig_eff_fits() {
                 c_ratio->Update();
                 
                 // Save the plot
-                std::string out_name_ratio = "1.5mrad_quadrant_ratio_" + quad_eff_labels[eff_idx] + ".png";
+                std::string out_name_ratio = Form("%s_quadrant_ratio_%s.png", time_cut.c_str(), quad_eff_labels[eff_idx].c_str());
                 c_ratio->SaveAs(out_name_ratio.c_str());
                 std::cout << "Saved quadrant ratio plot to " << out_name_ratio << std::endl;
             }
         }
+    }
     }
 
     return 0;

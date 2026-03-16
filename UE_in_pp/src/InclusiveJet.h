@@ -104,6 +104,10 @@ class InclusiveJet : public SubsysReco
   {
     m_doMBDeff = flag;
   }
+  void doMBDeffsyst(int flag)
+  {
+    m_doMBDeffsyst = flag;
+  }
   void
   doCalibJet(int flag)
   {
@@ -209,6 +213,7 @@ class InclusiveJet : public SubsysReco
   bool m_doLeadPtCut = true;
   bool m_doTruthLeadPtCut = false;
   bool m_doMBDeff = false;
+  bool m_doMBDeffsyst = false;
   bool m_doCalibJet = true;
   
   float m_totalCalo;
@@ -268,6 +273,14 @@ class InclusiveJet : public SubsysReco
   float truthpar_eta[100000];
   float truthpar_phi[100000];
   int truthpar_pid[100000];
+
+  int old_truthpar_n;
+  float old_truthpar_pz[100000];
+  float old_truthpar_pt[100000];
+  float old_truthpar_e[100000];
+  float old_truthpar_eta[100000];
+  float old_truthpar_phi[100000];
+  int old_truthpar_pid[100000];
 
   int m_emcal_clsmult;
   float m_emcal_cluster_e[2000];

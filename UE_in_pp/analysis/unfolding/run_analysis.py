@@ -8,20 +8,22 @@ steps = {
         ("condor_submit analyze_sim_1_condor.sub", None)
     ],
     2: [
-        ("hadd -f -k output_dijet_bkg_cut_sim_iter_1_jet10.root output_dijet_bkg_cut_sim_iter_1_jet10_*.root", "analysis_sim_run28_output"),
-        ("hadd -f -k output_dijet_bkg_cut_sim_iter_1_jet15.root output_dijet_bkg_cut_sim_iter_1_jet15_*.root", "analysis_sim_run28_output"),
+        ("hadd -f -k output_dijet_bkg_cut_sim_iter_1_jet5.root output_dijet_bkg_cut_sim_iter_1_jet5_*.root", "analysis_sim_run28_output"),
+        ("hadd -f -k output_dijet_bkg_cut_sim_iter_1_jet12.root output_dijet_bkg_cut_sim_iter_1_jet12_*.root", "analysis_sim_run28_output"),
         ("hadd -f -k output_dijet_bkg_cut_sim_iter_1_jet20.root output_dijet_bkg_cut_sim_iter_1_jet20_*.root", "analysis_sim_run28_output"),
         ("hadd -f -k output_dijet_bkg_cut_sim_iter_1_jet30.root output_dijet_bkg_cut_sim_iter_1_jet30_*.root", "analysis_sim_run28_output"),
+        ("hadd -f -k output_dijet_bkg_cut_sim_iter_1_jet40.root output_dijet_bkg_cut_sim_iter_1_jet40_*.root", "analysis_sim_run28_output"),
         ("hadd -f -k output_dijet_bkg_cut_sim_iter_1_jet50.root output_dijet_bkg_cut_sim_iter_1_jet50_*.root", "analysis_sim_run28_output"),
-        ("hadd -f -k output_dijet_bkg_cut_sim_iter_1_jet70.root output_dijet_bkg_cut_sim_iter_1_jet70_*.root", "analysis_sim_run28_output"),
-        ("hadd -f -k output_dijet_bkg_cut_sim_iter_1.root output_dijet_bkg_cut_sim_iter_1_jet10.root output_dijet_bkg_cut_sim_iter_1_jet15.root output_dijet_bkg_cut_sim_iter_1_jet20.root output_dijet_bkg_cut_sim_iter_1_jet30.root output_dijet_bkg_cut_sim_iter_1_jet50.root output_dijet_bkg_cut_sim_iter_1_jet70.root", "analysis_sim_run28_output"),
-        ("hadd -f -k output_none_bkg_cut_sim_iter_1_jet10.root output_none_bkg_cut_sim_iter_1_jet10_*.root", "analysis_sim_run28_output"),
-        ("hadd -f -k output_none_bkg_cut_sim_iter_1_jet15.root output_none_bkg_cut_sim_iter_1_jet15_*.root", "analysis_sim_run28_output"),
+        ("hadd -f -k output_dijet_bkg_cut_sim_iter_1_jet60.root output_dijet_bkg_cut_sim_iter_1_jet60_*.root", "analysis_sim_run28_output"),
+        ("hadd -f -k output_dijet_bkg_cut_sim_iter_1.root output_dijet_bkg_cut_sim_iter_1_jet5.root output_dijet_bkg_cut_sim_iter_1_jet12.root output_dijet_bkg_cut_sim_iter_1_jet20.root output_dijet_bkg_cut_sim_iter_1_jet30.root output_dijet_bkg_cut_sim_iter_1_jet40.root output_dijet_bkg_cut_sim_iter_1_jet50.root output_dijet_bkg_cut_sim_iter_1_jet60.root", "analysis_sim_run28_output"),
+        ("hadd -f -k output_none_bkg_cut_sim_iter_1_jet5.root output_none_bkg_cut_sim_iter_1_jet5_*.root", "analysis_sim_run28_output"),
+        ("hadd -f -k output_none_bkg_cut_sim_iter_1_jet12.root output_none_bkg_cut_sim_iter_1_jet12_*.root", "analysis_sim_run28_output"),
         ("hadd -f -k output_none_bkg_cut_sim_iter_1_jet20.root output_none_bkg_cut_sim_iter_1_jet20_*.root", "analysis_sim_run28_output"),
         ("hadd -f -k output_none_bkg_cut_sim_iter_1_jet30.root output_none_bkg_cut_sim_iter_1_jet30_*.root", "analysis_sim_run28_output"),
+        ("hadd -f -k output_none_bkg_cut_sim_iter_1_jet40.root output_none_bkg_cut_sim_iter_1_jet40_*.root", "analysis_sim_run28_output"),
         ("hadd -f -k output_none_bkg_cut_sim_iter_1_jet50.root output_none_bkg_cut_sim_iter_1_jet50_*.root", "analysis_sim_run28_output"),
-        ("hadd -f -k output_none_bkg_cut_sim_iter_1_jet70.root output_none_bkg_cut_sim_iter_1_jet70_*.root", "analysis_sim_run28_output"),
-        ("hadd -f -k output_none_bkg_cut_sim_iter_1.root output_none_bkg_cut_sim_iter_1_jet10.root output_none_bkg_cut_sim_iter_1_jet15.root output_none_bkg_cut_sim_iter_1_jet20.root output_none_bkg_cut_sim_iter_1_jet30.root output_none_bkg_cut_sim_iter_1_jet50.root output_none_bkg_cut_sim_iter_1_jet70.root", "analysis_sim_run28_output"),
+        ("hadd -f -k output_none_bkg_cut_sim_iter_1_jet60.root output_none_bkg_cut_sim_iter_1_jet60_*.root", "analysis_sim_run28_output"),
+        ("hadd -f -k output_none_bkg_cut_sim_iter_1.root output_none_bkg_cut_sim_iter_1_jet5.root output_none_bkg_cut_sim_iter_1_jet12.root output_none_bkg_cut_sim_iter_1_jet20.root output_none_bkg_cut_sim_iter_1_jet30.root output_none_bkg_cut_sim_iter_1_jet40.root output_none_bkg_cut_sim_iter_1_jet50.root output_none_bkg_cut_sim_iter_1_jet60.root", "analysis_sim_run28_output"),
     ],
     3: [
         ("condor_submit analyze_sim_2_condor.sub", None)
@@ -49,11 +51,10 @@ steps = {
         ("hadd -f -k output_none_bkg_cut_sim_iter_3.root output_none_bkg_cut_sim_iter_3_jet*_*.root", "analysis_sim_run28_output"),
         ],
     10: [
-        ("root -l -q -b 'do_unfold.C(\"analysis_sim_run28_output/output_dijet_bkg_cut_sim_iter_3.root\",\"analysis_data_run28_output/output_pu_correct_data_dijet_bkg_cut.root\",\"run28_output_files/output_unfolded_data_dijet_bkg_cut_\",1)'", None),
-        ("root -l -q -b 'do_unfold.C(\"analysis_sim_run28_output/output_none_bkg_cut_sim_iter_3.root\",\"analysis_data_run28_output/output_pu_correct_data_efrac_bkg_cut.root\",\"run28_output_files/output_unfolded_data_efrac_bkg_cut_\",1)'", None),
-        #("hadd -f -k output_unfolded_data_dijet_bkg_cut_run28_iter_3_1000toys.root output_unfolded_data_dijet_bkg_cut_calib_dijet_*run28_iter_3_1000toys.root", "run28_output_files"),
-        #("hadd -f -k output_unfolded_data_efrac_bkg_cut_run28_iter_3_1000toys.root output_unfolded_data_efrac_bkg_cut_calib_dijet_*run28_iter_3_1000toys.root", "run28_output_files"),
-
+        ("root -l -q -b 'do_unfold.C(\"analysis_sim_run28_output/output_dijet_bkg_cut_sim_iter_3.root\",\"analysis_data_run28_output/output_pu_correct_data_dijet_bkg_cut.root\",\"run28_output_files/output_unfolded_data_8calibetbin_dijet_bkg_cut_\",7)'", None),
+        ("root -l -q -b 'do_unfold.C(\"analysis_sim_run28_output/output_none_bkg_cut_sim_iter_3.root\",\"analysis_data_run28_output/output_pu_correct_data_efrac_bkg_cut.root\",\"run28_output_files/output_unfolded_data_8calibetbin_efrac_bkg_cut_\",7)'", None),
+        ("hadd -f -k output_unfolded_data_8calibetbin_dijet_bkg_cut_run28_iter_3_1000toys.root output_unfolded_data_8calibetbin_dijet_bkg_cut_calib_dijet_half1_run28_iter_3_1000toys.root output_unfolded_data_8calibetbin_dijet_bkg_cut_calib_dijet_half2_run28_iter_3_1000toys.root output_unfolded_data_8calibetbin_dijet_bkg_cut_calib_dijet_jerdown_run28_iter_3_1000toys.root output_unfolded_data_8calibetbin_dijet_bkg_cut_calib_dijet_jerup_run28_iter_3_1000toys.root output_unfolded_data_8calibetbin_dijet_bkg_cut_calib_dijet_jesdown_run28_iter_3_1000toys.root output_unfolded_data_8calibetbin_dijet_bkg_cut_calib_dijet_jesup_run28_iter_3_1000toys.root output_unfolded_data_8calibetbin_dijet_bkg_cut_calib_dijet_run28_iter_3_1000toys.root", "run28_output_files"),   
+        ("hadd -f -k output_unfolded_data_8calibetbin_efrac_bkg_cut_run28_iter_3_1000toys.root output_unfolded_data_8calibetbin_efrac_bkg_cut_calib_dijet_half1_run28_iter_3_1000toys.root output_unfolded_data_8calibetbin_efrac_bkg_cut_calib_dijet_half2_run28_iter_3_1000toys.root output_unfolded_data_8calibetbin_efrac_bkg_cut_calib_dijet_jerdown_run28_iter_3_1000toys.root output_unfolded_data_8calibetbin_efrac_bkg_cut_calib_dijet_jerup_run28_iter_3_1000toys.root output_unfolded_data_8calibetbin_efrac_bkg_cut_calib_dijet_jesdown_run28_iter_3_1000toys.root output_unfolded_data_8calibetbin_efrac_bkg_cut_calib_dijet_jesup_run28_iter_3_1000toys.root output_unfolded_data_8calibetbin_efrac_bkg_cut_calib_dijet_run28_iter_3_1000toys.root", "run28_output_files"),   
     ],
     11: [
         ("root -l -q -b 'plot_unfold.C()'", None),

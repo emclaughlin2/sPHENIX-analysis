@@ -9,6 +9,9 @@ with:
     trig in {10, 15, 20, 30, 50, 70}
 """
 
+# 1.4903e-6 - Jet 12 cross section -> scale 1.4903
+# 3.997e-6 - Jet 10 cross section -> scale 3.997
+
 import argparse
 import os
 import sys
@@ -17,10 +20,14 @@ import ROOT
 
 
 CUTS = ["dijet", "none"]
-TRIGS = [10, 15, 20, 30, 50, 70]
+TRIGS = [5, 12, 20, 30, 40, 50, 60]
+#TRIGS = [10,20,30,50]
+SCALE = 1.4903 * 0.81608598
+#SCALE = 3.997
 HIST_NAMES = [
     "h_lead_spectra_record",
     "h_lead_truth_spectra_record",
+    "h_jes_qa",
     #"h_et_transverse_record",
     #"h_et_truth_transverse_record",
 ]
@@ -36,12 +43,12 @@ def load_sphenix_style() -> None:
 def color_for_index(idx: int) -> int:
     """Return a readable line color for each trigger index."""
     palette = [
+        ROOT.kCyan + 2,
         ROOT.kRed + 1,
         ROOT.kBlue + 1,
         ROOT.kGreen + 2,
         ROOT.kMagenta + 1,
         ROOT.kOrange + 7,
-        ROOT.kCyan + 2,
     ]
     return palette[idx % len(palette)]
 
@@ -64,8 +71,34 @@ def fetch_histogram(root_file, hist_name: str):
     hist = root_file.Get(hist_name)
     if not hist:
         return None
-    hist.SetDirectory(0)
-    return hist
+    if hist_name == "h_jes_qa":
+        hist1d = hist.ProjectionY('h_jes_qa_pjy')
+        hist1d.SetDirectory(0)
+        return hist1d
+    else:
+        hist.SetDirectory(0)
+        return hist
+
+
+def fit_jes_histogram(hist):
+    """
+    Fit JES projection histogram with a Gaussian around 1.0.
+    Returns (mean, sigma) or (None, None) if fit fails.
+    """
+    fit_min = 0.6
+    fit_max = 1.4
+    fit = ROOT.TF1(f"f_gaus_{hist.GetName()}", "gaus", fit_min, fit_max)
+    fit.SetParameters(hist.GetMaximum(), 1.0, 0.1)
+    fit.SetParLimits(1, 0.8, 1.2)
+    fit.SetParLimits(2, 0.01, 0.5)
+
+    fit_status = int(hist.Fit(fit, "RQ0"))
+    if fit_status != 0:
+        return None, None
+
+    mean = fit.GetParameter(1)
+    sigma = fit.GetParameter(2)
+    return mean, sigma
 
 
 def make_overlay_for_cut_and_hist(
@@ -92,16 +125,27 @@ def make_overlay_for_cut_and_hist(
         if not hist:
             print(f"[warn] Histogram '{hist_name}' missing in {filename}")
             continue
-
+        if hist_name != 'h_jes_qa':
+            hist.Rebin(8)
+            hist.Scale(1.0/8.0)
+        hist.Scale(SCALE)
         hist.SetLineColor(color_for_index(i))
         hist.SetLineWidth(2)
         hist.SetMarkerColor(color_for_index(i))
         hist.SetMarkerStyle(20 + (i % 10))
         hist.SetMarkerSize(0.9)
-        hist.GetXaxis().SetRangeUser(14,80)
+        if hist_name == 'h_jes_qa':
+            hist.GetXaxis().SetRangeUser(0,5)
+        else:
+            hist.GetXaxis().SetRangeUser(14,100)
         hist.GetYaxis().SetRangeUser(0.000001,20000)
 
-        histograms.append((trig, hist))
+        fit_mean = None
+        fit_sigma = None
+        if hist_name == "h_jes_qa":
+            fit_mean, fit_sigma = fit_jes_histogram(hist)
+
+        histograms.append((trig, hist, fit_mean, fit_sigma))
 
         if total_hist is None:
             total_hist = hist.Clone(f"total_{cut}_{hist_name}")
@@ -117,16 +161,26 @@ def make_overlay_for_cut_and_hist(
     canvas = ROOT.TCanvas(canvas_name, canvas_name, 900, 700)
     canvas.SetLogy(1)
 
-    legend = ROOT.TLegend(0.56, 0.60, 0.88, 0.88)
+    legend = ROOT.TLegend(0.5, 0.60, 0.92, 0.92)
     legend.SetBorderSize(0)
     legend.SetFillStyle(0)
-    legend.SetTextSize(0.03)
+    legend.SetTextSize(0.025)
 
     first = True
-    for trig, hist in histograms:
+    for trig, hist, fit_mean, fit_sigma in histograms:
         draw_opt = "hist" if first else "hist same"
         hist.Draw(draw_opt)
-        legend.AddEntry(hist, f"cut={cut}, trig={trig}", "l")
+        if hist_name == "h_jes_qa" and fit_mean is not None and fit_sigma is not None:
+            legend_label = (
+                f"cut={cut}, trig={trig}, "
+                f"#mu={fit_mean:.3f}, #sigma={fit_sigma:.3f}"
+            )
+        elif hist_name == "h_jes_qa":
+            legend_label = f"cut={cut}, trig={trig}, fit failed"
+        else:
+            legend_label = f"cut={cut}, trig={trig}"
+
+        legend.AddEntry(hist, legend_label, "l")
         first = False
 
     if total_hist:
@@ -140,7 +194,7 @@ def make_overlay_for_cut_and_hist(
     canvas.Modified()
     canvas.Update()
 
-    out_base = os.path.join(output_dir, f"{cut}_{hist_name}_overlay")
+    out_base = os.path.join(output_dir, f"test_{cut}_{hist_name}_overlay")
     canvas.SaveAs(out_base + ".png")
     canvas.SaveAs(out_base + ".pdf")
     print(f"[ok] Wrote: {out_base}.png/.pdf")
@@ -159,7 +213,7 @@ def main() -> int:
     parser.add_argument(
         "-o",
         "--output-dir",
-        default="pyroot_overlays",
+        default="pyroot_overlays_run21_test",
         help="Directory to store output plots (default: pyroot_overlays)",
     )
     args = parser.parse_args()

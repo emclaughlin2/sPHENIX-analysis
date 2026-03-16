@@ -49,6 +49,7 @@ void fill_trim_1D_response_matrices(RooUnfoldResponse*& h_jetpt_resp, RooUnfoldR
 void fill_reweighted_trim_1D_response_matrices(RooUnfoldResponse*& h_jetpt_resp, RooUnfoldResponse*& h_caloet_resp, float meas_pt, float matched, float truth_pt, float meas_et, float truth_et, float weight_scale, const TMatrixD& counts_matrix, TH2D* h_counts_measured, TH2D* h_counts_truth, float trim_value, TH1D* h_jetpt_prior_weights, TH1D* h_caloet_prior_weights);
 
 TRandom3 randGen(1234);
+TRandom3 randGen2(123);
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //                                                                                                                               //
@@ -83,43 +84,41 @@ void analysis_sim(std::string runtype = "mb", int start_seg = 0, int end_seg = 2
     ////////// General Set up //////////
     double weight_scale = 1.0, truthjet_pt_min = 0, truthjet_pt_max = 3000;
     string count_filename;
-    if (runtype == "mb") {
-        std::cout << "Not using MB dataset" << std::endl;
-        //weight_scale = MB_scale;
-        //truthjet_pt_min = 0;
-        //truthjet_pt_max = 14;
-    } else if (runtype == "jet10") {
-        weight_scale = Jet10GeV_scale;
+    if (runtype == "jet5") {
+        weight_scale = Jet5GeV_scale;
+        truthjet_pt_min = 7;
+        truthjet_pt_max = 14;
+        if (iter > 1) count_filename = "analysis_sim_run28_output/output_" + bkg_cut + "_bkg_cut_sim_iter_1_jet5.root";
+    } else if (runtype == "jet12") {
+        weight_scale = Jet12GeV_scale;
         truthjet_pt_min = 14;
-        truthjet_pt_max = 17; // edited to not use jet 15
-        //truthjet_pt_max = 22;
-        if (iter > 1) count_filename = "analysis_sim_run28_output/output_" + bkg_cut + "_bkg_cut_sim_iter_1_jet10.root";
-    } else if (runtype == "jet15") {
-        weight_scale = Jet15GeV_scale;
-        truthjet_pt_min = 17;
-        truthjet_pt_max = 22;
-        if (iter > 1) count_filename = "analysis_sim_run28_output/output_" + bkg_cut + "_bkg_cut_sim_iter_1_jet15.root";
+        truthjet_pt_max = 21;
+        if (iter > 1) count_filename = "analysis_sim_run28_output/output_" + bkg_cut + "_bkg_cut_sim_iter_1_jet12.root";
     } else if (runtype == "jet20") {
         weight_scale = Jet20GeV_scale;
-        truthjet_pt_min = 22;
-        truthjet_pt_max = 35;
+        truthjet_pt_min = 21;
+        truthjet_pt_max = 32;
         if (iter > 1) count_filename = "analysis_sim_run28_output/output_" + bkg_cut + "_bkg_cut_sim_iter_1_jet20.root";
     } else if (runtype == "jet30") {
         weight_scale = Jet30GeV_scale;
-        truthjet_pt_min = 35;
-        truthjet_pt_max = 52;
+        truthjet_pt_min = 32;
+        truthjet_pt_max = 42;
         if (iter > 1) count_filename = "analysis_sim_run28_output/output_" + bkg_cut + "_bkg_cut_sim_iter_1_jet30.root";
+    } else if (runtype == "jet40") {
+        weight_scale = Jet40GeV_scale;
+        truthjet_pt_min = 42;
+        truthjet_pt_max = 52;
+        if (iter > 1) count_filename = "analysis_sim_run28_output/output_" + bkg_cut + "_bkg_cut_sim_iter_1_jet40.root";
     } else if (runtype == "jet50") {
         weight_scale = Jet50GeV_scale;
         truthjet_pt_min = 52;
-        truthjet_pt_max = 71; // edited to not use jet 70
-        //truthjet_pt_max = 1000; 
+        truthjet_pt_max = 62;
         if (iter > 1) count_filename = "analysis_sim_run28_output/output_" + bkg_cut + "_bkg_cut_sim_iter_1_jet50.root";
-    } else if (runtype == "jet70") {
-        weight_scale = Jet70GeV_scale;
-        truthjet_pt_min = 71;
+    } else if (runtype == "jet60") {
+        weight_scale = Jet60GeV_scale;
+        truthjet_pt_min = 62;
         truthjet_pt_max = 1000;
-        if (iter > 1) count_filename = "analysis_sim_run28_output/output_" + bkg_cut + "_bkg_cut_sim_iter_1_jet70.root";
+        if (iter > 1) count_filename = "analysis_sim_run28_output/output_" + bkg_cut + "_bkg_cut_sim_iter_1_jet60.root";
     } else if (runtype == "herwig_jet10") {
         weight_scale = Herwig_Jet10GeV_scale;
         truthjet_pt_min = 14;
@@ -258,7 +257,7 @@ void analysis_sim(std::string runtype = "mb", int start_seg = 0, int end_seg = 2
     std::vector<float>* unsubjet_emcal_calo_e = nullptr; chain.SetBranchStatus("jetEmcalE", 1); chain.SetBranchAddress("jetEmcalE", &unsubjet_emcal_calo_e);
     std::vector<float>* unsubjet_ihcal_calo_e = nullptr; chain.SetBranchStatus("jetIhcalE", 1); chain.SetBranchAddress("jetIhcalE", &unsubjet_ihcal_calo_e);
     std::vector<float>* unsubjet_ohcal_calo_e = nullptr; chain.SetBranchStatus("jetOhcalE", 1); chain.SetBranchAddress("jetOhcalE", &unsubjet_ohcal_calo_e);
-
+    std::vector<float>* calibjet_pt = nullptr; chain.SetBranchStatus("calibpt", 1); chain.SetBranchAddress("calibpt", &calibjet_pt);
     std::vector<float>* truthjet_e = nullptr; chain.SetBranchStatus("truthE", 1); chain.SetBranchAddress("truthE", &truthjet_e);
     std::vector<float>* truthjet_pt = nullptr; chain.SetBranchStatus("truthPt", 1); chain.SetBranchAddress("truthPt", &truthjet_pt);
     std::vector<float>* truthjet_eta = nullptr; chain.SetBranchStatus("truthEta", 1); chain.SetBranchAddress("truthEta", &truthjet_eta);
@@ -289,15 +288,15 @@ void analysis_sim(std::string runtype = "mb", int start_seg = 0, int end_seg = 2
         chain.SetBranchStatus("ohcaleta", 1); chain.SetBranchAddress("ohcaleta",ohcaleta);
         chain.SetBranchStatus("ohcalphi", 1); chain.SetBranchAddress("ohcalphi",ohcalphi);
     } else if (clusters && !emcal_clusters) {
-        chain.SetBranchStatus("clsmult2", 1); chain.SetBranchAddress("clsmult2",&clsmult);
-        chain.SetBranchStatus("cluster2_e", 1); chain.SetBranchAddress("cluster2_e",cluster_e);
-        chain.SetBranchStatus("cluster2_eta", 1); chain.SetBranchAddress("cluster2_eta",cluster_eta);
-        chain.SetBranchStatus("cluster2_phi", 1); chain.SetBranchAddress("cluster2_phi",cluster_phi);
-        chain.SetBranchStatus("cluster2_ntowers", 1); chain.SetBranchAddress("cluster2_ntowers",cluster_ntowers);
-        chain.SetBranchStatus("cluster2_tower_e", 1); chain.SetBranchAddress("cluster2_tower_e",cluster_tower_e);
-        chain.SetBranchStatus("cluster2_tower_calo", 1); chain.SetBranchAddress("cluster2_tower_calo",cluster_tower_calo);
-        chain.SetBranchStatus("cluster2_tower_ieta", 1); chain.SetBranchAddress("cluster2_tower_ieta",cluster_tower_ieta);
-        chain.SetBranchStatus("cluster2_tower_iphi", 1); chain.SetBranchAddress("cluster2_tower_iphi",cluster_tower_iphi);
+        chain.SetBranchStatus("clsmult", 1); chain.SetBranchAddress("clsmult",&clsmult);
+        chain.SetBranchStatus("cluster_e", 1); chain.SetBranchAddress("cluster_e",cluster_e);
+        chain.SetBranchStatus("cluster_eta", 1); chain.SetBranchAddress("cluster_eta",cluster_eta);
+        chain.SetBranchStatus("cluster_phi", 1); chain.SetBranchAddress("cluster_phi",cluster_phi);
+        chain.SetBranchStatus("cluster_ntowers", 1); chain.SetBranchAddress("cluster_ntowers",cluster_ntowers);
+        chain.SetBranchStatus("cluster_tower_e", 1); chain.SetBranchAddress("cluster_tower_e",cluster_tower_e);
+        chain.SetBranchStatus("cluster_tower_calo", 1); chain.SetBranchAddress("cluster_tower_calo",cluster_tower_calo);
+        chain.SetBranchStatus("cluster_tower_ieta", 1); chain.SetBranchAddress("cluster_tower_ieta",cluster_tower_ieta);
+        chain.SetBranchStatus("cluster_tower_iphi", 1); chain.SetBranchAddress("cluster_tower_iphi",cluster_tower_iphi);
     } else {
         chain.SetBranchStatus("emcal_clsmult", 1); chain.SetBranchAddress("emcal_clsmult",&clsmult);
         chain.SetBranchStatus("emcal_cluster_e", 1); chain.SetBranchAddress("emcal_cluster_e",cluster_e);
@@ -322,6 +321,7 @@ void analysis_sim(std::string runtype = "mb", int start_seg = 0, int end_seg = 2
     TH1D* h_zvertex = new TH1D("h_zvertex", ";Z-vertex [cm]", 400, -200, 200);
     TH1D* h_deltaphi_record = new TH1D("h_deltaphi_record","",125,-2*M_PI,2*M_PI);
     TH1D* h_xj_record = new TH1D("h_xj_record","",20,0,1);
+    TH1D* h_uncalib_lead_spectra_record = new TH1D("h_uncalib_lead_spectra_record",";p_{T} [GeV]", 1000, 0, 100);
     TH1D* h_lead_spectra_record = new TH1D("h_lead_spectra_record",";p_{T} [GeV]", 1000, 0, 100);
     TH1D* h_sub_spectra_record = new TH1D("h_sub_spectra_record",";p_{T} [GeV]", 1000, 0, 100);
     TH1D* h_truth_deltaphi_record = new TH1D("h_truth_deltaphi_record","",125,-2*M_PI,2*M_PI);
@@ -452,13 +452,13 @@ void analysis_sim(std::string runtype = "mb", int start_seg = 0, int end_seg = 2
     bool calibjet_matched_dijet, calibjet_matched_dijet_jesdown, calibjet_matched_dijet_jesup, calibjet_matched_dijet_jerdown, calibjet_matched_dijet_jerup, qa_matched;
     
     for (Long64_t entry = 0; entry < nEntries; ++entry) {
-    //for (Long64_t entry = 0; entry < 2000; ++entry) {
+    //for (Long64_t entry = 0; entry < 20; ++entry) {
         if (entry % 1000 == 0) cout << "event " << entry << endl;
         chain.GetEntry(entry);
 
         // Z-vertex cut.
         if (isnan(zvertex)) { continue; }
-        if (fabs(zvertex) > 60) { continue; } // edited from 60 cm to 30 cm
+        if (fabs(zvertex) > 60) { continue; } 
 
         // Fill z-vertex histogram.
         h_zvertex_noreweight->Fill(zvertex);
@@ -494,7 +494,7 @@ void analysis_sim(std::string runtype = "mb", int start_seg = 0, int end_seg = 2
         }
 
         std::vector<float> truthe_new, truthpt_new, trutheta_new, truthphi_new;
-        std::vector<float> recoe_new, recopt_new, recoeta_new, recophi_new, recoemcal_new, recoihcal_new, recoohcal_new;
+        std::vector<float> recoe_new, recopt_new, recoeta_new, recophi_new, recoemcal_new, recoihcal_new, recoohcal_new, recocalibpt_new;
 
         for (size_t i = 0; i < truthjet_eta->size(); ++i) {
             if (std::fabs(truthjet_eta->at(i)) <= 0.7) {
@@ -521,6 +521,7 @@ void analysis_sim(std::string runtype = "mb", int start_seg = 0, int end_seg = 2
                 recoemcal_new.push_back(unsubjet_emcal_calo_e->at(i));
                 recoihcal_new.push_back(unsubjet_ihcal_calo_e->at(i));
                 recoohcal_new.push_back(unsubjet_ohcal_calo_e->at(i));
+                recocalibpt_new.push_back(calibjet_pt->at(i));
             }
         }
 
@@ -532,6 +533,7 @@ void analysis_sim(std::string runtype = "mb", int start_seg = 0, int end_seg = 2
         *unsubjet_emcal_calo_e = std::move(recoemcal_new);
         *unsubjet_ihcal_calo_e = std::move(recoihcal_new);
         *unsubjet_ohcal_calo_e = std::move(recoohcal_new);
+        *calibjet_pt = std::move(recocalibpt_new);
 
         int nJetReq = 1;
         if (bkg_cut == "dijet") { nJetReq = 2; }
@@ -563,14 +565,17 @@ void analysis_sim(std::string runtype = "mb", int start_seg = 0, int end_seg = 2
             if (unsubjet_pt->size() >= nJetReq) {
                 get_leading_subleading_jet(ind_lead, ind_sub, unsubjet_pt); 
                 //std::cout << " sub/lead: " << unsubjet_e->at(ind_sub)/unsubjet_e->at(ind_lead) << " dPhi: " << get_dphi(unsubjet_phi->at(ind_lead), unsubjet_phi->at(ind_sub)) << std::endl; 
+                //std::cout << "lead e: " << unsubjet_e->at(ind_lead) << " lead uncalib pt: " << unsubjet_pt->at(ind_lead) << " lead calib pt: " << calibjet_pt->at(ind_lead) << " sub e: " << unsubjet_e->at(ind_sub) << " sub uncalib pt: " << unsubjet_pt->at(ind_sub) << " sub calib pt: " << calibjet_pt->at(ind_sub) << std::endl;
                 if (unsubjet_e->at(ind_sub)/unsubjet_e->at(ind_lead) > 0.3 && match_leading_subleading_jet(unsubjet_phi->at(ind_lead), unsubjet_phi->at(ind_sub))) {
                     reco_cut = true;
                 } else {
                     reco_cut = false;
                 }
                 lead.SetPtEtaPhi(unsubjet_pt->at(ind_lead), unsubjet_eta->at(ind_lead), unsubjet_phi->at(ind_lead));
+                //lead.SetPtEtaPhi(calibjet_pt->at(ind_lead), unsubjet_eta->at(ind_lead), unsubjet_phi->at(ind_lead));
                 lead_e = unsubjet_e->at(ind_lead);
                 sub.SetPtEtaPhi(unsubjet_pt->at(ind_sub), unsubjet_eta->at(ind_sub), unsubjet_phi->at(ind_sub));
+                //sub.SetPtEtaPhi(calibjet_pt->at(ind_sub), unsubjet_eta->at(ind_sub), unsubjet_phi->at(ind_sub));
                 sub_e = unsubjet_e->at(ind_sub);
             } else {
                 lead.SetPtEtaPhi(0,0,0);
@@ -585,8 +590,6 @@ void analysis_sim(std::string runtype = "mb", int start_seg = 0, int end_seg = 2
                 get_leading_jet(ind_truth_lead, truthjet_pt);
                 truthlead.SetPtEtaPhi(truthjet_pt->at(ind_truth_lead), truthjet_eta->at(ind_truth_lead), truthjet_phi->at(ind_truth_lead));
                 truthlead_e = truthjet_e->at(ind_truth_lead);
-                // if leading truth jet outside of trigger range, discard event
-                if (truthlead.Pt() < truthjet_pt_min || truthlead.Pt() > truthjet_pt_max) { continue; } // this shoulld be an error
             } else {
                 truthlead.SetPtEtaPhi(0,0,0);
                 truthlead_e = 0;
@@ -596,6 +599,7 @@ void analysis_sim(std::string runtype = "mb", int start_seg = 0, int end_seg = 2
             if (unsubjet_pt->size() >= nJetReq) {
                 get_leading_jet(ind_lead, unsubjet_pt);
                 lead.SetPtEtaPhi(unsubjet_pt->at(ind_lead), unsubjet_eta->at(ind_lead), unsubjet_phi->at(ind_lead));
+                //lead.SetPtEtaPhi(calibjet_pt->at(ind_lead), unsubjet_eta->at(ind_lead), unsubjet_phi->at(ind_lead));
                 lead_e = unsubjet_e->at(ind_lead);
                 // edited to test unfolding procedure: apply efraction cut to leading jet
                   //std::cout << " EMCal frac: " << unsubjet_emcal_calo_e->at(ind_lead)/lead_e << " IHCal frac: " << unsubjet_ihcal_calo_e->at(ind_lead)/lead_e << " OHCal frac: " << unsubjet_ohcal_calo_e->at(ind_lead)/lead_e << std::endl;
@@ -646,7 +650,7 @@ void analysis_sim(std::string runtype = "mb", int start_seg = 0, int end_seg = 2
         //std::cout << "Match after subleading match " << calibjet_matched_dijet << std::endl;
 
         match_meas_truth(lead.Eta(),lead.Phi(),qa_matched,truthlead.Eta(),truthlead.Phi(),jet_radius);
-        double calib_pt_qa = f_corr->Eval(lead.Pt()) * (1 + randGen.Gaus(0.0, 0.1)) * 1;
+        double calib_pt_qa = f_corr->Eval(lead.Pt()) * (1 + randGen2.Gaus(0.0, 0.1)) * 1;
         //std::cout << "calib_pt_qa: " << calib_pt_qa << " calibjet_pt_dijet: " << calibjet_pt_dijet << std::endl;
         if (truthlead.Pt() >= truthptbins[0] && truthlead.Pt() < truthptbins[truthnpt] && qa_matched) {
             //std::cout << "matched: " << qa_matched << " respmatrix match: " << calibjet_matched_dijet << " truth pt: " << truthlead.Pt() << " ratio: " << f_corr->Eval(lead.Pt())/truthlead.Pt() << " weight: " << weight_scale << std::endl;
@@ -691,7 +695,7 @@ void analysis_sim(std::string runtype = "mb", int start_seg = 0, int end_seg = 2
         float truth_et_transverse = 0;
         for (int i = 0; i < truthpar_n; i++) {
             if (fabs(truthpar_eta[i]) > 1.1) { continue; }
-            if ((truthpar_pid[i] == 22 || truthpar_pid[i] == 111) && fabs(truthpar_e[i]) < 0.5) { continue; } // edited from 0.2 to 0.5
+            if ((truthpar_pid[i] == 22 || truthpar_pid[i] == 111) && fabs(truthpar_e[i]) < 0.2) { continue; } // edited back to 0.2 for sPHENIX primary particle list
             else if (fabs(truthpar_e[i]) < 0.5) { continue; } // edited back to 0.5
             float dphi = get_dphi(truthlead.Phi(),truthpar_phi[i]);
             if (fabs(dphi) > M_PI/3.0 && fabs(dphi) < (2.0*M_PI)/3.0) { truth_et_transverse += truthpar_e[i]/cosh(truthpar_eta[i]); } 
@@ -747,16 +751,17 @@ void analysis_sim(std::string runtype = "mb", int start_seg = 0, int end_seg = 2
 
         //////////////////////////// RECORD QA PLOTS FOR ALL EVENTS IN UNFOLDING PROCEDURE ////////////////////////////
         if (reco_cut) {
-            h_lead_spectra_record->Fill(lead.Pt(), weight_scale*vertex_weight);
             if (calibjet_pt_dijet > calibptbins[0]) {
+                h_uncalib_lead_spectra_record->Fill(unsubjet_pt->at(ind_lead), weight_scale*vertex_weight);
+                h_lead_spectra_record->Fill(lead.Pt(), weight_scale*vertex_weight);
                 h_nw_et_transverse_record->Fill(et_transverse, weight_scale*vertex_weight);
                 h_et_transverse_record->Fill(et_transverse, weight_scale*vertex_weight);
                 h_ue_pt_transverse_record->Fill(lead.Pt(),et_transverse, weight_scale*vertex_weight);
             }
         }
             
-        h_lead_truth_spectra_record->Fill(truthlead.Pt(), weight_scale*vertex_weight);
         if (goodtruthjet_pt > truthptbins[0]) {
+            h_lead_truth_spectra_record->Fill(truthlead.Pt(), weight_scale*vertex_weight);
             h_nw_et_truth_transverse_record->Fill(truth_et_transverse, weight_scale*vertex_weight);
             h_et_truth_transverse_record->Fill(truth_et_transverse, weight_scale*vertex_weight);
             h_ue_pt_truth_transverse_record->Fill(truthlead.Pt(),truth_et_transverse, weight_scale*vertex_weight);
@@ -839,7 +844,7 @@ void analysis_sim(std::string runtype = "mb", int start_seg = 0, int end_seg = 2
     std::cout << "Writing histograms..." << std::endl;
     f_out->cd();
 
-    h_zvertex->Write(); h_zvertex_noreweight->Write(); h_jes_qa->Write(); h_truth_qa->Write(); h_measure_qa->Write();
+    h_zvertex->Write(); h_zvertex_noreweight->Write(); h_jes_qa->Write(); h_truth_qa->Write(); h_measure_qa->Write(); h_uncalib_lead_spectra_record->Write();
     efficiency_truth_match_test->Write();
     h_calib_jet_pt_tight->Write(); h_truth_jet_pt_tight->Write(); h_calib_calo_et_tight->Write(); h_truth_calo_et_tight->Write();
     h_calib_jet_pt_uni_tight->Write(); h_truth_jet_pt_uni_tight->Write(); h_calib_calo_et_uni_tight->Write(); h_truth_calo_et_uni_tight->Write();
@@ -918,6 +923,7 @@ void get_calibjet(float& calibjet_pt, float& calibjet_eta, float& calibjet_phi, 
     calibjet_phi = -9999;
     if (!reco_cut) return;
     double calib_pt = f_corr->Eval(jet_pt) * (1 + randGen.Gaus(0.0, jer_para)) * jes_para;
+    //double calib_pt = jet_pt * (1 + randGen.Gaus(0.0, jer_para)) * jes_para;
     if (calib_pt < calibptbins[0] || calib_pt > calibptbins[calibnpt]) return;
     calibjet_pt = calib_pt;
     calibjet_eta = jet_eta;

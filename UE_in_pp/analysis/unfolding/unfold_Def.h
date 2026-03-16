@@ -51,9 +51,15 @@ const float sectphi = (2.0*M_PI)/3.0;
 
 
 // try bins Dec. 12th 2025
+//double calibptbins[] = {21, 26, 32.5, 40.5, 63.5}; // 52.0
+//double truthptbins[] = {17, 21, 26, 32.5, 40.5, 63.5, 82}; // 72
+//double calibetbins[] = {-1.08, -0.1, 0.0, 0.1, 1.08, 1.97, 3.05, 4.68, 6.2, 15.0}; // calib bins set 1
+//double truthetbins[] = {0.0, 0.5, 1.08, 1.97, 3.05, 4.68, 6.2, 15.0, 35.0};
+
+// try bins Feb. 25th 2025
 double calibptbins[] = {21, 26, 32.5, 40.5, 63.5}; // 52.0
 double truthptbins[] = {17, 21, 26, 32.5, 40.5, 63.5, 82}; // 72
-double calibetbins[] = {-1.08, -0.1, 0.0, 0.1, 1.08, 1.97, 3.05, 4.68, 6.2, 15.0}; // calib bins set 1
+double calibetbins[] = {-1.08, -0.1, 0.1, 1.08, 1.97, 3.05, 4.68, 6.2, 15.0}; // calib bins set 1
 double truthetbins[] = {0.0, 0.5, 1.08, 1.97, 3.05, 4.68, 6.2, 15.0, 35.0};
 
 
@@ -77,75 +83,28 @@ int truthnpt = sizeof(truthptbins) / sizeof(truthptbins[0]) - 1;
 //double calibetbins[] = {0.0, 0.1, 0.31001396179199225, 0.4800130683506723, 0.6800045540707071, 0.8900158955437308, 1.1399858191862862, 1.4400130785669445, 1.8100128184303708, 2.3399763215468474, 3.2499956903596625, 6.182471266853046, 20};
 //double truthetbins[] = {0.0, 0.1, 0.44997577667236327, 0.7099975290529982, 0.9600378567654406, 1.2099803190052243, 1.4599559400810458, 1.7199664593967476, 1.9899819546215256, 2.270032089561787, 2.5799696440961695, 2.9099702816398665, 3.2999990541901827, 3.729994228266298, 4.249971156932052, 4.9100057772473065, 5.829997597189914, 7.3, 15, 35};
 
+double Jet5GeV_cross_section = 1.3878e-4; // 1.3878e+0.8 pb
+double Jet12GeV_cross_section = 1.4903e-6; // 1.4903e+06 pb
+double Jet20GeV_cross_section = 6.2623e-8; // 6.2623e+04 pb
+double Jet30GeV_cross_section = 2.5298e-9; // 2.5298e+03 pb
+double Jet40GeV_cross_section = 1.3553e-10; // 1.3553e+02 pb
+double Jet50GeV_cross_section = 7.3113e-12; // 7.3113 pb
+double Jet60GeV_cross_section = 3.3261e-13; // 3.3261e-01 pb
 
-// Run 22 weights for events with |vz| < 30 cm 
-//double n_MB_events = 54.124084;
-//double n_Jet10GeV_events = 6.064367;
-//double n_Jet20GeV_events = 5.648636;
-//double n_Jet30GeV_events = 4.731896;
-//double n_Jet50GeV_events = 3.833537;
-
-// Run 21 weights for events with |vz| < 30 cm
-//double n_Jet10GeV_events = 1.733975;
-//double n_Jet20GeV_events = 2.172405;
-//double n_Jet30GeV_events = 2.104795;
-//double n_Jet50GeV_events = 1.524089;
-
-//double MB_cross_section = 4.197e-2; // 4.197e+10 pb
-double Jet10GeV_cross_section = 3.997e-6; // 3.997e+06 pb
-double Jet15GeV_cross_section = 4.073e-7; // 4.073e+05 pb
-double Jet20GeV_cross_section = 6.218e-8; // 6.218e+04 pb
-double Jet30GeV_cross_section = 2.502e-9; // 2.502e+03 pb
-double Jet50GeV_cross_section = 7.2695e-12; // 7.2695 pb
-double Jet70GeV_cross_section = 1.034e-14; // 1.034e-02 pb
-
-// Run 28 weights for events with |vz| < 60 cm
-// edited to switch from 60 cm to 30 cm 
-/*
-double n_Jet10GeV_events = 4.850779;
-double n_Jet15GeV_events = 4.636542;
-double n_Jet20GeV_events = 4.436351;
-double n_Jet30GeV_events = 4.005899;
-double n_Jet50GeV_events = 2.860146;
-double n_jet70GeV_events = 1.233838;
-*/
-
-// Run 28 weights for events with |vz| < 30 cm 
-double n_Jet10GeV_events = 2.639596;
-double n_Jet15GeV_events = 2.518738;
-double n_Jet20GeV_events = 2.408086;
-double n_Jet30GeV_events = 2.169086;
-double n_Jet50GeV_events = 1.532307;
-double n_jet70GeV_events = 0.643021;
-
-double n_Herwig_Jet10GeV_events = 2.554878;
-double n_Herwig_Jet30GeV_events = 0.928629;
-
-//double Herwig_Jet10GeV_cross_section = 0.157028e-6; // 0.157028 nb?
-//double Herwig_Jet30GeV_cross_section = 0.001473e-6; // 0.001473 nb?
 double Herwig_Jet10GeV_cross_section = 4.252e-6; // 4.252e+06 pb
 double Herwig_Jet30GeV_cross_section = 2.2831e-9; // 2.2831e+03
 
-//double MB_scale = MB_cross_section/(double)n_MB_events;
-//double Jet10GeV_scale = Jet10GeV_cross_section/(double)(n_Jet10GeV_events*Jet10GeV_cross_section); // edited to use not use MB dataset
-//double Jet15GeV_scale = Jet15GeV_cross_section/(double)(n_Jet15GeV_events*Jet10GeV_cross_section);
-//double Jet20GeV_scale = Jet20GeV_cross_section/(double)(n_Jet20GeV_events*Jet10GeV_cross_section);
-//double Jet30GeV_scale = Jet30GeV_cross_section/(double)(n_Jet30GeV_events*Jet10GeV_cross_section);
-//double Jet50GeV_scale = Jet50GeV_cross_section/(double)(n_Jet50GeV_events*Jet10GeV_cross_section);
-//double Jet70GeV_scale = Jet70GeV_cross_section/(double)(n_jet70GeV_events*Jet10GeV_cross_section);
-
-double Herwig_Jet10GeV_scale = Herwig_Jet10GeV_cross_section/(double)(n_Herwig_Jet10GeV_events*Herwig_Jet10GeV_cross_section);
-double Herwig_Jet30GeV_scale = Herwig_Jet30GeV_cross_section/(double)(n_Herwig_Jet30GeV_events*Herwig_Jet10GeV_cross_section);
-//double Herwig_Jet10GeV_scale = Jet10GeV_cross_section/(double)(n_Herwig_Jet10GeV_events*Jet10GeV_cross_section);
-//double Herwig_Jet30GeV_scale = Jet30GeV_cross_section/(double)(n_Herwig_Jet30GeV_events*Jet10GeV_cross_section);
+double Herwig_Jet10GeV_scale = Herwig_Jet10GeV_cross_section/(double)(Herwig_Jet10GeV_cross_section);
+double Herwig_Jet30GeV_scale = Herwig_Jet30GeV_cross_section/(double)(Herwig_Jet10GeV_cross_section);
 
 // Dec. 11 2025 CORRECT scaling uses just the cross section
-double Jet10GeV_scale = Jet10GeV_cross_section/Jet10GeV_cross_section; // edited to use not use MB dataset
-double Jet15GeV_scale = Jet15GeV_cross_section/Jet10GeV_cross_section;
-double Jet20GeV_scale = Jet20GeV_cross_section/Jet10GeV_cross_section;
-double Jet30GeV_scale = Jet30GeV_cross_section/Jet10GeV_cross_section;
-double Jet50GeV_scale = Jet50GeV_cross_section/Jet10GeV_cross_section;
-double Jet70GeV_scale = Jet70GeV_cross_section/Jet10GeV_cross_section;
+double Jet5GeV_scale = Jet5GeV_cross_section/Jet12GeV_cross_section;
+double Jet12GeV_scale = Jet12GeV_cross_section/Jet12GeV_cross_section;
+double Jet20GeV_scale = Jet20GeV_cross_section/Jet12GeV_cross_section;
+double Jet30GeV_scale = Jet30GeV_cross_section/Jet12GeV_cross_section;
+double Jet40GeV_scale = Jet40GeV_cross_section/Jet12GeV_cross_section;
+double Jet50GeV_scale = Jet50GeV_cross_section/Jet12GeV_cross_section;
+double Jet60GeV_scale = Jet60GeV_cross_section/Jet12GeV_cross_section;
 
 float get_deta(float eta1, float eta2) {
   return eta1 - eta2;

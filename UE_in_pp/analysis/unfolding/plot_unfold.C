@@ -214,8 +214,8 @@ void draw_iteration_graph(std::vector<TGraph*> graphs, std::vector<std::string> 
     }
     leg1->Draw();
 
-    string outfile = fname + "_h_unfolding_iterations_all_respmatrices.png";
-    if (syst != "") outfile = fname + "_h_unfolding_iterations_" + syst + "_.png";
+    string outfile = fname + "_h_unfolding_iterations_8calibetbin_all_respmatrices.png";
+    if (syst != "") outfile = fname + "_h_unfolding_iterations_8calibetbin_" + syst + "_.png";
 
     c1->SaveAs(outfile.c_str());
 }
