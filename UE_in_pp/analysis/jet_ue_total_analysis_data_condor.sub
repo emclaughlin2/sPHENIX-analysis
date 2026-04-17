@@ -1,0 +1,7 @@
+executable = jet_ue_total_analysis_data.sh
+arguments = $(run) $(bkgcut)
+output = output_logs/output_jet_ue_total_analysis_data_$(Process).out
+when_to_transfer_output = ON_EXIT
+error			= output_logs/error_jet_ue_total_analysis_data_$(Process).err
+log = /tmp/egm2153_$(Process).log
+queue run, bkgcut from jet_ue_total_analysis_data_queue.list

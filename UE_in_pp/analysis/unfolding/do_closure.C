@@ -123,13 +123,15 @@ void do_closure(const char* simfile = "analysis_sim_run28_output/output_sim_iter
   TFile *f_out = new TFile(closurefile, "RECREATE");
 
   int ntoys = 1000;
-  std::vector<std::string> syst = {"calib_dijet","calib_dijet_jesdown","calib_dijet_jesup","calib_dijet_jerdown","calib_dijet_jerup","calib_dijet_half1","calib_dijet_half2"};;
+  std::vector<std::string> syst = {"calib_dijet","calib_dijet_jesdown","calib_dijet_jesup","calib_dijet_jerdown","calib_dijet_jerup",
+  "calib_dijet_clus_smear","calib_dijet_ohcal_mc_data_var","calib_dijet_2sigma_noise",
+  "calib_dijet_half1","calib_dijet_half2"};;
   std::vector<std::string> syst1D = {"jetpt_respmatrix","caloet_respmatrix"};
   std::vector<std::string> trim = {"","_trim_5","_trim_10","_reweight","_reweight_trim_5","_reweight_trim_10"};
   
-  RooUnfoldResponse* h_respmatrix[7][6];
-  TH2D* h_truth[7][6];
-  TH2D* h_measure[7][6];
+  RooUnfoldResponse* h_respmatrix[10][6];
+  TH2D* h_truth[10][6];
+  TH2D* h_measure[10][6];
   for (int i = 0; i < syst.size(); i++) {
     for (int j = 0; j < trim.size(); j++) {
         //std::cout << i << " " << j << std::endl;
@@ -139,9 +141,9 @@ void do_closure(const char* simfile = "analysis_sim_run28_output/output_sim_iter
     }
   }
 
-  RooUnfoldBayes unfold_full_1[7][6];
+  RooUnfoldBayes unfold_full_1[10][6];
   RooUnfoldBayes unfold_half[6][10];
-  TH2D* h_unfold_full_1[7][6];
+  TH2D* h_unfold_full_1[10][6];
   TH2D* h_unfold_half[6][10];
 
   for (int i = 0; i < syst.size(); i++) {
@@ -157,7 +159,7 @@ void do_closure(const char* simfile = "analysis_sim_run28_output/output_sim_iter
   
   for (int i = 0; i < trim.size(); i++) {
     for (int j = 0; j < 6; j++) {
-        unfold_half[i][j] = RooUnfoldBayes(h_respmatrix[5][i], h_measure[6][i]);
+        unfold_half[i][j] = RooUnfoldBayes(h_respmatrix[8][i], h_measure[9][i]);
         unfold_half[i][j].SetIterations(j+1);
         unfold_half[i][j].HandleFakes(true);
         h_unfold_half[i][j] = (TH2D*)unfold_half[i][j].Hunfold(RooUnfolding::kErrors); 

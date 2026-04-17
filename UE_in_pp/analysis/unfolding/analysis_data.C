@@ -13,8 +13,11 @@
 
 bool check_bad_trigger(std::vector<int>* gl1_trigger_vector_scaled);
 void get_leading_subleading_jet(int& leadingjet_index, int& subleadingjet_index, std::vector<float>* jet_et);
+void get_leading_subleading_subsubleading_jet(int& leadingjet_index, int& subleadingjet_index, int& subsubleadingjet_index, std::vector<float>* jet_et);
 void get_leading_jet(int& leadingjet_index, std::vector<float>* jet_et);
 bool match_leading_subleading_jet(float leadingjet_phi, float subleadingjet_phi);
+
+TRandom3 phiResRandGen(27);
 
 std::vector<int> run_numbers;
 std::vector<double> collision_rates;
@@ -89,7 +92,7 @@ void analysis_data(int runnumber = 51274, std::string bkg_cut = "dijet", bool cl
   //get_pileup_rates("/sphenix/user/egm2153/calib_study/analysis/UE_in_pp/analysis/pileup/updated_1.5mrad_collision_rates.txt");
   const char* baseDirJet = "/sphenix/tg/tg01/jets/egm2153/UEinppOutput";
   TChain chain("T");
-  chain.Add(Form("%s/output_ana509_v2_%d_*.root", baseDirJet, runnumber));
+  chain.Add(Form("%s/output_ana509_%d_*.root", baseDirJet, runnumber));
   /*
   if (runnumber < 51274) {
     chain.Add(Form("%s/output_0mrad_ana468_%d_*.root", baseDirJet, runnumber));
@@ -111,11 +114,17 @@ void analysis_data(int runnumber = 51274, std::string bkg_cut = "dijet", bool cl
   std::vector<float>* unsubjet_time = nullptr; chain.SetBranchStatus("jettime", 1); chain.SetBranchAddress("jettime", &unsubjet_time);
   float mbd_t0; chain.SetBranchStatus("mbd_t0", 1); chain.SetBranchAddress("mbd_t0", &mbd_t0);
 
-  int emcaln = 0; float emcale[24576] = {0.0}; float emcaleta[24576] = {0.0}; float emcalphi[24576] = {0.0};
-  int ihcaln = 0; float ihcale[1536] = {0.0}; float ihcaleta[1536] = {0.0}; float ihcalphi[1536] = {0.0};
-  int ohcaln = 0; float ohcale[1536] = {0.0}; float ohcaleta[1536] = {0.0}; float ohcalphi[1536] = {0.0};
-  int clsmult = 0; float cluster_e[10000] = {0.0}; float cluster_eta[10000] = {0.0}; float cluster_phi[10000] = {0.0};
+  //int emcaln = 0; float emcale[24576] = {0.0}; float emcaleta[24576] = {0.0}; float emcalphi[24576] = {0.0};
+  //int ihcaln = 0; float ihcale[1536] = {0.0}; float ihcaleta[1536] = {0.0}; float ihcalphi[1536] = {0.0};
+  //int ohcaln = 0; float ohcale[1536] = {0.0}; float ohcaleta[1536] = {0.0}; float ohcalphi[1536] = {0.0};
+  int clsmult = 0; float cluster_e[1000] = {0.0}; float cluster_eta[1000] = {0.0}; float cluster_phi[1000] = {0.0};
+  int cluster_ntowers[1000] = {0}; float cluster_tower_e[1000][500] = {0.0}; int cluster_tower_calo[1000][500] = {0};
+  int clsmult2 = 0; float cluster2_e[2000] = {0.0}; float cluster2_eta[2000] = {0.0}; float cluster2_phi[2000] = {0.0};
+  int clsmult4 = 0; float cluster4_e[2000] = {0.0}; float cluster4_eta[2000] = {0.0}; float cluster4_phi[2000] = {0.0};
+  //int cluster2_ntowers[2000] = {0}; float cluster2_tower_e[2000][500] = {0.0};
   if (!clusters) {
+    std::cout << "towers turned off" << std::endl;
+    /*
       chain.SetBranchStatus("emcaln", 1); chain.SetBranchAddress("emcaln",&emcaln);
       chain.SetBranchStatus("emcale", 1); chain.SetBranchAddress("emcale",emcale);
       chain.SetBranchStatus("emcaleta", 1); chain.SetBranchAddress("emcaleta",emcaleta);
@@ -128,11 +137,25 @@ void analysis_data(int runnumber = 51274, std::string bkg_cut = "dijet", bool cl
       chain.SetBranchStatus("ohcale", 1); chain.SetBranchAddress("ohcale",ohcale);
       chain.SetBranchStatus("ohcaleta", 1); chain.SetBranchAddress("ohcaleta",ohcaleta);
       chain.SetBranchStatus("ohcalphi", 1); chain.SetBranchAddress("ohcalphi",ohcalphi);
+    */
   } else if (clusters && !emcal_clusters) {
       chain.SetBranchStatus("clsmult", 1); chain.SetBranchAddress("clsmult",&clsmult); // edited to use lower topoclsuter threshold
       chain.SetBranchStatus("cluster_e", 1); chain.SetBranchAddress("cluster_e",cluster_e);
       chain.SetBranchStatus("cluster_eta", 1); chain.SetBranchAddress("cluster_eta",cluster_eta);
       chain.SetBranchStatus("cluster_phi", 1); chain.SetBranchAddress("cluster_phi",cluster_phi);
+      chain.SetBranchStatus("cluster_ntowers",1); chain.SetBranchAddress("cluster_ntowers",cluster_ntowers);
+      chain.SetBranchStatus("cluster_tower_calo",1); chain.SetBranchAddress("cluster_tower_calo",cluster_tower_calo);
+      chain.SetBranchStatus("cluster_tower_e",1); chain.SetBranchAddress("cluster_tower_e",cluster_tower_e);
+      chain.SetBranchStatus("clsmult2", 1); chain.SetBranchAddress("clsmult2",&clsmult2); 
+      chain.SetBranchStatus("cluster2_e", 1); chain.SetBranchAddress("cluster2_e",cluster2_e);
+      chain.SetBranchStatus("cluster2_eta", 1); chain.SetBranchAddress("cluster2_eta",cluster2_eta);
+      chain.SetBranchStatus("cluster2_phi", 1); chain.SetBranchAddress("cluster2_phi",cluster2_phi);
+      chain.SetBranchStatus("clsmult4", 1); chain.SetBranchAddress("clsmult4",&clsmult4);
+      chain.SetBranchStatus("cluster4_e", 1); chain.SetBranchAddress("cluster4_e",cluster4_e);
+      chain.SetBranchStatus("cluster4_eta", 1); chain.SetBranchAddress("cluster4_eta",cluster4_eta);
+      chain.SetBranchStatus("cluster4_phi", 1); chain.SetBranchAddress("cluster4_phi",cluster4_phi);
+      //chain.SetBranchStatus("cluster2_ntowers",1); chain.SetBranchAddress("cluster2_ntowers",cluster2_ntowers);
+      //chain.SetBranchStatus("cluster2_tower_e",1); chain.SetBranchAddress("cluster2_tower_e",cluster2_tower_e);
   } else {
       chain.SetBranchStatus("emcal_clsmult", 1); chain.SetBranchAddress("emcal_clsmult",&clsmult);
       chain.SetBranchStatus("emcal_cluster_e", 1); chain.SetBranchAddress("emcal_cluster_e",cluster_e);
@@ -191,6 +214,13 @@ void analysis_data(int runnumber = 51274, std::string bkg_cut = "dijet", bool cl
   double deltat_mbd_var[2] = {-6.0,2.0}; // delta time variation
   double deltat_dijet_var[2] = {-4.0,4.0}; // delta timme variation
 
+  //////////// Calo Scale Variations ////////////////
+  double emcal_scale_var = 0.005;
+  double ihcal_scale_var = 0.1;
+  double ohcal_scale_var = 0.01;
+  double had_resp_var = 0.049;
+  double phi_res_var = 0.005;
+
   /////////////// Histograms ///////////////
   TH1D *h_zvertex = new TH1D("h_zvertex", ";Z-vertex [cm]", 120, -60, 60);
   TH1D* h_deltaphi_record = new TH1D("h_deltaphi_record","",125,-2*M_PI,2*M_PI);
@@ -206,6 +236,17 @@ void analysis_data(int runnumber = 51274, std::string bkg_cut = "dijet", bool cl
   TH2D *h_calibjet_pt_pu_up_et = new TH2D("h_calibjet_pt_pu_up_et", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, 0, 1, calibnet, 0, 1);
   TH2D *h_calibjet_pt_pu_down_et = new TH2D("h_calibjet_pt_pu_down_et", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, 0, 1, calibnet, 0, 1);
   TH2D *h_calibjet_pt_timingeffup = new TH2D("h_calibjet_pt_timingeffup", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, 0, 1, calibnet, 0, 1); // for timing cut efficiency uncertainty
+  TH2D *h_calibjet_pt_emcal_scale_up = new TH2D("h_calibjet_pt_emcal_scale_up", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, 0, 1, calibnet, 0, 1); // for emcal scale uncertainty
+  TH2D *h_calibjet_pt_emcal_scale_down = new TH2D("h_calibjet_pt_emcal_scale_down", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, 0, 1, calibnet, 0, 1); // for emcal scale uncertainty
+  TH2D *h_calibjet_pt_ihcal_scale_up = new TH2D("h_calibjet_pt_ihcal_scale_up", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, 0, 1, calibnet, 0, 1); // for ihcal scale uncertainty
+  TH2D *h_calibjet_pt_ihcal_scale_down = new TH2D("h_calibjet_pt_ihcal_scale_down", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, 0, 1, calibnet, 0, 1); // for ihcal scale uncertainty
+  TH2D *h_calibjet_pt_ohcal_scale_up = new TH2D("h_calibjet_pt_ohcal_scale_up", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, 0, 1, calibnet, 0, 1); // for ohcal scale uncertainty
+  TH2D *h_calibjet_pt_ohcal_scale_down = new TH2D("h_calibjet_pt_ohcal_scale_down", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, 0, 1, calibnet, 0, 1); // for ohcal scale uncertainty
+  TH2D *h_calibjet_pt_phi_res = new TH2D("h_calibjet_pt_phi_res", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, 0, 1, calibnet, 0, 1); // for cluster position resolution uncertainty
+  TH2D *h_calibjet_pt_had_resp_up = new TH2D("h_calibjet_pt_had_resp_up", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, 0, 1, calibnet, 0, 1); // for hadronic response uncertainty
+  TH2D *h_calibjet_pt_had_resp_down = new TH2D("h_calibjet_pt_had_resp_down", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, 0, 1, calibnet, 0, 1); // for hadronic response uncertainty
+  TH2D *h_calibjet_pt_2sigma_noise = new TH2D("h_calibjet_pt_2sigma_noise", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, 0, 1, calibnet, 0, 1); // for noise uncertainty
+  TH2D *h_calibjet_pt_4sigma_noise = new TH2D("h_calibjet_pt_4sigma_noise", ";p_{T} [GeV];#SigmaE_{T} [GeV]", calibnpt, 0, 1, calibnet, 0, 1); // for noise uncertainty
   TH1D* h_jetpt = new TH1D("h_jetpt","", calibnpt, 0, 1); TH1D* h_caloet = new TH1D("h_caloet","", calibnet, 0, 1);
 
   TH1D* h_calib_jet_pt_tight = new TH1D("h_calib_jet_pt_tight","",50,15,65);
@@ -253,7 +294,7 @@ void analysis_data(int runnumber = 51274, std::string bkg_cut = "dijet", bool cl
     //////////////////////////// SETUP JET VARIABLES FOR UNFOLDING ////////////////////////////
 
     // indices to find leading and subleading jets 
-    int ind_lead = -1; int ind_sub = -1;
+    int ind_lead = -1; int ind_sub = -1; int ind_subsub = -1;
     float lead_e = 0;
     reco_bkg_cut = false;
 
@@ -309,6 +350,16 @@ void analysis_data(int runnumber = 51274, std::string bkg_cut = "dijet", bool cl
       //std::cout << " sub/lead: " << unsubjet_e->at(ind_sub)/unsubjet_e->at(ind_lead) << " dPhi: " << get_dphi(unsubjet_phi->at(ind_lead), unsubjet_phi->at(ind_sub)) << std::endl; 
       if (unsubjet_e->at(ind_sub)/unsubjet_e->at(ind_lead) > 0.3 && match_leading_subleading_jet(unsubjet_phi->at(ind_lead), unsubjet_phi->at(ind_sub))) {
         reco_bkg_cut = true;
+        if (unsubjet_pt->size() == 2) { // if nreco jets == 2
+          reco_bkg_cut = true;
+        } else { // if nreco jets > 2
+          get_leading_subleading_subsubleading_jet(ind_lead, ind_sub, ind_subsub, unsubjet_pt); 
+          if (unsubjet_e->at(ind_subsub)/unsubjet_e->at(ind_lead) < 0.5) {
+            reco_bkg_cut = true;
+          } else {
+            reco_bkg_cut = false;
+          }
+        }
       } else {
         reco_bkg_cut = false;
       }
@@ -383,7 +434,20 @@ void analysis_data(int runnumber = 51274, std::string bkg_cut = "dijet", bool cl
 
     // find reco ET information 
     float et_transverse = 0;
+    float et_transverse_emcal_scale_up = 0;
+    float et_transverse_emcal_scale_down = 0;
+    float et_transverse_ihcal_scale_up = 0;
+    float et_transverse_ihcal_scale_down = 0;
+    float et_transverse_ohcal_scale_up = 0;
+    float et_transverse_ohcal_scale_down = 0;
+    float et_transverse_had_resp_up = 0;
+    float et_transverse_had_resp_down = 0;
+    float et_transverse_phi_res = 0;
+    float et_transverse_2sigma = 0;
+    float et_transverse_4sigma = 0;
     if (!clusters) {
+      std::cout << "towers turned off" << std::endl;
+      /*
         for (int i = 0; i < emcaln; i++) {
             float dphi = get_dphi(lead.Phi(),emcalphi[i]);
             if (fabs(dphi) > M_PI/3.0 && fabs(dphi) < (2.0*M_PI)/3.0) { et_transverse += emcale[i]/cosh(emcaleta[i]); } 
@@ -396,11 +460,63 @@ void analysis_data(int runnumber = 51274, std::string bkg_cut = "dijet", bool cl
             float dphi = get_dphi(lead.Phi(),ohcalphi[i]);
             if (fabs(dphi) > M_PI/3.0 && fabs(dphi) < (2.0*M_PI)/3.0) { et_transverse += ohcale[i]/cosh(ohcaleta[i]); } 
         }
+        */
     } else {
-        for (int i = 0; i < clsmult; i++) {
-            float dphi = get_dphi(lead.Phi(),cluster_phi[i]);
-            if (fabs(dphi) > M_PI/3.0 && fabs(dphi) < (2.0*M_PI)/3.0) { et_transverse += cluster_e[i]/cosh(cluster_eta[i]); }
+
+      for (int i = 0; i < clsmult; i++) {
+        float dphi = get_dphi(lead.Phi(),cluster_phi[i]);
+        if (fabs(dphi) > M_PI/3.0 && fabs(dphi) < (2.0*M_PI)/3.0 && cluster_e[i]/cluster_eta[i] > -1.0) { 
+          et_transverse += cluster_e[i]/cosh(cluster_eta[i]); 
         }
+      }
+
+      for (int i = 0; i < clsmult; i++) {
+        float phi_var = cluster_phi[i] + phiResRandGen.Gaus(0.0, 0.005);
+        float dphi = get_dphi(lead.Phi(),phi_var);
+        if (fabs(dphi) > M_PI/3.0 && fabs(dphi) < (2.0*M_PI)/3.0 && cluster_e[i]/cluster_eta[i] > -1.0) { 
+          et_transverse_phi_res += cluster_e[i]/cosh(cluster_eta[i]); 
+        }
+      }
+
+      for (int i = 0; i < clsmult2; i++) {
+        float dphi = get_dphi(lead.Phi(),cluster2_phi[i]);
+        if (fabs(dphi) > M_PI/3.0 && fabs(dphi) < (2.0*M_PI)/3.0 && cluster2_e[i]/cluster2_eta[i] > -1.0) { 
+          et_transverse_2sigma += cluster2_e[i]/cosh(cluster2_eta[i]); 
+        }
+      }
+
+      for (int i = 0; i < clsmult4; i++) {
+        float dphi = get_dphi(lead.Phi(),cluster4_phi[i]);
+        if (fabs(dphi) > M_PI/3.0 && fabs(dphi) < (2.0*M_PI)/3.0 && cluster4_e[i]/cluster4_eta[i] > -1.0) { 
+          et_transverse_4sigma += cluster4_e[i]/cosh(cluster4_eta[i]); 
+        }
+      }
+
+      et_transverse_emcal_scale_up = et_transverse; 
+      et_transverse_emcal_scale_down = et_transverse; 
+      et_transverse_ihcal_scale_up = et_transverse; 
+      et_transverse_ihcal_scale_down = et_transverse; 
+      et_transverse_ohcal_scale_up = et_transverse; 
+      et_transverse_ohcal_scale_down = et_transverse; 
+      et_transverse_had_resp_up = et_transverse * (1.0 + had_resp_var); 
+      et_transverse_had_resp_down = et_transverse * (1.0 - had_resp_var);; 
+      for (int i = 0; i < clsmult; i++) {
+        float dphi = get_dphi(lead.Phi(),cluster_phi[i]);
+        if (fabs(dphi) > M_PI/3.0 && fabs(dphi) < (2.0*M_PI)/3.0 && cluster_e[i]/cluster_eta[i] > -1.0) {
+          for (int j = 0; j < cluster_ntowers[i]; j++) {
+            if (cluster_tower_calo[i][j] == 1) {
+              et_transverse_emcal_scale_up += emcal_scale_var*cluster_tower_e[i][j]/(cosh(cluster_eta[i]));
+              et_transverse_emcal_scale_down -= emcal_scale_var*cluster_tower_e[i][j]/(cosh(cluster_eta[i]));
+            } else if (cluster_tower_calo[i][j] == 2) {
+              et_transverse_ohcal_scale_up += ohcal_scale_var*cluster_tower_e[i][j]/(cosh(cluster_eta[i]));
+              et_transverse_ohcal_scale_down -= ohcal_scale_var*cluster_tower_e[i][j]/(cosh(cluster_eta[i]));
+            } else if (cluster_tower_calo[i][j] == 3) {
+              et_transverse_ihcal_scale_up += ihcal_scale_var*cluster_tower_e[i][j]/(cosh(cluster_eta[i]));
+              et_transverse_ihcal_scale_down -= ihcal_scale_var*cluster_tower_e[i][j]/(cosh(cluster_eta[i]));
+            }
+          }
+        }
+      }
     }
 
     float pu_correct_et_transverse = et_transverse;
@@ -440,6 +556,17 @@ void analysis_data(int runnumber = 51274, std::string bkg_cut = "dijet", bool cl
     double uni_pu_correct_meas_et = MapToUniform(pu_correct_et_transverse, calibetbins, calibnet);
     double uni_pu_up_meas_et = MapToUniform(pu_up_et_transverse, calibetbins, calibnet);
     double uni_pu_down_meas_et = MapToUniform(pu_down_et_transverse, calibetbins, calibnet);
+    double uni_emcal_scale_up_meas_et = MapToUniform(et_transverse_emcal_scale_up, calibetbins, calibnet);
+    double uni_emcal_scale_down_meas_et = MapToUniform(et_transverse_emcal_scale_down, calibetbins, calibnet);
+    double uni_ihcal_scale_up_meas_et = MapToUniform(et_transverse_ihcal_scale_up, calibetbins, calibnet);
+    double uni_ihcal_scale_down_meas_et = MapToUniform(et_transverse_ihcal_scale_down, calibetbins, calibnet);   
+    double uni_ohcal_scale_up_meas_et = MapToUniform(et_transverse_ohcal_scale_up, calibetbins, calibnet);
+    double uni_ohcal_scale_down_meas_et = MapToUniform(et_transverse_ohcal_scale_down, calibetbins, calibnet); 
+    double uni_phi_res_meas_et = MapToUniform(et_transverse_phi_res, calibetbins, calibnet);
+    double uni_had_resp_up_meas_et = MapToUniform(et_transverse_had_resp_up, calibetbins, calibnet);
+    double uni_had_resp_down_meas_et = MapToUniform(et_transverse_had_resp_down, calibetbins, calibnet);
+    double uni_2sigma_noise_meas_et = MapToUniform(et_transverse_2sigma, calibetbins, calibnet);
+    double uni_4sigma_noise_meas_et = MapToUniform(et_transverse_4sigma, calibetbins, calibnet);
 
     if (uni_meas_pt >= 0 && uni_meas_pt < 1 && uni_meas_et >= 0 && uni_meas_et < 1) {
       h_calib_jet_pt_tight->Fill(caliblead.Pt());
@@ -492,6 +619,17 @@ void analysis_data(int runnumber = 51274, std::string bkg_cut = "dijet", bool cl
     if (uni_meas_pt >= 0 && uni_meas_pt < 1 && uni_pu_correct_meas_et >= 0 && uni_pu_correct_meas_et < 1) { h_calibjet_pt_dijet_pu_correct_et->Fill(uni_meas_pt, uni_pu_correct_meas_et, jettrig_scale*timingcut_scale); }
     if (uni_meas_pt >= 0 && uni_meas_pt < 1 && uni_pu_up_meas_et >= 0 && uni_pu_up_meas_et < 1) { h_calibjet_pt_pu_up_et->Fill(uni_meas_pt, uni_pu_up_meas_et, jettrig_scale*timingcut_scale); }
     if (uni_meas_pt >= 0 && uni_meas_pt < 1 && uni_pu_down_meas_et >= 0 && uni_pu_down_meas_et < 1) { h_calibjet_pt_pu_down_et->Fill(uni_meas_pt, uni_pu_down_meas_et, jettrig_scale*timingcut_scale); }
+    if (uni_meas_pt >= 0 && uni_meas_pt < 1 && uni_emcal_scale_up_meas_et >= 0 && uni_emcal_scale_up_meas_et < 1) { h_calibjet_pt_emcal_scale_up->Fill(uni_meas_pt, uni_emcal_scale_up_meas_et, jettrig_scale*timingcut_scale); }
+    if (uni_meas_pt >= 0 && uni_meas_pt < 1 && uni_emcal_scale_down_meas_et >= 0 && uni_emcal_scale_down_meas_et < 1) { h_calibjet_pt_emcal_scale_down->Fill(uni_meas_pt, uni_emcal_scale_down_meas_et, jettrig_scale*timingcut_scale); }
+    if (uni_meas_pt >= 0 && uni_meas_pt < 1 && uni_ihcal_scale_up_meas_et >= 0 && uni_ihcal_scale_up_meas_et < 1) { h_calibjet_pt_ihcal_scale_up->Fill(uni_meas_pt, uni_ihcal_scale_up_meas_et, jettrig_scale*timingcut_scale); }
+    if (uni_meas_pt >= 0 && uni_meas_pt < 1 && uni_ihcal_scale_down_meas_et >= 0 && uni_ihcal_scale_down_meas_et < 1) { h_calibjet_pt_ihcal_scale_down->Fill(uni_meas_pt, uni_ihcal_scale_down_meas_et, jettrig_scale*timingcut_scale); }
+    if (uni_meas_pt >= 0 && uni_meas_pt < 1 && uni_ohcal_scale_up_meas_et >= 0 && uni_ohcal_scale_up_meas_et < 1) { h_calibjet_pt_ohcal_scale_up->Fill(uni_meas_pt, uni_ohcal_scale_up_meas_et, jettrig_scale*timingcut_scale); }
+    if (uni_meas_pt >= 0 && uni_meas_pt < 1 && uni_ohcal_scale_down_meas_et >= 0 && uni_ohcal_scale_down_meas_et < 1) { h_calibjet_pt_ohcal_scale_down->Fill(uni_meas_pt, uni_ohcal_scale_down_meas_et, jettrig_scale*timingcut_scale); }
+    if (uni_meas_pt >= 0 && uni_meas_pt < 1 && uni_had_resp_up_meas_et >= 0 && uni_had_resp_up_meas_et < 1) { h_calibjet_pt_had_resp_up->Fill(uni_meas_pt, uni_had_resp_up_meas_et, jettrig_scale*timingcut_scale); }
+    if (uni_meas_pt >= 0 && uni_meas_pt < 1 && uni_had_resp_down_meas_et >= 0 && uni_had_resp_down_meas_et < 1) { h_calibjet_pt_had_resp_down->Fill(uni_meas_pt, uni_had_resp_down_meas_et, jettrig_scale*timingcut_scale); }
+    if (uni_meas_pt >= 0 && uni_meas_pt < 1 && uni_phi_res_meas_et >= 0 && uni_phi_res_meas_et < 1) { h_calibjet_pt_phi_res->Fill(uni_meas_pt, uni_phi_res_meas_et, jettrig_scale*timingcut_scale); }
+    if (uni_meas_pt >= 0 && uni_meas_pt < 1 && uni_2sigma_noise_meas_et >= 0 && uni_2sigma_noise_meas_et < 1) { h_calibjet_pt_2sigma_noise->Fill(uni_meas_pt, uni_2sigma_noise_meas_et, jettrig_scale*timingcut_scale); }
+    if (uni_meas_pt >= 0 && uni_meas_pt < 1 && uni_4sigma_noise_meas_et >= 0 && uni_4sigma_noise_meas_et < 1) { h_calibjet_pt_4sigma_noise->Fill(uni_meas_pt, uni_4sigma_noise_meas_et, jettrig_scale*timingcut_scale); }
 
   } // event loop end
 
@@ -512,6 +650,17 @@ void analysis_data(int runnumber = 51274, std::string bkg_cut = "dijet", bool cl
   h_calibjet_pt_pu_up_et->Write();
   h_calibjet_pt_pu_down_et->Write();
   h_calibjet_pt_timingeffup->Write();
+  h_calibjet_pt_emcal_scale_up->Write();
+  h_calibjet_pt_emcal_scale_down->Write();
+  h_calibjet_pt_ihcal_scale_up->Write();
+  h_calibjet_pt_ihcal_scale_down->Write();
+  h_calibjet_pt_ohcal_scale_up->Write();
+  h_calibjet_pt_ohcal_scale_down->Write();
+  h_calibjet_pt_had_resp_up->Write();
+  h_calibjet_pt_had_resp_down->Write();
+  h_calibjet_pt_phi_res->Write();
+  h_calibjet_pt_2sigma_noise->Write();
+  h_calibjet_pt_4sigma_noise->Write();
   h_jetpt->Write();
   h_caloet->Write();
   h_unscale_average_et->Write();
@@ -554,6 +703,41 @@ void get_leading_subleading_jet(int& leadingjet_index, int& subleadingjet_index,
     } else if (jetet > subleadingjet_et) {
       subleadingjet_et = jetet;
       subleadingjet_index = ij;
+    }
+  }
+}
+
+void get_leading_subleading_subsubleading_jet(int& leadingjet_index, int& subleadingjet_index, int& subsubleadingjet_index, std::vector<float>* jet_et)
+{
+  leadingjet_index = -1;
+  subleadingjet_index = -1;
+  subsubleadingjet_index = -1;
+  float leadingjet_et = -9999;
+  float subleadingjet_et = -9999;
+  float subsubleadingjet_et = -9999;
+  for (int ij = 0; ij < jet_et->size(); ++ij)
+  {
+    float jetet = jet_et->at(ij);
+    if (jetet > leadingjet_et)
+    {
+      subsubleadingjet_et = subleadingjet_et;
+      subsubleadingjet_index = subleadingjet_index;
+      subleadingjet_et = leadingjet_et;
+      subleadingjet_index = leadingjet_index;
+      leadingjet_et = jetet;
+      leadingjet_index = ij;
+    }
+    else if (jetet > subleadingjet_et)
+    {
+      subsubleadingjet_et = subleadingjet_et;
+      subsubleadingjet_index = subleadingjet_index;
+      subleadingjet_et = jetet;
+      subleadingjet_index = ij;
+    }
+    else if (jetet > subsubleadingjet_et)
+    {
+      subsubleadingjet_et = jetet;
+      subsubleadingjet_index = ij;
     }
   }
 }

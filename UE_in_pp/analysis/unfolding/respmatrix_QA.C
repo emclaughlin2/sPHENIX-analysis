@@ -15,7 +15,7 @@
 #include "unfold_Def.h"
 #include "/sphenix/user/hanpuj/CaloDataAna24_skimmed/src/draw_template.C" 
 
-void respmatrix_QA() {
+void respmatrix_QA(bool dijet = 1) {
   gROOT->LoadMacro("/sphenix/u/egm2153/spring_2023/sPhenixStyle.C");
   gROOT->ProcessLine("SetsPhenixStyle()");
   gStyle->SetPadTickX(1);
@@ -32,16 +32,21 @@ void respmatrix_QA() {
   std::vector<std::string> legend;
  
   //********** Files **********//
-  TFile *f_sim = new TFile("analysis_sim_run21_output/output_dijet_sim_iter_3_herwig.root", "READ");
+  TFile *f_sim;
+  if (dijet) {
+    f_sim = new TFile("sphenix_primary_analysis_sim_run28_output/output_dijet_bkg_cut_sim_iter_3.root", "READ");
+  } else {
+    f_sim = new TFile("sphenix_primary_analysis_sim_run28_output/output_none_bkg_cut_sim_iter_3.root", "READ");
+  }
   //TFile *f_purityefficiency = new TFile("output_purityefficiency.root", "READ");
 
   TH1D* h_zvertex = (TH1D*)f_sim->Get("h_zvertex"); 
   
-  TH1D* h_deltaphi_record = (TH1D*)f_sim->Get("h_deltaphi_record"); 
-  TH1D* h_truth_deltaphi_record = (TH1D*)f_sim->Get("h_truth_deltaphi_record"); 
+  //TH1D* h_deltaphi_record = (TH1D*)f_sim->Get("h_deltaphi_record"); 
+  //TH1D* h_truth_deltaphi_record = (TH1D*)f_sim->Get("h_truth_deltaphi_record"); 
   
-  TH1D* h_xj_record = (TH1D*)f_sim->Get("h_xj_record"); 
-  TH1D* h_truth_xj_record = (TH1D*)f_sim->Get("h_truth_xj_record"); 
+  //TH1D* h_xj_record = (TH1D*)f_sim->Get("h_xj_record"); 
+  //TH1D* h_truth_xj_record = (TH1D*)f_sim->Get("h_truth_xj_record"); 
   
   TH1D* h_lead_spectra_record = (TH1D*)f_sim->Get("h_lead_spectra_record"); 
   TH1D* h_sub_spectra_record = (TH1D*)f_sim->Get("h_sub_spectra_record"); 
@@ -70,8 +75,8 @@ void respmatrix_QA() {
   TH2D* h_truth_calib_dijet = (TH2D*)f_sim->Get("h_truth_calib_dijet"); 
   TH2D* h_measure_calib_dijet = (TH2D*)f_sim->Get("h_measure_calib_dijet"); 
   RooUnfoldResponse* h_respmatrix_calib_dijet = (RooUnfoldResponse*)f_sim->Get("h_respmatrix_calib_dijet");  
-  RooUnfoldResponse* h_respmatrix_calib_dijet_trim = (RooUnfoldResponse*)f_sim->Get("h_respmatrix_calib_dijet_trim_5");  
-  RooUnfoldResponse* h_respmatrix_calib_dijet_rw_trim = (RooUnfoldResponse*)f_sim->Get("h_respmatrix_calib_dijet_reweight_trim_5");  
+  RooUnfoldResponse* h_respmatrix_calib_dijet_trim = (RooUnfoldResponse*)f_sim->Get("h_respmatrix_calib_dijet_trim_10");  
+  RooUnfoldResponse* h_respmatrix_calib_dijet_rw_trim = (RooUnfoldResponse*)f_sim->Get("h_respmatrix_calib_dijet_reweight_trim_10");  
   TH2D* h_fake_calib_dijet = (TH2D*)f_sim->Get("h_fake_calib_dijet"); 
   TH2D* h_miss_calib_dijet = (TH2D*)f_sim->Get("h_miss_calib_dijet"); 
   RooUnfoldResponse* h_counts_calib_dijet = (RooUnfoldResponse*)f_sim->Get("h_respmatrix_calib_dijet_counts");  
@@ -132,10 +137,10 @@ void respmatrix_QA() {
   TH2D* hist2d = new TH2D("response2D", "Response Matrix;Reco Bin;Truth Bin", nxr*nyr, 0, nxr*nyr, nxt*nyt, 0, nxt*nyt);
   TH2D* trim_hist2d = new TH2D("trim_response2D", "Trim Response Matrix;Reco Bin;Truth Bin", nxr*nyr, 0, nxr*nyr, nxt*nyt, 0, nxt*nyt);
   TH2D* rw_trim_hist2d = new TH2D("rw_trim_response2D","Reweight Trim Response Matrix;Reco Bin;Truth Bin",nxr*nyr, 0, nxr*nyr, nxt*nyt, 0, nxt*nyt);
-  TH2D* trim_jet_pt_respmatrix = new TH2D("trim_jet_pt_respmatrix",";p_{T}^{Calib jet} [GeV];p_{T}^{Truth jet} [GeV]", calibnpt, 0, 1, truthnpt, 0, 1);
-  TH2D* trim_calo_et_respmatrix = new TH2D("trim_calo_et_respmatrix",";#SigmaE_{T}^{Reco} [GeV];#SigmaE_{T}^{Truth} [GeV]", calibnet, 0, 1, truthnet, 0, 1);
-  TH2D* rw_trim_jet_pt_respmatrix = new TH2D("rw_trim_jet_pt_respmatrix",";p_{T}^{Calib jet} [GeV];p_{T}^{Truth jet} [GeV]", calibnpt, 0, 1, truthnpt, 0, 1);
-  TH2D* rw_trim_calo_et_respmatrix = new TH2D("rw_trim_calo_et_respmatrix",";#SigmaE_{T}^{Reco} [GeV];#SigmaE_{T}^{Truth} [GeV]", calibnet, 0, 1, truthnet, 0, 1);
+  TH2D* trim_jet_pt_respmatrix = new TH2D("trim_jet_pt_respmatrix",";p_{T}^{Calib jet} [GeV];p_{T}^{Truth jet} [GeV]", calibnpt, calibptbins, truthnpt, truthptbins);
+  TH2D* trim_calo_et_respmatrix = new TH2D("trim_calo_et_respmatrix",";#SigmaE_{T}^{Reco} [GeV];#SigmaE_{T}^{Truth} [GeV]", calibnet, calibetbins, truthnet, truthetbins);
+  TH2D* rw_trim_jet_pt_respmatrix = new TH2D("rw_trim_jet_pt_respmatrix",";p_{T}^{Calib jet} [GeV];p_{T}^{Truth jet} [GeV]", calibnpt, calibptbins, truthnpt, truthptbins);
+  TH2D* rw_trim_calo_et_respmatrix = new TH2D("rw_trim_calo_et_respmatrix",";#SigmaE_{T}^{Reco} [GeV];#SigmaE_{T}^{Truth} [GeV]", calibnet, calibetbins, truthnet, truthetbins);
 
 
   for (int ixr = 0; ixr < nxr; ++ixr) {
@@ -187,19 +192,28 @@ void respmatrix_QA() {
       rw_trim_calo_et_respmatrix->SetBinContent(iyr + 1, iyt + 1, rw_sum);
     }
   }
-
-  
-  TCanvas* resp_canvas = new TCanvas("resp_canvas","resp_canvas", 700, 600);
+  /*
+  TCanvas* resp_canvas = new TCanvas("resp_canvas","resp_canvas", 700, 650);
+  resp_canvas->SetTopMargin(0.18);
+  TLegend* resp_legend = new TLegend(.05,.82,.55,.99);
+  resp_legend->AddEntry("","#bf{#it{sPHENIX}} Internal Pythia8 200 GeV p+p","");
+  resp_legend->AddEntry("","anti-k_{t}#it{R}=0.4, |#eta_{jet}| < 0.7, p_{T}^{truth lead jet} > 17 GeV","");
+  if (dijet) resp_legend->AddEntry("","Exclusive Dijet","");
+  else { resp_legend->AddEntry("","Inclusive Jet",""); }
+  resp_legend->SetFillStyle(0);
+  resp_legend->SetTextSize(0.035);
   resp_canvas->SetLogz(1);
   resp_canvas->SetRightMargin(0.2);
-  hist2d->GetZaxis()->SetRangeUser(0.000001,500);
+  hist2d->GetZaxis()->SetRangeUser(0.000001,800);
   hist2d->Draw("colz");
   resp_canvas->Update();
   TPaletteAxis *resp_palette = (TPaletteAxis*)hist2d->GetListOfFunctions()->FindObject("palette");
   resp_palette->SetX1NDC(0.82);
   resp_palette->SetX2NDC(0.9);
+  resp_legend->Draw("same");
   resp_canvas->Update();
-  resp_canvas->SaveAs("uniform_bin_run21_figure/respmatrix_QA_herwig_raw_respmatrix.png");
+  if (dijet) resp_canvas->SaveAs("sphenix_primary_run28_output_files/raw_respmatrix_dijet.png");
+  else resp_canvas->SaveAs("sphenix_primary_run28_output_files/raw_respmatrix_none.png");
 
   TCanvas* trim_resp_canvas = new TCanvas("trim_resp_canvas","trim_resp_canvas", 700, 600);
   trim_resp_canvas->SetLogz(1);
@@ -211,7 +225,7 @@ void respmatrix_QA() {
   trim_resp_palette->SetX1NDC(0.82);
   trim_resp_palette->SetX2NDC(0.9);
   trim_resp_canvas->Update();
-  trim_resp_canvas->SaveAs("uniform_bin_run21_figure/respmatrix_QA_herwig_trim_respmatrix.png");
+  trim_resp_canvas->SaveAs("sphenix_primary_run28_output_files/respmatrix_QA_herwig_trim_respmatrix.png");
 
   TCanvas* trim_jet_pt_resp_canvas = new TCanvas("trim_jet_pt_resp_canvas","trim_resp_canvas", 700, 600);
   trim_jet_pt_resp_canvas->SetLogz(1);
@@ -223,7 +237,7 @@ void respmatrix_QA() {
   trim_jet_pt_resp_palette->SetX1NDC(0.82);
   trim_jet_pt_resp_palette->SetX2NDC(0.9);
   trim_jet_pt_resp_canvas->Update();
-  trim_jet_pt_resp_canvas->SaveAs("uniform_bin_run21_figure/respmatrix_QA_herwig_trim_jet_pt_respmatrix.png");
+  trim_jet_pt_resp_canvas->SaveAs("sphenix_primary_run28_output_files/respmatrix_QA_herwig_trim_jet_pt_respmatrix.png");
 
   TCanvas* trim_calo_et_resp_canvas = new TCanvas("trim_calo_et_resp_canvas","trim_resp_canvas", 700, 600);
   trim_calo_et_resp_canvas->SetLogz(1);
@@ -235,44 +249,75 @@ void respmatrix_QA() {
   trim_calo_et_resp_palette->SetX1NDC(0.82);
   trim_calo_et_resp_palette->SetX2NDC(0.9);
   trim_calo_et_resp_canvas->Update();
-  trim_calo_et_resp_canvas->SaveAs("uniform_bin_run21_figure/respmatrix_QA_herwig_trim_calo_et_respmatrix.png");
-
-  TCanvas* rw_trim_resp_canvas = new TCanvas("rw_trim_resp_canvas","rw_trim_resp_canvas", 700, 600);
+  trim_calo_et_resp_canvas->SaveAs("sphenix_primary_run28_output_files/respmatrix_QA_herwig_trim_calo_et_respmatrix.png");
+  */
+  TCanvas* rw_trim_resp_canvas = new TCanvas("rw_trim_resp_canvas","rw_trim_resp_canvas", 700, 650);
+  rw_trim_resp_canvas->SetTopMargin(0.18);
+  TLegend* rw_trim_resp_legend = new TLegend(.05,.82,.55,.99);
+  rw_trim_resp_legend->AddEntry("","#bf{#it{sPHENIX}} Internal Pythia8 200 GeV p+p","");
+  rw_trim_resp_legend->AddEntry("","anti-k_{t}#it{R}=0.4, |#eta_{jet}| < 0.7, p_{T}^{truth lead jet} > 17 GeV","");
+  if (dijet) rw_trim_resp_legend->AddEntry("","Exclusive Dijet","");
+  else { rw_trim_resp_legend->AddEntry("","Inclusive Jet",""); }
+  rw_trim_resp_legend->SetFillStyle(0);
+  rw_trim_resp_legend->SetTextSize(0.035);
   rw_trim_resp_canvas->SetLogz(1);
   rw_trim_resp_canvas->SetRightMargin(0.2);
-  rw_trim_hist2d->GetZaxis()->SetRangeUser(0.000001,500);
+  rw_trim_hist2d->GetZaxis()->SetRangeUser(0.0000001,800);
   rw_trim_hist2d->Draw("colz");
   rw_trim_resp_canvas->Update();
   TPaletteAxis *rw_trim_resp_palette = (TPaletteAxis*)rw_trim_hist2d->GetListOfFunctions()->FindObject("palette");
   rw_trim_resp_palette->SetX1NDC(0.82);
   rw_trim_resp_palette->SetX2NDC(0.9);
+  rw_trim_resp_legend->Draw("same");
   rw_trim_resp_canvas->Update();
-  rw_trim_resp_canvas->SaveAs("uniform_bin_run21_figure/respmatrix_QA_herwig_rw_trim_respmatrix.png");
+  if (dijet) rw_trim_resp_canvas->SaveAs("sphenix_primary_run28_output_files/respmatrix_dijet.png");
+  else rw_trim_resp_canvas->SaveAs("sphenix_primary_run28_output_files/respmatrix_none.png");
 
-  TCanvas* rw_trim_jet_pt_resp_canvas = new TCanvas("rw_trim_jet_pt_resp_canvas","rw_trim_resp_canvas", 700, 600);
+  TCanvas* rw_trim_jet_pt_resp_canvas = new TCanvas("rw_trim_jet_pt_resp_canvas","rw_trim_jet_pt_resp_canvas", 700, 650);
+  rw_trim_jet_pt_resp_canvas->SetTopMargin(0.18);
+  TLegend* rw_trim_jet_pt_resp_legend = new TLegend(.05,.82,.55,.99);
+  rw_trim_jet_pt_resp_legend->AddEntry("","#bf{#it{sPHENIX}} Internal Pythia8 200 GeV p+p","");
+  rw_trim_jet_pt_resp_legend->AddEntry("","anti-k_{t}#it{R}=0.4, |#eta_{jet}| < 0.7, p_{T}^{truth lead jet} > 17 GeV","");
+  if (dijet) rw_trim_jet_pt_resp_legend->AddEntry("","Exclusive Dijet","");
+  else { rw_trim_jet_pt_resp_legend->AddEntry("","Inclusive Jet",""); }
+  rw_trim_jet_pt_resp_legend->SetFillStyle(0);
+  rw_trim_jet_pt_resp_legend->SetTextSize(0.035);
   rw_trim_jet_pt_resp_canvas->SetLogz(1);
   rw_trim_jet_pt_resp_canvas->SetRightMargin(0.2);
-  rw_trim_jet_pt_respmatrix->GetZaxis()->SetRangeUser(0.0000001,2000);
+  rw_trim_jet_pt_respmatrix->GetZaxis()->SetRangeUser(0.0001,100000);
   rw_trim_jet_pt_respmatrix->Draw("colz");
   rw_trim_jet_pt_resp_canvas->Update();
   TPaletteAxis *rw_trim_jet_pt_resp_palette = (TPaletteAxis*)rw_trim_jet_pt_respmatrix->GetListOfFunctions()->FindObject("palette");
   rw_trim_jet_pt_resp_palette->SetX1NDC(0.82);
   rw_trim_jet_pt_resp_palette->SetX2NDC(0.9);
+  rw_trim_jet_pt_resp_legend->Draw("same");
   rw_trim_jet_pt_resp_canvas->Update();
-  rw_trim_jet_pt_resp_canvas->SaveAs("uniform_bin_run21_figure/respmatrix_QA_herwig_rw_trim_jet_pt_respmatrix.png");
+  if (dijet) rw_trim_jet_pt_resp_canvas->SaveAs("sphenix_primary_run28_output_files/jet_pt_respmatrix_dijet.png");
+  else rw_trim_jet_pt_resp_canvas->SaveAs("sphenix_primary_run28_output_files/jet_pt_respmatrix_none.png");
 
-  TCanvas* rw_trim_calo_et_resp_canvas = new TCanvas("rw_trim_calo_et_resp_canvas","rw_trim_resp_canvas", 700, 600);
+  TCanvas* rw_trim_calo_et_resp_canvas = new TCanvas("rw_trim_calo_et_resp_canvas","rw_trim_calo_et_resp_canvas", 700, 650);
+  rw_trim_calo_et_resp_canvas->SetTopMargin(0.18);
+  TLegend* rw_trim_calo_et_resp_legend = new TLegend(.05,.82,.55,.99);
+  rw_trim_calo_et_resp_legend->AddEntry("","#bf{#it{sPHENIX}} Internal Pythia8 200 GeV p+p","");
+  rw_trim_calo_et_resp_legend->AddEntry("","anti-k_{t}#it{R}=0.4, |#eta_{jet}| < 0.7, p_{T}^{truth lead jet} > 17 GeV","");
+  if (dijet) rw_trim_calo_et_resp_legend->AddEntry("","Exclusive Dijet","");
+  else { rw_trim_calo_et_resp_legend->AddEntry("","Inclusive Jet",""); }
+  rw_trim_calo_et_resp_legend->SetFillStyle(0);
+  rw_trim_calo_et_resp_legend->SetTextSize(0.035);
   rw_trim_calo_et_resp_canvas->SetLogz(1);
   rw_trim_calo_et_resp_canvas->SetRightMargin(0.2);
-  rw_trim_calo_et_respmatrix->GetZaxis()->SetRangeUser(0.0000001,500);
+  rw_trim_calo_et_respmatrix->GetZaxis()->SetRangeUser(0.0001,20000);
   rw_trim_calo_et_respmatrix->Draw("colz");
   rw_trim_calo_et_resp_canvas->Update();
   TPaletteAxis *rw_trim_calo_et_resp_palette = (TPaletteAxis*)rw_trim_calo_et_respmatrix->GetListOfFunctions()->FindObject("palette");
   rw_trim_calo_et_resp_palette->SetX1NDC(0.82);
   rw_trim_calo_et_resp_palette->SetX2NDC(0.9);
+  rw_trim_calo_et_resp_legend->Draw("same");
   rw_trim_calo_et_resp_canvas->Update();
-  rw_trim_calo_et_resp_canvas->SaveAs("uniform_bin_run21_figure/respmatrix_QA_herwig_rw_trim_calo_et_respmatrix.png");
+  if (dijet) rw_trim_calo_et_resp_canvas->SaveAs("sphenix_primary_run28_output_files/calo_et_respmatrix_dijet.png");
+  else rw_trim_calo_et_resp_canvas->SaveAs("sphenix_primary_run28_output_files/calo_et_respmatrix_none.png");
 
+  /*
   TCanvas* zvtx_canvas = new TCanvas("zvtx_canvas", "zvtx_canvas", 800, 600);
   zvtx_canvas->cd();
   h_zvertex->Scale(1.0/h_zvertex->Integral());
@@ -280,8 +325,8 @@ void respmatrix_QA() {
   h_zvertex->SetXTitle("v_{z} [cm]");
   h_zvertex->GetXaxis()->SetRangeUser(-40,40);
   h_zvertex->Draw();
-  zvtx_canvas->SaveAs("uniform_bin_run21_figure/respmatrix_QA_herwig_zvertex.png");
-
+  zvtx_canvas->SaveAs("sphenix_primary_run28_output_files/respmatrix_QA_herwig_zvertex.png");
+  
   TCanvas* deltaphi_canvas = new TCanvas("deltaphi_canvas", "deltaphi_canvas", 800, 600);
   deltaphi_canvas->cd();
   h_deltaphi_record->Scale(1.0/h_deltaphi_record->Integral());
@@ -315,7 +360,8 @@ void respmatrix_QA() {
   xj_leg->AddEntry(h_truth_xj_record, "Truth", "l");
   xj_leg->Draw("same");
   xj_canvas->SaveAs("uniform_bin_run21_figure/respmatrix_QA_herwig_xj.png");
-
+  */
+  /*
   TCanvas* jet_spectra_canvas = new TCanvas("jet_spectra_canvas", "jet_spectra_canvas", 800, 600);
   jet_spectra_canvas->cd();
   jet_spectra_canvas->SetLogy(1);
@@ -461,5 +507,7 @@ void respmatrix_QA() {
   nw_calo_et_resp_canvas->Write();
   f_out->Close();
   std::cout << "All done!" << std::endl;
+
+  */
   
 }

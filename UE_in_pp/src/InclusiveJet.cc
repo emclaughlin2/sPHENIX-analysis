@@ -262,6 +262,16 @@ int InclusiveJet::Init(PHCompositeNode *topNode)
     m_T->Branch("cluster2_tower_calo",m_cluster2_tower_calo,"cluster2_tower_calo[clsmult2][500]/I");
     m_T->Branch("cluster2_tower_ieta",m_cluster2_tower_ieta,"cluster2_tower_ieta[clsmult2][500]/I");
     m_T->Branch("cluster2_tower_iphi",m_cluster2_tower_iphi,"cluster2_tower_iphi[clsmult2][500]/I");
+
+    m_T->Branch("clsmult4",&m_clsmult4,"clsmult4/I");
+    m_T->Branch("cluster4_e",m_cluster4_e,"cluster4_e[clsmult4]/F");
+    m_T->Branch("cluster4_eta",m_cluster4_eta,"cluster4_eta[clsmult4]/F");
+    m_T->Branch("cluster4_phi",m_cluster4_phi,"cluster4_phi[clsmult4]/F");
+    m_T->Branch("cluster4_ntowers",m_cluster4_ntowers,"cluster4_ntowers[clsmult4]/I");
+    m_T->Branch("cluster4_tower_e",m_cluster4_tower_e,"cluster4_tower_e[clsmult4][500]/F");
+    m_T->Branch("cluster4_tower_calo",m_cluster4_tower_calo,"cluster4_tower_calo[clsmult4][500]/I");
+    m_T->Branch("cluster4_tower_ieta",m_cluster4_tower_ieta,"cluster4_tower_ieta[clsmult4][500]/I");
+    m_T->Branch("cluster4_tower_iphi",m_cluster4_tower_iphi,"cluster4_tower_iphi[clsmult4][500]/I");
   }
 
   if(m_doTruth) {
@@ -600,6 +610,14 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
 
   RawClusterContainer *topoclusters2 = findNode::getClass<RawClusterContainer>(topNode,"TOPOCLUSTER_ALLCALO_2SIGMA"); 
   if (m_doTopoclusters && !topoclusters2) {
+        std::cout
+    <<"MyJetAnalysis::process_event - Error can not find 2 sigma topoclusters "
+    << std::endl;
+  exit(-1);
+  }
+
+  RawClusterContainer *topoclusters4 = findNode::getClass<RawClusterContainer>(topNode,"TOPOCLUSTER_ALLCALO_4SIGMA"); 
+  if (m_doTopoclusters && !topoclusters4) {
         std::cout
     <<"MyJetAnalysis::process_event - Error can not find 2 sigma topoclusters "
     << std::endl;
@@ -1005,6 +1023,32 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
         if (m_clsmult2 == 10000) { break; }
       } 
     }
+
+    if (topoclusters4) {
+      RawClusterContainer::Map clusterMap = topoclusters4->getClustersMap();
+      m_clsmult4 = 0;
+      float cluster_vertex = m_zvtx;
+      if ((m_doMBDeff || m_doMBDeffsyst) && fabs(m_zvtx) > 200) { cluster_vertex = 0.0; }
+      for(auto entry : clusterMap){
+        RawCluster* cluster = entry.second;
+        CLHEP::Hep3Vector origin(0, 0, cluster_vertex);
+        m_cluster4_e[m_clsmult4] = cluster->get_energy();
+        m_cluster4_eta[m_clsmult4] = RawClusterUtility::GetPseudorapidity(*cluster, origin);
+        m_cluster4_phi[m_clsmult4] = RawClusterUtility::GetAzimuthAngle(*cluster, origin);
+        m_cluster4_ntowers[m_clsmult4] = (int)cluster->getNTowers();
+        int m_clstower = 0;
+        for (const auto& [tower_id, tower_e] : cluster->get_towermap())
+        {
+            m_cluster4_tower_calo[m_clsmult4][m_clstower] = static_cast<int>(RawTowerDefs::decode_caloid(tower_id));
+            m_cluster4_tower_ieta[m_clsmult4][m_clstower]  = RawTowerDefs::decode_index1(tower_id);
+            m_cluster4_tower_iphi[m_clsmult4][m_clstower]  = RawTowerDefs::decode_index2(tower_id);
+            m_cluster4_tower_e[m_clsmult4][m_clstower] = tower_e;
+            m_clstower++;
+        }
+        m_clsmult4++;
+        if (m_clsmult4 == 10000) { break; }
+      } 
+    }
   }
 
   if (m_doTruth) {
@@ -1014,7 +1058,7 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
       // Get truth particle
       const PHG4Particle *truth = iter->second;
       if (!truth) { std::cout << "missing particle" << std::endl; continue; }
-      if (!truthinfo->is_primary(truth)) continue;
+      //if (!truthinfo->is_primary(truth)) continue;
       /// Get this particles momentum, etc.
       float eta = atanh(truth->get_pz() / sqrt(truth->get_px()*truth->get_px()+truth->get_py()*truth->get_py()+truth->get_pz()*truth->get_pz()));
       if (fabs(eta) > 1.1) { continue; }
@@ -1038,7 +1082,7 @@ int InclusiveJet::process_event(PHCompositeNode *topNode)
       // Get truth particle
       const PHG4Particle *truth = iter2->second;
       if (!truth) { std::cout << "missing particle" << std::endl; continue; }
-      if (!truthinfo->is_primary(truth)) continue;
+      //if (!truthinfo->is_primary(truth)) continue;
       /// Get this particles momentum, etc.
       float eta = atanh(truth->get_pz() / sqrt(truth->get_px()*truth->get_px()+truth->get_py()*truth->get_py()+truth->get_pz()*truth->get_pz()));
       if (fabs(eta) > 1.1) { continue; }

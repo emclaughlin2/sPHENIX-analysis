@@ -116,7 +116,7 @@ void toy_errors1D(RooUnfoldBayes& unfold, TH1D* h_unfolded, int ntoys = 1000) {
 void do_unfold(const char* simfile = "analysis_sim_run21_output/output_dijet_sim_iter_3.root",
                const char* datafile = "analysis_data_run21_output/output_pu_correct_data_dijet.root",
                std::string outfileroot = "output_unfolded_data_dijet_bkg_cut_",
-               int variations = 7) {
+               int variations = 11) {
 
     std::cout << gSystem->GetLibraries() << std::endl;
     std::cout << RooUnfoldResponse::Class()->GetImplFileName() << std::endl;
@@ -126,13 +126,19 @@ void do_unfold(const char* simfile = "analysis_sim_run21_output/output_dijet_sim
     TFile *f_data = new TFile(datafile, "READ");
 
     int ntoys = 1000;
-    std::vector<std::string> syst = {"calib_dijet","calib_dijet_jesdown","calib_dijet_jesup","calib_dijet_jerdown","calib_dijet_jerup","calib_dijet_half1","calib_dijet_half2","jetpt_respmatrix","caloet_respmatrix"};;
+    std::vector<std::string> syst = {"calib_dijet","calib_dijet_jesdown","calib_dijet_jesup","calib_dijet_jerdown","calib_dijet_jerup",
+    "calib_dijet_clus_smear","calib_dijet_ohcal_mc_data_var","calib_dijet_2sigma_noise","calib_dijet_4sigma_noise",
+    "calib_dijet_half1","calib_dijet_half2","jetpt_respmatrix","caloet_respmatrix"};;
     std::vector<std::string> trim = {"","_trim_5","_trim_10","_reweight","_reweight_trim_5","_reweight_trim_10"};
-    std::vector<std::string> data_var = {"h_calibjet_pt_dijet_eff","h_calibjet_pt_dijet_effdown","h_calibjet_pt_dijet_effup","h_calibjet_pt_dijet_pu_correct_et","h_calibjet_pt_timingeffup"};
-    TH2D* h_measure[5];
+    std::vector<std::string> data_var = {"h_calibjet_pt_dijet_eff","h_calibjet_pt_dijet_effdown","h_calibjet_pt_dijet_effup","h_calibjet_pt_dijet_pu_correct_et","h_calibjet_pt_timingeffup",
+    "h_calibjet_pt_emcal_scale_up","h_calibjet_pt_emcal_scale_down","h_calibjet_pt_ihcal_scale_up","h_calibjet_pt_ihcal_scale_down","h_calibjet_pt_ohcal_scale_up","h_calibjet_pt_ohcal_scale_down",
+    "h_calibjet_pt_phi_res","h_calibjet_pt_had_resp_up","h_calibjet_pt_had_resp_down","h_calibjet_pt_2sigma_noise","h_calibjet_pt_4sigma_noise"};
+
+    int n_data_var = 16;
+    TH2D* h_measure[n_data_var];
     for (int i = 0; i < data_var.size(); i++) { h_measure[i] = (TH2D*)f_data->Get(data_var[i].c_str()); }
 
-    for (int i = 0; i < variations; i++) {
+    for (int i = 0; i < variations; i++) { // simulation response matrix variations
         std::string outfilename = outfileroot + syst[i] + "_run28_iter_3_1000toys.root";
         TFile *f_out = new TFile(outfilename.c_str(),"RECREATE");
         
@@ -156,10 +162,10 @@ void do_unfold(const char* simfile = "analysis_sim_run21_output/output_dijet_sim
             }
         }
 
-        RooUnfoldBayes unfold_var[4][20];
-        TH2D* h_unfold_var[4][20];
+        RooUnfoldBayes unfold_var[n_data_var-1][20];
+        TH2D* h_unfold_var[n_data_var-1][20];
         if (i == 0) {
-            for (int k = 0; k < 4; k++) {
+            for (int k = 0; k < n_data_var-1; k++) { // data histogram variations
                 for (int n = 0; n < 20; n++) {
                     unfold_var[k][n] = RooUnfoldBayes(h_respmatrix[5], h_measure[k+1]);
                     unfold_var[k][n].SetIterations(n+1);
@@ -168,6 +174,24 @@ void do_unfold(const char* simfile = "analysis_sim_run21_output/output_dijet_sim
                     h_unfold_var[k][n]->SetName(("h_unfold_" + data_var[k+1] + "_" + syst[i] + trim[5] + "_" + to_string(n + 1)).c_str());
                     //toy_errors(unfold_var[k][n], h_unfold_var[k][n], ntoys);
                 }
+            }
+        } else if (i == 7) { // 2 sigma topoclusters variation
+            for (int n = 0; n < 20; n++) {
+                unfold_var[0][n] = RooUnfoldBayes(h_respmatrix[5], h_measure[14]);
+                unfold_var[0][n].SetIterations(n+1);
+                unfold_var[0][n].HandleFakes(true);
+                h_unfold_var[0][n] = (TH2D*)unfold_var[0][n].Hunfold(RooUnfolding::kErrors);
+                h_unfold_var[0][n]->SetName(("h_unfold_" + data_var[14] + "_" + syst[i] + trim[5] + "_" + to_string(n + 1)).c_str());
+                //toy_errors(unfold_var[0][n], h_unfold_var[0][n], ntoys);
+            }
+        } else if (i == 8) { // 4 sigma topoclusters variation
+            for (int n = 0; n < 20; n++) {
+                unfold_var[0][n] = RooUnfoldBayes(h_respmatrix[5], h_measure[15]);
+                unfold_var[0][n].SetIterations(n+1);
+                unfold_var[0][n].HandleFakes(true);
+                h_unfold_var[0][n] = (TH2D*)unfold_var[0][n].Hunfold(RooUnfolding::kErrors);
+                h_unfold_var[0][n]->SetName(("h_unfold_" + data_var[15] + "_" + syst[i] + trim[5] + "_" + to_string(n + 1)).c_str());
+                //toy_errors(unfold_var[0][n], h_unfold_var[0][n], ntoys);
             }
         }
         
@@ -184,13 +208,13 @@ void do_unfold(const char* simfile = "analysis_sim_run21_output/output_dijet_sim
             h_respmatrix1D[1] = (RooUnfoldResponse*)f_sim->Get("h_caloet_respmatrix_reweight_trim_10");
             for (int j = 0; j < 2; j++) { 
                 h_truth1D[j] = (TH1D*)h_respmatrix1D[j]->Htruth(); 
-                h_truth1D[j]->SetName(("h_truth_"+syst[j+7]+"reweight_trim_10").c_str()); 
+                h_truth1D[j]->SetName(("h_truth_"+syst[j+11]+"reweight_trim_10").c_str()); 
                 for (int n = 0; n < 20; n++) {
                     unfold1D[j][n] = RooUnfoldBayes(h_respmatrix1D[j], h_measure1D[j]);
                     unfold1D[j][n].SetIterations(n+1);
                     unfold1D[j][n].HandleFakes(true);
                     h_unfold1D[j][n] = (TH1D*)unfold1D[j][n].Hunfold(RooUnfolding::kErrors); 
-                    h_unfold1D[j][n]->SetName(("h_unfold_"+syst[j+7]+"_reweight_trim_10_"+to_string(n+1)).c_str());
+                    h_unfold1D[j][n]->SetName(("h_unfold_"+syst[j+11]+"_reweight_trim_10_"+to_string(n+1)).c_str());
                     //toy_errors1D(unfold1D[j][n], h_unfold1D[j][n], ntoys);
                 }
             }
@@ -204,11 +228,21 @@ void do_unfold(const char* simfile = "analysis_sim_run21_output/output_dijet_sim
             for (int k = 0; k < data_var.size(); k++) {
                 h_measure[k]->Write();
             }
-            for (int k = 0; k < 4; k++) {
+            for (int k = 0; k < n_data_var-1; k++) {
                 for (int n = 0; n < 20; n++) {
                     h_unfold_var[k][n]->Write();
                 }
             }   
+        }
+        if (i == 7) {
+            for (int n = 0; n < 20; n++) {
+                h_unfold_var[0][n]->Write();
+            }
+        }
+        if (i == 8) {
+            for (int n = 0; n < 20; n++) {
+                h_unfold_var[0][n]->Write();
+            }
         }
         
         for (int j = 0; j < trim.size(); j++) {

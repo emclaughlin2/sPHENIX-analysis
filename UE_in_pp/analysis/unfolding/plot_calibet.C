@@ -1,20 +1,26 @@
-double calibptbins[] = {21, 26, 32.5, 40.5, 63.5}; // 52.0
-double truthptbins[] = {17, 21, 26, 32.5, 40.5, 63.5, 82}; // 72
-double calibetbins[] = {-1.08, -0.1, 0.0, 0.1, 1.08, 1.97, 3.05, 4.68, 6.2, 15.0}; // calib bins set 1
-double truthetbins[] = {0.0, 0.5, 1.08, 1.97, 3.05, 4.68, 6.2, 15.0, 35.0};
-int calibnet = sizeof(calibetbins) / sizeof(calibetbins[0]) - 1;
-int truthnet = sizeof(truthetbins) / sizeof(truthetbins[0]) - 1;
-int calibnpt = sizeof(calibptbins) / sizeof(calibptbins[0]) - 1;
-int truthnpt = sizeof(truthptbins) / sizeof(truthptbins[0]) - 1;
-//#include "unfold_Def.h"
+//double calibptbins[] = {21, 26, 32.5, 40.5, 63.5}; // 52.0
+//double truthptbins[] = {17, 21, 26, 32.5, 40.5, 63.5, 82}; // 72
+//double calibetbins[] = {-1.08, -0.1, 0.0, 0.1, 1.08, 1.97, 3.05, 4.68, 6.2, 15.0}; // calib bins set 1
+//double truthetbins[] = {0.0, 0.5, 1.08, 1.97, 3.05, 4.68, 6.2, 15.0, 35.0};
+//int calibnet = sizeof(calibetbins) / sizeof(calibetbins[0]) - 1;
+//int truthnet = sizeof(truthetbins) / sizeof(truthetbins[0]) - 1;
+//int calibnpt = sizeof(calibptbins) / sizeof(calibptbins[0]) - 1;
+//int truthnpt = sizeof(truthptbins) / sizeof(truthptbins[0]) - 1;
+#include "unfold_Def.h"
 
-void plot_calibet(const char* infile = "input.root") 
+void plot_calibet(bool dijet = 1) 
 {
+    string infile;
+    if (dijet) {
+        infile = "analysis_data_run28_output/output_pu_correct_data_dijet_bkg_cut.root";
+    } else {
+        infile = "analysis_data_run28_output/output_pu_correct_data_efrac_bkg_cut.root";
+    }
 
     // Open file
-    TFile* f = TFile::Open(infile, "READ");
+    TFile* f = TFile::Open(infile.c_str(), "READ");
     if (!f || f->IsZombie()) {
-        Error("plot_calibjets", "Could not open file %s", infile);
+        Error("plot_calibjets", "Could not open file %s", infile.c_str());
         return;
     }
 
@@ -103,6 +109,11 @@ void plot_calibet(const char* infile = "input.root")
     gStyle->SetOptStat(0);
 
     TLegend* leg = new TLegend(0.3,0.75,0.88,0.88);
+    if (dijet) {
+        leg->AddEntry("","Exclusive Dijet","");
+    } else {
+        leg->AddEntry("","Inclusive Jet","");
+    }
     bool first = true;
     for (size_t i = 0; i < projY_hists.size(); i++) {
         if (!projY_hists[i]) continue;
@@ -124,6 +135,9 @@ void plot_calibet(const char* infile = "input.root")
     }
     leg->Draw();
 
-    c->SaveAs("plots_run28/calibet_et_binning_comparison.pdf");
-    c->SaveAs("plots_run28/calibet_et_binning_comparison.png");
+    if (dijet) {
+        c->SaveAs("sphenix_primary_run28_output_files/calibet_neg_1GeV_et_cut_dijet_et_binning_comparison.png");
+    } else {
+        c->SaveAs("sphenix_primary_run28_output_files/calibet_neg_1GeV_et_cut_efrac_et_binning_comparison.png");
+    }
 }

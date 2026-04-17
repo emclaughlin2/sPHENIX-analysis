@@ -307,6 +307,16 @@ class InclusiveJet : public SubsysReco
   int m_cluster2_tower_iphi[2000][500];
   float m_cluster2_tower_e[2000][500];
 
+  int m_clsmult4;
+  float m_cluster4_e[2000];
+  float m_cluster4_eta[2000];
+  float m_cluster4_phi[2000];
+  int m_cluster4_ntowers[2000];
+  int m_cluster4_tower_calo[2000][500];
+  int m_cluster4_tower_ieta[2000][500];
+  int m_cluster4_tower_iphi[2000][500];
+  float m_cluster4_tower_e[2000][500];
+
   int m_trkmult;
   unsigned int _nlayers_maps = 3;
   unsigned int _nlayers_intt = 4;

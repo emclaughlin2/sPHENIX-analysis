@@ -173,7 +173,7 @@ int make_trig_eff_fits(std::string time_cut, bool do_quad = false) {
     TCanvas* c = new TCanvas("c","TEfficiency fit with smooth ±1σ",800,600);
     jet10->Draw("AP");
     c->Update();
-    jet10->GetPaintedGraph()->GetXaxis()->SetRangeUser(0,60);
+    jet10->GetPaintedGraph()->GetXaxis()->SetRangeUser(0,35);
     c->Update();
     jet10->GetPaintedGraph()->GetXaxis()->SetTitle("Leading Jet p_{T} [GeV]");
     c->Update();

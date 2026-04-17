@@ -20,16 +20,16 @@ import ROOT
 
 
 CUTS = ["dijet", "none"]
-TRIGS = [5, 12, 20, 30, 40, 50, 60]
+TRIGS = [12, 20, 30, 40, 50, 60]
 #TRIGS = [10,20,30,50]
 SCALE = 1.4903 * 0.81608598
 #SCALE = 3.997
 HIST_NAMES = [
     "h_lead_spectra_record",
     "h_lead_truth_spectra_record",
-    "h_jes_qa",
-    #"h_et_transverse_record",
-    #"h_et_truth_transverse_record",
+    #"h_jes_qa",
+    "h_et_transverse_record",
+    "h_et_truth_transverse_record",
 ]
 
 
@@ -71,13 +71,8 @@ def fetch_histogram(root_file, hist_name: str):
     hist = root_file.Get(hist_name)
     if not hist:
         return None
-    if hist_name == "h_jes_qa":
-        hist1d = hist.ProjectionY('h_jes_qa_pjy')
-        hist1d.SetDirectory(0)
-        return hist1d
-    else:
-        hist.SetDirectory(0)
-        return hist
+    hist.SetDirectory(0)
+    return hist
 
 
 def fit_jes_histogram(hist):
@@ -125,26 +120,18 @@ def make_overlay_for_cut_and_hist(
         if not hist:
             print(f"[warn] Histogram '{hist_name}' missing in {filename}")
             continue
-        if hist_name != 'h_jes_qa':
-            hist.Rebin(8)
-            hist.Scale(1.0/8.0)
+        hist.Rebin(8)
+        hist.Scale(1.0/8.0)
         hist.Scale(SCALE)
         hist.SetLineColor(color_for_index(i))
         hist.SetLineWidth(2)
         hist.SetMarkerColor(color_for_index(i))
         hist.SetMarkerStyle(20 + (i % 10))
         hist.SetMarkerSize(0.9)
-        if hist_name == 'h_jes_qa':
-            hist.GetXaxis().SetRangeUser(0,5)
-        else:
-            hist.GetXaxis().SetRangeUser(14,100)
-        hist.GetYaxis().SetRangeUser(0.000001,20000)
+        hist.GetYaxis().SetRangeUser(0.0000001,20000)
 
         fit_mean = None
         fit_sigma = None
-        if hist_name == "h_jes_qa":
-            fit_mean, fit_sigma = fit_jes_histogram(hist)
-
         histograms.append((trig, hist, fit_mean, fit_sigma))
 
         if total_hist is None:
@@ -170,15 +157,7 @@ def make_overlay_for_cut_and_hist(
     for trig, hist, fit_mean, fit_sigma in histograms:
         draw_opt = "hist" if first else "hist same"
         hist.Draw(draw_opt)
-        if hist_name == "h_jes_qa" and fit_mean is not None and fit_sigma is not None:
-            legend_label = (
-                f"cut={cut}, trig={trig}, "
-                f"#mu={fit_mean:.3f}, #sigma={fit_sigma:.3f}"
-            )
-        elif hist_name == "h_jes_qa":
-            legend_label = f"cut={cut}, trig={trig}, fit failed"
-        else:
-            legend_label = f"cut={cut}, trig={trig}"
+        legend_label = f"cut={cut}, trig={trig}"
 
         legend.AddEntry(hist, legend_label, "l")
         first = False
@@ -213,7 +192,7 @@ def main() -> int:
     parser.add_argument(
         "-o",
         "--output-dir",
-        default="pyroot_overlays_run21_test",
+        default="pyroot_overlays",
         help="Directory to store output plots (default: pyroot_overlays)",
     )
     args = parser.parse_args()

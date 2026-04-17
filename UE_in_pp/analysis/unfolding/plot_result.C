@@ -14,13 +14,15 @@
 #include <sstream>
 #include <iterator>
 #include <unfold_Def.h>
+#include <iomanip>
 
-int rgb[20][3] = {{0,0,0},{230, 25, 75}, {60, 180, 75}, {255, 225, 25}, {0, 130, 200},
+int rgb[25][3] = {{0,0,0}, {230, 25, 75}, {60, 180, 75}, {255, 225, 25}, {0, 130, 200},
                  {245, 130, 48}, {145, 30, 180}, {70, 240, 240}, {240, 50, 230}, {210, 245, 60},
                 {250, 190, 212}, {0, 128, 128}, {220, 190, 255}, {170, 110, 40}, {128, 128, 128}, 
-                {128, 0, 0}, {128, 128, 0}, {255, 215, 180}, {0, 0, 128}, {34, 139, 34}};
-int colors[20];
-for (int i = 0; i < 20; i++) colors[i] = TColor::GetColor(rgb[i][0],rgb[i][1],rgb[i][2]);
+                {128, 0, 0}, {128, 128, 0}, {255, 215, 180}, {0, 0, 128}, {34, 139, 34}, 
+                {59, 213, 224},{173, 117, 219},{209, 62, 109},{108, 137, 204},{189, 10, 67}};
+int colors[25];
+for (int i = 0; i < 25; i++) colors[i] = TColor::GetColor(rgb[i][0],rgb[i][1],rgb[i][2]);
 
 void draw_profile(std::vector<TH1D*> truth, std::vector<TH1D*> unfold, bool jet, std::vector<std::string> leg_tags, int max_iter, int dijet, const char* output_name = nullptr)
 {
@@ -33,37 +35,24 @@ void draw_profile(std::vector<TH1D*> truth, std::vector<TH1D*> unfold, bool jet,
     pad1->Draw();
     pad1->cd();
 
-    truth[0]->SetStats(0);
-    truth[0]->SetLineColor(colors[max_iter + 1]);
-    truth[0]->SetMarkerColor(colors[max_iter + 1]);
-    truth[0]->GetXaxis()->SetLabelSize(0);
-    truth[1]->SetStats(0);
-    truth[1]->SetLineColor(colors[max_iter + 2]);    
-    truth[1]->SetMarkerColor(colors[max_iter + 2]);
-    truth[0]->GetXaxis()->SetRangeUser(17, 63);
-    truth[1]->GetXaxis()->SetRangeUser(17, 63);
-
     for (int i = max_iter - 1; i >= 0; --i) {
         unfold[i]->SetStats(0); // Use TColor::GetColor if needed
         unfold[i]->SetLineColor(colors[i]); // Use TColor::GetColor if needed
         unfold[i]->SetMarkerColor(colors[i]);
         unfold[i]->GetXaxis()->SetLabelSize(0);
-        unfold[i]->GetXaxis()->SetRangeUser(17, 63);
-        unfold[i]->GetYaxis()->SetRangeUser(1,5);
-        unfold[i]->GetYaxis()->SetTitle("<#SigmaE_{T}> [GeV]");
+        unfold[i]->GetXaxis()->SetRangeUser(21, 63);
+        unfold[i]->GetYaxis()->SetRangeUser(0.0, 1.2);
+        unfold[i]->GetYaxis()->SetTitle("<#SigmaE_{T}/#delta#eta#delta#phi> [GeV]");
         unfold[i]->GetXaxis()->SetTitle("p_{T,lead} [GeV]");
     }
 
     unfold[1]->Draw();
     for (int i = 2; i < max_iter; ++i) {
         unfold[i]->Draw("same");
-    }
+    } 
     unfold[0]->Draw("same");
-    for (int i = 0; i < truth.size(); i++) {
-        truth[i]->Draw("same");
-    }
 
-    TLegend* leg = new TLegend(0.17, 0.6, 0.92, 0.92);
+    TLegend* leg = new TLegend(0.17, 0.5, 0.92, 0.92);
     leg->AddEntry("","#bf{#it{sPHENIX}} Internal","");
     leg->AddEntry("","200 GeV p+p anti-k_{t}#it{R}=0.4 |#eta_{jet}| < 0.7","");
     if (dijet) { leg->AddEntry("","Exclusive dijet",""); }
@@ -72,8 +61,6 @@ void draw_profile(std::vector<TH1D*> truth, std::vector<TH1D*> unfold, bool jet,
     for (int i = 0; i < max_iter; ++i) {
         leg->AddEntry(unfold[i], leg_tags[i].c_str(), "lp");
     }
-    leg->AddEntry(truth[0], "Pythia8 Truth", "lp");
-    leg->AddEntry(truth[1], "Herwig Truth", "lp");
     leg->SetTextSize(0.04);
     leg->Draw();
 
@@ -125,24 +112,28 @@ void draw_profile(std::vector<TH1D*> truth, std::vector<TH1D*> unfold, bool jet,
     ratios[0]->GetXaxis()->SetTitleOffset(0);
     ratios[0]->GetXaxis()->SetLabelFont(43);
     ratios[0]->GetXaxis()->SetLabelSize(25);
-    ratios[0]->GetXaxis()->SetRangeUser(17, 63);
+    ratios[0]->GetXaxis()->SetRangeUser(21, 63);
 
     std::cout << ratios.size() << std::endl;
     for (int i = 0; i < ratios.size(); ++i) {
-        ratios[i]->GetXaxis()->SetRangeUser(17, 63);
+        ratios[i]->GetXaxis()->SetRangeUser(21, 63);
         ratios[i]->GetYaxis()->SetRangeUser(0.5,1.5);
         std::cout << i << " " << leg_tags[i+1] << " ";
+        float avgbin = 0;
+        int nbins = 0;
         for (int j = 2; j < ratios[i]->GetNbinsX(); j++) {
-            std::cout << ratios[i]->GetBinContent(j) << " ";
+            avgbin += ratios[i]->GetBinContent(j) - 1.0; 
+            nbins++;
+            //std::cout << ratios[i]->GetBinContent(j) << " ";
         }
-        std::cout << std::endl;
+        std::cout << std::setprecision(3) << (avgbin*100.0)/nbins << "% " << std::endl;
         if (i == 0) ratios[i]->Draw("hist");
         else ratios[i]->Draw("hist, same");
     }
 
-    TLine* line0 = new TLine(17, 1.0, 63, 1.0);
-    TLine* line1 = new TLine(17, 0.95, 63, 0.95);
-    TLine* line2 = new TLine(17, 1.05, 63, 1.05);
+    TLine* line0 = new TLine(21, 1.0, 63, 1.0);
+    TLine* line1 = new TLine(21, 0.95, 63, 0.95);
+    TLine* line2 = new TLine(21, 1.05, 63, 1.05);
     line0->SetLineStyle(1);
     line1->SetLineStyle(2);
     line2->SetLineStyle(2);
@@ -167,19 +158,19 @@ void draw_test_profile(std::vector<TH1D*> truth, std::vector<TH1D*> unfold, bool
     truth[1]->SetStats(0);
     truth[1]->SetLineColor(max_iter + 2);
     truth[1]->SetMarkerColor(max_iter + 2);
-    truth[0]->GetXaxis()->SetRangeUser(17, 63);
-    truth[1]->GetXaxis()->SetRangeUser(17, 63);
+    truth[0]->GetXaxis()->SetRangeUser(21, 63);
+    truth[1]->GetXaxis()->SetRangeUser(21, 63);
 
     for (int i = 0; i < max_iter; ++i) {
         unfold[i]->SetStats(0);
         unfold[i]->SetLineColor(colors[i]); // Use TColor::GetColor if needed
         unfold[i]->SetMarkerColor(colors[i]);
-        unfold[i]->GetXaxis()->SetRangeUser(17, 63);
-        unfold[i]->GetYaxis()->SetRangeUser(1,5);
+        unfold[i]->GetXaxis()->SetRangeUser(21, 63);
+        unfold[i]->GetYaxis()->SetRangeUser(0.0, 1.2);
     }
 
 
-    unfold[0]->GetYaxis()->SetTitle("<#SigmaE_{T}> [GeV]");
+    unfold[0]->GetYaxis()->SetTitle("<#SigmaE_{T}/#delta#eta#delta#phi> [GeV]");
     unfold[0]->GetXaxis()->SetTitle("p_{T,lead} [GeV]");
     unfold[0]->Draw();
     for (int i = 1; i < max_iter; ++i) {
@@ -233,6 +224,8 @@ void draw_result_with_syst(std::vector<TH1D*> truth, std::vector<TH1D*> unfold, 
     g_syst->SetFillStyle(1001);
     g_syst->SetLineWidth(0);
 
+    g_syst->Print();
+
     // --- Canvas ---
     TCanvas* canvas = new TCanvas("canvas_result", "", 600, 800);
 
@@ -246,15 +239,15 @@ void draw_result_with_syst(std::vector<TH1D*> truth, std::vector<TH1D*> unfold, 
     unfold[0]->SetMarkerColor(kBlack);
     unfold[0]->SetMarkerStyle(20);
     unfold[0]->GetXaxis()->SetLabelSize(0);
-    unfold[0]->GetXaxis()->SetRangeUser(17, 63);
-    unfold[0]->GetYaxis()->SetRangeUser(1, 5);
-    unfold[0]->GetYaxis()->SetTitle("<#SigmaE_{T}> [GeV]");
+    unfold[0]->GetXaxis()->SetRangeUser(21, 63);
+    unfold[0]->GetYaxis()->SetRangeUser(0.0, 1.2);
+    unfold[0]->GetYaxis()->SetTitle("<#SigmaE_{T}/#delta#eta#delta#phi> [GeV]");
 
     truth[0]->SetStats(0);
     truth[0]->SetLineColor(kRed + 1);
     truth[0]->SetLineWidth(2);
     truth[0]->SetMarkerColor(kRed + 1);
-    truth[0]->GetXaxis()->SetRangeUser(17, 63);
+    truth[0]->GetXaxis()->SetRangeUser(21, 63);
 
     unfold[0]->Draw("E1");
     g_syst->Draw("2 same");
@@ -325,15 +318,15 @@ void draw_result_with_syst(std::vector<TH1D*> truth, std::vector<TH1D*> unfold, 
     //ratio_nominal->GetXaxis()->SetTitleOffset(4);
     ratio_nominal->GetXaxis()->SetLabelFont(43);
     ratio_nominal->GetXaxis()->SetLabelSize(25);
-    ratio_nominal->GetXaxis()->SetRangeUser(17, 63);
+    ratio_nominal->GetXaxis()->SetRangeUser(21, 63);
 
     ratio_nominal->Draw("E1");
     g_ratio_syst->Draw("2 same");
     ratio_nominal->Draw("E1 same");
 
-    TLine* line0 = new TLine(17, 1.0, 63, 1.0);
-    TLine* line1 = new TLine(17, 0.95, 63, 0.95);
-    TLine* line2 = new TLine(17, 1.05, 63, 1.05);
+    TLine* line0 = new TLine(21, 1.0, 63, 1.0);
+    TLine* line1 = new TLine(21, 0.95, 63, 0.95);
+    TLine* line2 = new TLine(21, 1.05, 63, 1.05);
     line0->SetLineStyle(1);
     line1->SetLineStyle(2);
     line2->SetLineStyle(2);
@@ -361,18 +354,33 @@ void plot_result(int dijet = 1) {
     "h_calibjet_pt_dijet_effdown_calib_dijet_reweight_trim_10_2_etEffCorrected", 
     "h_calibjet_pt_dijet_pu_correct_et_calib_dijet_reweight_trim_10_2_etEffCorrected",
     "h_calibjet_pt_timingeffup_calib_dijet_reweight_trim_10_2_etEffCorrected",
+    "h_calibjet_pt_emcal_scale_up_calib_dijet_reweight_trim_10_2_etEffCorrected",
+    "h_calibjet_pt_emcal_scale_down_calib_dijet_reweight_trim_10_2_etEffCorrected",
+    "h_calibjet_pt_ihcal_scale_up_calib_dijet_reweight_trim_10_2_etEffCorrected",
+    "h_calibjet_pt_ihcal_scale_down_calib_dijet_reweight_trim_10_2_etEffCorrected",
+    "h_calibjet_pt_ohcal_scale_up_calib_dijet_reweight_trim_10_2_etEffCorrected",
+    "h_calibjet_pt_ohcal_scale_down_calib_dijet_reweight_trim_10_2_etEffCorrected",
+    "h_calibjet_pt_had_resp_up_calib_dijet_reweight_trim_10_2_etEffCorrected",
+    "h_calibjet_pt_had_resp_down_calib_dijet_reweight_trim_10_2_etEffCorrected",
+    "h_calibjet_pt_phi_res_calib_dijet_reweight_trim_10_2_etEffCorrected",
+    "calib_dijet_clus_smear_reweight_trim_10_2_etEffCorrected",
+    "h_calibjet_pt_2sigma_noise_calib_dijet_2sigma_noise_reweight_trim_10_2_etEffCorrected",
+    "h_calibjet_pt_4sigma_noise_calib_dijet_4sigma_noise_reweight_trim_10_2_etEffCorrected",
+    "calib_dijet_ohcal_mc_data_var_reweight_trim_10_2_etEffCorrected",
     "calib_dijet_reweight_trim_10_2_var_up_etEffCorrected", 
     "calib_dijet_reweight_trim_10_2_var_down_etEffCorrected" 
     };
-    std::vector<std::string> syst_tags = {"Nominal", "JES Down", "JES Up", "JER Down", "JER Up", "No reweight", "Jet Trigger Eff down", "Jet Trigger Eff up", "PU corr", "Timing eff", "MBD eff up", "MBD eff down", "Herwig"};
+    std::vector<std::string> syst_tags = {"Nominal", "JES Down", "JES Up", "JER Down", "JER Up", "No reweight", "Jet Trigger Eff down", "Jet Trigger Eff up", "PU corr", "Timing eff",
+     "EMCal scale up", "EMCal scale down", "IHCal scale up", "IHCal scale down", "OHCal scale up", "OHCal scale down", "Had resp up", "Had resp down", "Cluster Phi Res",
+     "Cluster E res","Noise down","Noise up","OHCal MC/Data var","MBD eff up", "MBD eff down", "Herwig"}; 
 
     std::vector<std::string> truth_syst = {"pythia","herwig"};
 
     TFile* f = nullptr;
     if (dijet) {
-        f = TFile::Open("run28_output_files/output_mbd_correct_w_syst_unfolded_data_8calibetbin_dijet_bkg_cut_run28_iter_3_1000toys.root");
+        f = TFile::Open("sphenix_primary_run28_output_files/output_mbd_correct_unfolded_data_8calibetbin_dijet_bkg_cut_run28_iter_3_1000toys.root");
     } else {
-        f = TFile::Open("run28_output_files/output_mbd_correct_w_syst_unfolded_data_8calibetbin_efrac_bkg_cut_run28_iter_3_1000toys.root");
+        f = TFile::Open("sphenix_primary_run28_output_files/output_mbd_correct_unfolded_data_8calibetbin_efrac_bkg_cut_run28_iter_3_1000toys.root");
     }
     TFile* fherwig = TFile::Open("run21_output_files/output_unfolded_data_herwig_calib_dijet_run21_iter_3_1000toys.root");
 
@@ -465,11 +473,18 @@ void plot_result(int dijet = 1) {
         }
         h_unfold.push_back(hist);
     }
+    for (int i = 0; i < (int)h_unfold.size(); i++) {
+        h_unfold[i]->Scale(3.0 / (2.2*2*M_PI));
+    }
+    for (int i = 0; i < (int)h_truth.size(); i++) {
+        h_truth[i]->Scale(3.0 / (2.2*2*M_PI));
+    }
+
     if (dijet) {
-        draw_profile(h_truth, h_unfold, true, syst_tags, (int)h_unfold.size(), dijet, "run28_output_files/h_profile_run28_8calibetbin_dijet_bkg_cut_figure.png");
-        draw_result_with_syst(h_truth, h_unfold, dijet, "run28_output_files/h_result_run28_8calibetbin_dijet_bkg_cut_syst_band_figure.png");
+        draw_profile(h_truth, h_unfold, true, syst_tags, (int)h_unfold.size(), dijet, "sphenix_primary_run28_output_files/h_profile_run28_w_calo_syst_8calibetbin_dijet_bkg_cut_figure.png");
+        draw_result_with_syst(h_truth, h_unfold, dijet, "sphenix_primary_run28_output_files/h_result_run28_w_calo_syst_8calibetbin_dijet_bkg_cut_syst_band_figure.png");
     } else {
-        draw_profile(h_truth, h_unfold, true, syst_tags, (int)h_unfold.size(), dijet, "run28_output_files/h_profile_run28_8calibetbin_efrac_bkg_cut_figure.png");
-        draw_result_with_syst(h_truth, h_unfold, dijet, "run28_output_files/h_result_run28_8calibetbin_efrac_bkg_cut_syst_band_figure.png");
+        draw_profile(h_truth, h_unfold, true, syst_tags, (int)h_unfold.size(), dijet, "sphenix_primary_run28_output_files/h_profile_run28_w_calo_syst_8calibetbin_efrac_bkg_cut_figure.png");
+        draw_result_with_syst(h_truth, h_unfold, dijet, "sphenix_primary_run28_output_files/h_result_run28_w_calo_syst_8calibetbin_efrac_bkg_cut_syst_band_figure.png");
     }
 }

@@ -196,7 +196,7 @@ void draw_unfolded_spectra(TH1D* truth, TH1D* measure, std::vector<TH1D*> unfold
 
 void draw_iteration_graph(std::vector<TGraph*> graphs, std::vector<std::string> leg_tags, std::string syst_tag, std::string syst, string fname = "") {
     TCanvas* c1 = new TCanvas("c1", "Val Diff and Errors", 800, 600);
-    graphs[0]->GetYaxis()->SetRangeUser(0,0.2);
+    graphs[0]->GetYaxis()->SetRangeUser(0,0.1);
     graphs[0]->GetXaxis()->SetTitle("Iteration");
     graphs[0]->GetYaxis()->SetTitle("#sigma");
     graphs[0]->Draw("ALP");

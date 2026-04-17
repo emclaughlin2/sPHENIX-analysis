@@ -11,6 +11,24 @@
 #include <string>
 #include <sstream>
 #include <iterator>
+#include "unfold_Def.h"
+
+TH2D* clone_to_truth_binning(TH2D* source, const std::string& hist_name)
+{
+    TH2D* truth_binned = new TH2D(hist_name.c_str(), source->GetTitle(),
+                                  truthnpt, truthptbins,
+                                  truthnet, truthetbins);
+    truth_binned->Sumw2();
+
+    for (int ix = 1; ix <= truthnpt; ++ix) {
+        for (int iy = 1; iy <= truthnet; ++iy) {
+            truth_binned->SetBinContent(ix, iy, source->GetBinContent(ix, iy));
+            truth_binned->SetBinError(ix, iy, source->GetBinError(ix, iy));
+        }
+    }
+
+    return truth_binned;
+}
 
 void draw_reweighted_spectra(TH1D* truth, TH1D* reweight, bool jet, std::pair<double, double> x_range, std::string syst_tag, const char* output_name = nullptr)
 {
@@ -21,7 +39,7 @@ void draw_reweighted_spectra(TH1D* truth, TH1D* reweight, bool jet, std::pair<do
     pad1->Draw();
     pad1->cd();
     if (jet) pad1->SetLogy(1);
-    //else pad1->SetLogx(1);
+    else pad1->SetLogx(1);
 
     vector<double> bins;
     vector<double> bin_size;
@@ -60,6 +78,7 @@ void draw_reweighted_spectra(TH1D* truth, TH1D* reweight, bool jet, std::pair<do
     truth->GetXaxis()->SetLabelSize(0);
     reweight->GetXaxis()->SetLabelSize(0);
     truth->GetXaxis()->SetRangeUser(x_range.first, x_range.second);
+    reweight->GetXaxis()->SetRangeUser(x_range.first, x_range.second);
 
     truth->Draw();
     reweight->Draw("same");
@@ -78,7 +97,7 @@ void draw_reweighted_spectra(TH1D* truth, TH1D* reweight, bool jet, std::pair<do
     pad2->SetBottomMargin(0.2);
     pad2->Draw();
     pad2->cd();
-    //if (!jet) pad2->SetLogx(1);
+    if (!jet) pad2->SetLogx(1);
 
     TH1D* r0 = (TH1D*)reweight->Clone("ratio");
     r0->Divide(truth);
@@ -115,37 +134,45 @@ void draw_reweighted_spectra(TH1D* truth, TH1D* reweight, bool jet, std::pair<do
     if (output_name) canvas->SaveAs(output_name);
 }
 
-void plot_reweight() {
+void plot_reweight(bool dijet = 1) {
     gROOT->LoadMacro("/sphenix/u/egm2153/spring_2023/sPhenixStyle.C");
     gROOT->ProcessLine("SetsPhenixStyle()");
 
-    std::vector<std::string> syst = {"calib_dijet","calib_dijet_jesdown","calib_dijet_jesup","calib_dijet_jerdown","calib_dijet_jerup"};
-    std::vector<std::string> syst_tags = {"Nominal", "JES Down", "JES Up", "JER Down", "JER Up"};
-    //std::vector<std::string> trim = {"_trim_10","_reweight_trim_10"};
-    std::vector<std::string> trim = {"","_trim_5","_trim_10","_reweight","_reweight_trim_5","_reweight_trim_10"};
+    std::vector<std::string> syst = {"calib_dijet"}; //,"calib_dijet_jesdown","calib_dijet_jesup","calib_dijet_jerdown","calib_dijet_jerup"};
+    std::vector<std::string> syst_tags = {"Nominal"}; //, "JES Down", "JES Up", "JER Down", "JER Up"};
+    std::vector<std::string> trim = {"_trim_10","_reweight_trim_10"};
+    //std::vector<std::string> trim = {"","_trim_5","_trim_10","_reweight","_reweight_trim_5","_reweight_trim_10"};
 
-    TFile* f = TFile::Open("run28_output_files/output_unfolded_data_efrac_bkg_cut_calib_dijet_run28_iter_3_1000toys.root");
-
+    TFile* f;
+    if (dijet) f = TFile::Open("sphenix_primary_run28_output_files/output_unfolded_data_8calibetbin_dijet_bkg_cut_calib_dijet_run28_iter_3_1000toys.root");
+    else f = TFile::Open("sphenix_primary_run28_output_files/output_unfolded_data_8calibetbin_efrac_bkg_cut_calib_dijet_run28_iter_3_1000toys.root");
     std::vector<std::vector<TH2D*>> h_truth_2D(5, std::vector<TH2D*>(2, nullptr));
     std::vector<std::vector<TH1D*>> hj_truth(5, std::vector<TH1D*>(2, nullptr));
     std::vector<std::vector<TH1D*>> hc_truth(5, std::vector<TH1D*>(2, nullptr));
     
     for (int i = 0; i < syst.size(); i++) {
         for (int j = 0; j < trim.size(); j++) {
-            h_truth_2D[i][j] = (TH2D*)f->Get(("h_truth_"+syst[i]+trim[j]).c_str());
+            TH2D* h_truth_raw = (TH2D*)f->Get(("h_truth_"+syst[i]+trim[j]).c_str());
+            h_truth_2D[i][j] = clone_to_truth_binning(h_truth_raw, ("h_truth_"+syst[i]+trim[j]+"_truthbins"));
             hj_truth[i][j] = h_truth_2D[i][j]->ProjectionX(("hj_truth_"+syst[i]+trim[j]).c_str());
             hc_truth[i][j] = h_truth_2D[i][j]->ProjectionY(("hc_truth_"+syst[i]+trim[j]).c_str());
         }
     }
     
     for (int i = 0; i < syst.size(); i++) {
-            string jet_outfile = "plots_run28/h_reweighted_truth_jet_spectrum_" + syst[i] + "_iter_3.png";
-            string et_outfile = "plots_run28/h_reweighted_truth_et_spectrum_" + syst[i] + "_iter_3.png";
-            draw_reweighted_spectra(hj_truth[i][0], hj_truth[i][1], true, std::make_pair(0.0, 1.0), syst_tags[i], jet_outfile.c_str());
-            draw_reweighted_spectra(hc_truth[i][0], hc_truth[i][1], false, std::make_pair(0.0, 1.0), syst_tags[i], et_outfile.c_str());
+        string jet_outfile, et_outfile;
+        if (dijet) {
+            jet_outfile = "sphenix_primary_run28_output_files/h_reweighted_truth_jet_spectrum_" + syst[i] + "_dijet_iter_3.png";
+            et_outfile = "sphenix_primary_run28_output_files/h_reweighted_truth_et_spectrum_" + syst[i] + "_dijet_iter_3.png";
+        } else {
+            jet_outfile = "sphenix_primary_run28_output_files/h_reweighted_truth_jet_spectrum_" + syst[i] + "_efrac_iter_3.png";
+            et_outfile = "sphenix_primary_run28_output_files/h_reweighted_truth_et_spectrum_" + syst[i] + "_efrac_iter_3.png";
+        }
+            //draw_reweighted_spectra(hj_truth[i][0], hj_truth[i][1], true, std::make_pair(0.0, 1.0), syst_tags[i], jet_outfile.c_str());
+            //draw_reweighted_spectra(hc_truth[i][0], hc_truth[i][1], false, std::make_pair(0.0, 1.0), syst_tags[i], et_outfile.c_str());
     
-            //draw_reweighted_spectra(hj_truth[i][0], hj_truth[i][1], true, std::make_pair(17.0, 82.0), syst_tags[i], jet_outfile.c_str());
-            //draw_reweighted_spectra(hc_truth[i][0], hc_truth[i][1], false, std::make_pair(0.1, 35), syst_tags[i], et_outfile.c_str());
+            draw_reweighted_spectra(hj_truth[i][0], hj_truth[i][1], true, std::make_pair(17.0, 82.0), syst_tags[i], jet_outfile.c_str());
+            draw_reweighted_spectra(hc_truth[i][0], hc_truth[i][1], false, std::make_pair(0.5, 35), syst_tags[i], et_outfile.c_str());
     }
     
 
