@@ -55,3 +55,27 @@ Running "run\_analysis.py" from within "analysis/unfolding":
 	14. OPTIONAL Perform iteration optmization
 - Herwig samples are run via "python3 run\_herwig\_analysis.py \#"
 - Note it makes most sense to run both "run\_analysis.py" and "run\_herwig\_analysis.py" steps 1-11 and then run "run\_analysis.py" step 12 since the plot result step uses the results from both the pythia and herwig analysis. Additionally, the output root files from step 11 for both the run_analysis and run_herwig_analysis are the files used for the result figure macro in the final_plotting directory just copied over to there.
+
+One more note on roounfold version! 
+The roounfold version was updated shortly after the analysis was completed ~ late May. The analysis has not been updated to work with the new roounfold version included in the sPHENIX SDCC environment by default. Instead the library path to the old roounfold version must be used. This is already included in the scripts that are run via condor but needs to included in your interactive environment as well since some steps of the run_analysis.py procedure run interactively (like the prior reweighting step). Below is a version of my ana version setup script which includes these libraries. I provide that I want to run with ana.536:
+
+#!bin/bash
+
+case $# in 
+ 0) source /opt/sphenix/core/bin/sphenix_setup.sh -n ana;;
+ 1) source /opt/sphenix/core/bin/sphenix_setup.sh -n ana.$1;;
+esac
+#source /opt/sphenix/core/bin/sphenix_setup.sh -n ana.318
+
+export MYINSTALL=/sphenix/u/egm2153/install
+
+export LD_LIBRARY_PATH=$MYINSTALL/lib:$LD_LIBRARY_PATH
+export ROOT_INCLUDE_PATH=$MYINSTALL/include:$ROOT_INCLUDE_PATH
+
+source $OPT_SPHENIX/bin/setup_local.sh $MYINSTALL
+
+export PYTHIA8=${OFFLINE_MAIN}/share/Pythia8
+export PYTHIA8DATA=${PYTHIA8}/xmldoc
+
+export LD_LIBRARY_PATH=/sphenix/user/phnxbld/workarea/sPHENIX_SL7.3/almalinux-9.2/gcc-14.2.0/need_root_version/root-6.32.06/RooUnfold-3.0.5/build:$LD_LIBRARY_PATH
+export ROOT_INCLUDE_PATH=/sphenix/user/phnxbld/workarea/sPHENIX_SL7.3/almalinux-9.2/gcc-14.2.0/need_root_version/root-6.32.06/RooUnfold-3.0.5/build:$ROOT_INCLUDE_PATH
