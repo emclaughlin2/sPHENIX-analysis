@@ -54,4 +54,4 @@ Running "run\_analysis.py" from within "analysis/unfolding":
 	13. OPTIONAL Perform closure tests
 	14. OPTIONAL Perform iteration optmization
 - Herwig samples are run via "python3 run\_herwig\_analysis.py \#"
-- Note it makes most sense to run both "run\_analysis.py" and "run\_herwig\_analysis.py" steps 1-11 and then run "run\_analysis.py" step 12 since the plot result step uses the results from both the pythia and herwig analysis
+- Note it makes most sense to run both "run\_analysis.py" and "run\_herwig\_analysis.py" steps 1-11 and then run "run\_analysis.py" step 12 since the plot result step uses the results from both the pythia and herwig analysis. Additionally, the output root files from step 11 for both the run_analysis and run_herwig_analysis are the files used for the result figure macro in the final_plotting directory just copied over to there.
