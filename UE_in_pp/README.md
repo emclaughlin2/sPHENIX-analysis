@@ -34,9 +34,10 @@ In the analysis directory the main components (directories) are:
 5. unfolding:
 	- use the "./run\_analysis.py" script to run through the analysis, runs "./analysis\_sim.C" and "./analysis\_data.C" scripts, outputs are the pythia truth results and the unfolded data results using the pythia response matrices
 	- use the "./run\_herwig\_analysis.py" script to run the full analysis using the herwig samples, outputs are the herwig truth results and the unfolded data results using the herwig response matrices
+Unless there are big changes to the analysis, only the scripts in the unfolding directory should need to be rerun to get different results. The results from all other directories should be fairly static.
 
-Running "run\_analysis.py":
-- Each step should be run in order as "python3 run\_analysis.py 1"
+Running "run\_analysis.py" from within "analysis/unfolding":
+- Each step should be run in order as "python3 run\_analysis.py \#"
 - Steps:
 	1. Run over pythia simulation data with "analysis\_sim.C" to create truth hists and response matrices (iter\_1)
 	2. hadd simulation root files (iter\_1)
