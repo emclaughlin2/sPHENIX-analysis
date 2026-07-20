@@ -5,6 +5,9 @@ import sys
 import os
 from array import array
 
+ROOT.gROOT.LoadMacro("/sphenix/u/egm2153/spring_2023/sPhenixStyle.C");
+ROOT.gROOT.ProcessLine("SetsPhenixStyle()")
+
 ROOT.gROOT.SetBatch(True)
 ROOT.gStyle.SetOptStat(0)
 
@@ -100,9 +103,14 @@ def main(original_file, corrected_file, output_file):
     projY_corr.Draw("HIST E")
     projY_orig.Draw("HIST E SAME")
 
-    leg1 = ROOT.TLegend(0.6, 0.75, 0.88, 0.88)
-    leg1.AddEntry(projY_orig, "Before correction", "l")
-    leg1.AddEntry(projY_corr, "After correction", "l")
+    leg1 = ROOT.TLegend(0.45, 0.7, 0.88, 0.92)
+    leg1.AddEntry("","#bf{#it{sPHENIX}} Internal","")
+    if "efrac" in original_file:
+        leg1.AddEntry("","200 GeV p+p Inclusive Jet","")
+    else:
+        leg1.AddEntry("","200 GeV p+p Dijet","")
+    leg1.AddEntry(projY_orig, "Before MBD Eff Correction", "l")
+    leg1.AddEntry(projY_corr, "After MBD Eff Correction", "l")
     leg1.Draw()
 
     c1.Write()
@@ -118,9 +126,14 @@ def main(original_file, corrected_file, output_file):
     profX_corr.Draw("E")
     profX_orig.Draw("E SAME")
 
-    leg2 = ROOT.TLegend(0.6, 0.75, 0.88, 0.88)
-    leg2.AddEntry(profX_orig, "Before correction", "l")
-    leg2.AddEntry(profX_corr, "After correction", "l")
+    leg2 = ROOT.TLegend(0.45, 0.7, 0.88, 0.92)
+    leg2.AddEntry("","#bf{#it{sPHENIX}} Internal","")
+    if "efrac" in original_file:
+        leg2.AddEntry("","200 GeV p+p Inclusive Jet","")
+    else:
+        leg2.AddEntry("","200 GeV p+p Dijet","")
+    leg2.AddEntry(profX_orig, "Before MBD Eff Correction", "l")
+    leg2.AddEntry(profX_corr, "After MBD Eff Correction", "l")
     leg2.Draw()
 
     c2.Write()

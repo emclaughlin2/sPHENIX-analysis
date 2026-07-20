@@ -41,7 +41,7 @@ void draw_profile(std::vector<TH1D*> truth, std::vector<TH1D*> unfold, bool jet,
         unfold[i]->SetMarkerColor(colors[i]);
         unfold[i]->GetXaxis()->SetLabelSize(0);
         unfold[i]->GetXaxis()->SetRangeUser(21, 63);
-        unfold[i]->GetYaxis()->SetRangeUser(0.0, 1.2);
+        unfold[i]->GetYaxis()->SetRangeUser(0.2, 1.2);
         unfold[i]->GetYaxis()->SetTitle("<#SigmaE_{T}/#delta#eta#delta#phi> [GeV]");
         unfold[i]->GetXaxis()->SetTitle("p_{T,lead} [GeV]");
     }
@@ -52,7 +52,7 @@ void draw_profile(std::vector<TH1D*> truth, std::vector<TH1D*> unfold, bool jet,
     } 
     unfold[0]->Draw("same");
 
-    TLegend* leg = new TLegend(0.17, 0.5, 0.92, 0.92);
+    TLegend* leg = new TLegend(0.17, 0.4, 0.92, 0.92);
     leg->AddEntry("","#bf{#it{sPHENIX}} Internal","");
     leg->AddEntry("","200 GeV p+p anti-k_{t}#it{R}=0.4 |#eta_{jet}| < 0.7","");
     if (dijet) { leg->AddEntry("","Exclusive dijet",""); }
@@ -61,7 +61,7 @@ void draw_profile(std::vector<TH1D*> truth, std::vector<TH1D*> unfold, bool jet,
     for (int i = 0; i < max_iter; ++i) {
         leg->AddEntry(unfold[i], leg_tags[i].c_str(), "lp");
     }
-    leg->SetTextSize(0.04);
+    leg->SetTextSize(0.05);
     leg->Draw();
 
     canvas->cd();
@@ -93,14 +93,14 @@ void draw_profile(std::vector<TH1D*> truth, std::vector<TH1D*> unfold, bool jet,
     std::cout << ratios.size() << std::endl;
     for (int i = 0; i < ratios.size(); i++) {
         for (int j = 2; j < ratios[i]->GetNbinsX(); j++) {
-            std::cout << ratios[i]->GetBinContent(j) << " ";
+            std::cout << ratios[i]->GetBinContent(j)-1.0 << " ";
         }
         std::cout << std::endl;
     }
 
     ratios[0]->GetYaxis()->SetTitle("Var/Nominal Ratio");
     ratios[0]->GetYaxis()->SetNdivisions(510);
-    ratios[0]->GetYaxis()->SetRangeUser(0.5, 1.5);
+    ratios[0]->GetYaxis()->SetRangeUser(0.8, 1.2);
     ratios[0]->GetYaxis()->SetTitleSize(25);
     ratios[0]->GetYaxis()->SetTitleFont(43);
     ratios[0]->GetYaxis()->SetTitleOffset(1.5);
@@ -117,7 +117,7 @@ void draw_profile(std::vector<TH1D*> truth, std::vector<TH1D*> unfold, bool jet,
     std::cout << ratios.size() << std::endl;
     for (int i = 0; i < ratios.size(); ++i) {
         ratios[i]->GetXaxis()->SetRangeUser(21, 63);
-        ratios[i]->GetYaxis()->SetRangeUser(0.5,1.5);
+        ratios[i]->GetYaxis()->SetRangeUser(0.8,1.2);
         std::cout << i << " " << leg_tags[i+1] << " ";
         float avgbin = 0;
         int nbins = 0;
@@ -222,15 +222,22 @@ void draw_result_with_syst(std::vector<TH1D*> truth, std::vector<TH1D*> unfold, 
                                                        eyl.data(), eyh.data());
     g_syst->SetFillColorAlpha(kAzure - 9, 0.6);
     g_syst->SetFillStyle(1001);
-    g_syst->SetLineWidth(0);
+    g_syst->SetLineWidth(2);
+    g_syst->SetMarkerStyle(20);
+    g_syst->SetMarkerColor(kBlack);
+    g_syst->SetLineColor(kBlack);
 
     g_syst->Print();
 
     // --- Canvas ---
-    TCanvas* canvas = new TCanvas("canvas_result", "", 600, 800);
+    TCanvas* canvas = new TCanvas("canvas_result", "", 600, 500);
 
-    TPad* pad1 = new TPad("pad1_result", "", 0, 0.5, 1, 1.0);
-    pad1->SetBottomMargin(0.02);
+    // Define consistent text sizes scaled for pad heights
+    float textSize_pad1 = 0.07;    // NDC size for upper pad
+    float textSize_pad2 = 0.07 / (0.35 / 0.65);      // NDC size for lower pad (scaled by height ratio)
+
+    TPad* pad1 = new TPad("pad1_result", "", 0, 0.35, 1, 1.0);
+    pad1->SetBottomMargin(0.03);
     pad1->Draw();
     pad1->cd();
 
@@ -240,61 +247,85 @@ void draw_result_with_syst(std::vector<TH1D*> truth, std::vector<TH1D*> unfold, 
     unfold[0]->SetMarkerStyle(20);
     unfold[0]->GetXaxis()->SetLabelSize(0);
     unfold[0]->GetXaxis()->SetRangeUser(21, 63);
-    unfold[0]->GetYaxis()->SetRangeUser(0.0, 1.2);
+    unfold[0]->GetYaxis()->SetRangeUser(0.0, 0.6);
     unfold[0]->GetYaxis()->SetTitle("<#SigmaE_{T}/#delta#eta#delta#phi> [GeV]");
+    unfold[0]->GetYaxis()->SetTitleSize(textSize_pad1);
+    unfold[0]->GetYaxis()->SetTitleFont(42);
+    unfold[0]->GetYaxis()->SetLabelFont(42);
+    unfold[0]->GetYaxis()->SetLabelSize(textSize_pad1);
+    unfold[0]->GetYaxis()->SetTitleOffset(0.65 * 1.1);
 
     truth[0]->SetStats(0);
     truth[0]->SetLineColor(kRed + 1);
     truth[0]->SetLineWidth(2);
     truth[0]->SetMarkerColor(kRed + 1);
     truth[0]->GetXaxis()->SetRangeUser(21, 63);
+    truth[1]->SetStats(0);
+    truth[1]->SetLineColor(kSpring - 6);
+    truth[1]->SetLineWidth(2);
+    truth[1]->SetMarkerColor(kSpring - 6);
+    truth[1]->GetXaxis()->SetRangeUser(21, 63);
 
     unfold[0]->Draw("E1");
     g_syst->Draw("2 same");
     unfold[0]->Draw("E1 same");
     truth[0]->Draw("hist same");
+    truth[1]->Draw("hist same");
 
-    TLegend* leg = new TLegend(0.17, 0.65, 0.78, 0.92);
-    leg->AddEntry("","#bf{#it{sPHENIX}} Internal","");
-    leg->AddEntry("","200 GeV p+p anti-k_{t}#it{R}=0.4 |#eta_{jet}| < 0.7","");
-    if (dijet) { leg->AddEntry("","Exclusive dijet",""); }
-    else { leg->AddEntry("","Inclusive jet",""); }
-    leg->AddEntry(unfold[0], "Unfolded data (stat. unc.)", "lp");
-    leg->AddEntry(g_syst, "Total syst. uncertainty", "f");
-    leg->AddEntry(truth[0], "Pythia8 Truth", "l");
-    leg->SetTextSize(0.04);
-    leg->Draw();
+    TLatex lat;
+    lat.SetNDC();
+    lat.SetTextFont(42);
+    lat.SetTextSize(textSize_pad1);
+    lat.DrawLatex(0.22, 0.36, "#it{#bf{sPHENIX}} Internal");
+    lat.DrawLatex(0.22, 0.28, "200 GeV p+p #kern[-0.4]{#scale[0.5]{#int}}#kern[+0.2]{#it{L}}dt = 34 pb^{-1}");
+    lat.DrawLatex(0.22, 0.2, "anti-k_{t} #kern[-0.6]{#it{R}} = 0.4 |#eta_{jet}| < 0.7");
+    if (dijet) { lat.DrawLatex(0.22, 0.12, "Exclusive dijet"); }
+    else { lat.DrawLatex(0.22, 0.12, "Inclusive jet"); }
+    lat.Draw("same");
+
+    TLegend* leg = new TLegend(0.69, 0.16, 0.94, 0.4);
+    leg->AddEntry(g_syst, "Data", "lpf");
+    leg->AddEntry(truth[0], "Pythia8", "l");
+    leg->AddEntry(truth[1], "Herwig7", "l");
+    leg->SetTextSize(textSize_pad1);
+    leg->SetTextFont(42);
+    leg->Draw("same");
 
     // --- Ratio pad ---
     canvas->cd();
-    TPad* pad2 = new TPad("pad2_result", "", 0, 0.0, 1, 0.5);
-    pad2->SetTopMargin(0.02);
-    pad2->SetBottomMargin(0.2);
+    TPad* pad2 = new TPad("pad2_result", "", 0, 0.0, 1, 0.35);
+    pad2->SetTopMargin(0.03);
+    pad2->SetBottomMargin(0.35);
     pad2->Draw();
     pad2->cd();
 
     // Nominal / Pythia8 ratio with stat errors from data only
     TH1D* ratio_nominal = (TH1D*)unfold[0]->Clone("ratio_nominal_result");
+    TH1D* ratio_herwig = (TH1D*)unfold[0]->Clone("ratio_herwig_result");
+    TH1D* ratio_statunc = (TH1D*)unfold[0]->Clone("ratio_statunc");
     for (int b = 1; b <= nbins; b++) {
         double pyt  = truth[0]->GetBinContent(b);
+        double her = truth[1]->GetBinContent(b);
         double nom  = unfold[0]->GetBinContent(b);
         double stat = unfold[0]->GetBinError(b);
         if (pyt > 0) {
             ratio_nominal->SetBinContent(b, nom / pyt);
             ratio_nominal->SetBinError(b, stat / pyt);
-        } else {
-            ratio_nominal->SetBinContent(b, 0);
-            ratio_nominal->SetBinError(b, 0);
         }
+        if (her > 0) {
+            ratio_herwig->SetBinContent(b, nom / her);
+            ratio_herwig->SetBinError(b, stat / her);
+        }
+        ratio_statunc->SetBinContent(b, 1);
+        ratio_statunc->SetBinError(b, stat / nom);
     }
 
     // Syst band for ratio: same absolute syst / pythia8
     std::vector<double> ry(nbins), reyl(nbins), reyh(nbins);
     for (int b = 0; b < nbins; b++) {
-        double pyt = truth[0]->GetBinContent(b + 1);
-        ry[b]   = (pyt > 0) ? y[b]   / pyt : 0;
-        reyl[b] = (pyt > 0) ? eyl[b] / pyt : 0;
-        reyh[b] = (pyt > 0) ? eyh[b] / pyt : 0;
+        ry[b]   = 1;
+        reyl[b] = (y[b] > 0) ? eyl[b] / y[b] : 0;
+        reyh[b] = (y[b] > 0) ? eyh[b] / y[b] : 0;
     }
     TGraphAsymmErrors* g_ratio_syst = new TGraphAsymmErrors(nbins, x.data(), ry.data(),
                                                              exl.data(), exh.data(),
@@ -302,41 +333,57 @@ void draw_result_with_syst(std::vector<TH1D*> truth, std::vector<TH1D*> unfold, 
     g_ratio_syst->SetFillColorAlpha(kAzure - 9, 0.6);
     g_ratio_syst->SetFillStyle(1001);
     g_ratio_syst->SetLineWidth(0);
+    g_ratio_syst->SetMarkerStyle(0);
 
     ratio_nominal->SetStats(0);
-    ratio_nominal->GetYaxis()->SetTitle("Data / Pythia8");
-    ratio_nominal->GetYaxis()->SetNdivisions(510);
-    ratio_nominal->GetYaxis()->SetRangeUser(0.5, 1.5);
-    ratio_nominal->GetYaxis()->SetTitleSize(25);
-    ratio_nominal->GetYaxis()->SetTitleFont(43);
-    ratio_nominal->GetYaxis()->SetTitleOffset(1.5);
-    ratio_nominal->GetYaxis()->SetLabelFont(43);
-    ratio_nominal->GetYaxis()->SetLabelSize(25);
+    ratio_nominal->GetYaxis()->SetTitle("Data / MC");
+    ratio_nominal->GetYaxis()->SetNdivisions(404);
+    ratio_nominal->GetYaxis()->SetRangeUser(0.6, 1.2);
+    ratio_nominal->GetYaxis()->SetTitleSize(textSize_pad2);
+    ratio_nominal->GetYaxis()->SetTitleFont(42);
+    ratio_nominal->GetYaxis()->SetTitleOffset(0.35 * 1.1);
+    ratio_nominal->GetYaxis()->SetLabelFont(42);
+    ratio_nominal->GetYaxis()->SetLabelSize(textSize_pad2);
     ratio_nominal->GetXaxis()->SetTitle("p_{T,lead} [GeV]");
-    ratio_nominal->GetXaxis()->SetTitleSize(25);
-    ratio_nominal->GetXaxis()->SetTitleFont(43);
-    //ratio_nominal->GetXaxis()->SetTitleOffset(4);
-    ratio_nominal->GetXaxis()->SetLabelFont(43);
-    ratio_nominal->GetXaxis()->SetLabelSize(25);
+    ratio_nominal->GetXaxis()->SetTitleSize(textSize_pad2);
+    ratio_nominal->GetXaxis()->SetTitleFont(42);
+    ratio_nominal->GetXaxis()->SetTitleOffset(1.1);
+    ratio_nominal->GetXaxis()->SetLabelFont(42);
+    ratio_nominal->GetXaxis()->SetLabelSize(textSize_pad2);
     ratio_nominal->GetXaxis()->SetRangeUser(21, 63);
+
+    ratio_nominal->SetMarkerColor(kRed + 1);
+    ratio_nominal->SetLineColor(kRed + 1);
+    ratio_herwig->SetMarkerColor(kSpring - 6);
+    ratio_herwig->SetLineColor(kSpring - 6);
 
     ratio_nominal->Draw("E1");
     g_ratio_syst->Draw("2 same");
+    //ratio_statunc->Draw("E1 same");
     ratio_nominal->Draw("E1 same");
+    ratio_herwig->Draw("E1 same");
 
-    TLine* line0 = new TLine(21, 1.0, 63, 1.0);
-    TLine* line1 = new TLine(21, 0.95, 63, 0.95);
-    TLine* line2 = new TLine(21, 1.05, 63, 1.05);
-    line0->SetLineStyle(1);
-    line1->SetLineStyle(2);
-    line2->SetLineStyle(2);
+    TLine* line0 = new TLine(21, 1.0, 63.5, 1.0);
+    line0->SetLineStyle(2);
     line0->Draw("same");
-    line1->Draw("same");
-    line2->Draw("same");
 
     canvas->Update();
     canvas->Draw();
     if (output_name) canvas->SaveAs(output_name);
+
+    TFile* f_hist_out;
+    if (dijet) {
+        f_hist_out = new TFile("sphenix_primary_run28_output_files/plot_result_hist_output_dijet_bkg_cut_run28_iter_3_1000toys.root","RECREATE");
+    } else {
+        f_hist_out = new TFile("sphenix_primary_run28_output_files/plot_result_hist_output_efrac_bkg_cut_run28_iter_3_1000toys.root","RECREATE");
+    }
+    f_hist_out->cd();
+    unfold[0]->Write();
+    g_syst->Write();
+    truth[0]->Write();
+    truth[1]->Write();
+    f_hist_out->Close();
+
 }
 
 void plot_result(int dijet = 1) {
@@ -377,13 +424,15 @@ void plot_result(int dijet = 1) {
     std::vector<std::string> truth_syst = {"pythia","herwig"};
 
     TFile* f = nullptr;
+    TFile* fherwig = nullptr;
     if (dijet) {
         f = TFile::Open("sphenix_primary_run28_output_files/output_mbd_correct_unfolded_data_8calibetbin_dijet_bkg_cut_run28_iter_3_1000toys.root");
+        fherwig = TFile::Open("sphenix_primary_run28_output_files/output_mbd_correct_herwig_unfolded_data_8calibetbin_dijet_bkg_cut_run28_iter_3_1000toys.root");
     } else {
         f = TFile::Open("sphenix_primary_run28_output_files/output_mbd_correct_unfolded_data_8calibetbin_efrac_bkg_cut_run28_iter_3_1000toys.root");
+        fherwig = TFile::Open("sphenix_primary_run28_output_files/output_mbd_correct_herwig_unfolded_data_8calibetbin_efrac_bkg_cut_run28_iter_3_1000toys.root");
     }
-    TFile* fherwig = TFile::Open("run21_output_files/output_unfolded_data_herwig_calib_dijet_run21_iter_3_1000toys.root");
-
+    
     std::vector<TH2D*> h_uni_truth_2D;
     std::vector<TH2D*> h_truth_2D;
     std::vector<TProfile*> h_truth_prof;
@@ -400,7 +449,7 @@ void plot_result(int dijet = 1) {
             h[i] = new TH2D("h_var_truth_calib_dijet","",truthnpt, truthptbins, truthnet, truthetbins);
         }
         if (i == 1) {
-            h_uni_truth_2D.push_back((TH2D*)f->Get("h_truth_calib_dijet"));
+            h_uni_truth_2D.push_back((TH2D*)fherwig->Get("h_truth_calib_dijet"));
             h[i] = new TH2D("h_var_truth_herwig_calib_dijet","",truthnpt, truthptbins, truthnet, truthetbins);
         }
         for (int ix = 1; ix <= h_uni_truth_2D[i]->GetNbinsX(); ix++) {
@@ -445,18 +494,25 @@ void plot_result(int dijet = 1) {
 
     // fherwig: h_unfold_calib_dijet_reweight_trim_5_8 (already variable binning)
     {
-        TH2D* hv = (TH2D*)fherwig->Get("h_unfold_calib_dijet_reweight_trim_5_8");
-        //h_unfold_2D.push_back(hv);
+        TH2D* hu = (TH2D*)fherwig->Get("h_unfold_calib_dijet_reweight_trim_10_2_etEffCorrected");
+        TH2D* hv = new TH2D("h_var_unfold_herwig_calib_dijet_reweigt_trim_10_2","",truthnpt, truthptbins, truthnet, truthetbins);
+        for (int ix = 1; ix <= hu->GetNbinsX(); ix++) {
+            for (int iy = 1; iy <= hu->GetNbinsY(); iy++) {
+                hv->SetBinContent(ix,iy,hu->GetBinContent(ix,iy));
+                hv->SetBinError(ix,iy,hu->GetBinError(ix,iy));
+            }
+        }
+        h_unfold_2D.push_back(hv);
     }
 
     // Profile and extract 1D for all unfold histograms
     auto get_unfold_prof_name = [&](int i) -> std::string {
-        if (i < (int)syst.size()) return "unfold_prof_"+syst[i]+"_5";
-        return "unfold_prof_herwig_trim_5_8";
+        if (i < (int)syst.size()) return "unfold_prof_"+syst[i]+"_2";
+        return "unfold_prof_herwig_trim_10_2";
     };
     auto get_unfold_hist_name = [&](int i) -> std::string {
-        if (i < (int)syst.size()) return "unfold_hist_"+syst[i]+"_5";
-        return "unfold_hist_herwig_trim_5_8";
+        if (i < (int)syst.size()) return "unfold_hist_"+syst[i]+"_2";
+        return "unfold_hist_herwig_trim_10_2";
     };
 
     for (int i = 0; i < (int)h_unfold_2D.size(); i++) {

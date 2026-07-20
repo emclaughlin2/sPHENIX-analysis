@@ -100,7 +100,7 @@ void full_jet_ue_pileup_analysis(int run, bool clusters = true, bool emcal_clust
     float lead_ptmin = 21;
     float deltaphimin = 3.0*M_PI/4.0;
 
-	string outfilename = "full_pileup_wbkgcut_analysis/pileup_inclusive_jet_UE_analysis_nombdtimecut_" + to_string(run);
+	string outfilename = "full_pileup_final_analysis/pileup_inclusive_jet_UE_analysis_" + to_string(run);
     if (!clusters) outfilename += "_calo_tower_sum";
     if (clusters && emcal_clusters) outfilename += "_emcal_clusters";
 	if (do_jet_pt_range) outfilename += "_leadjet_21_30_GeV";
@@ -499,10 +499,10 @@ void full_jet_ue_pileup_analysis(int run, bool clusters = true, bool emcal_clust
 	        reco_bkg_cut = false;
 	      }
 	  	}
-	    //lead_deltat = jettime->at(ind_lead)*17.6 - mbd_t0;
-	    //if (lead_deltat < deltat_mbd_cut[0] || lead_deltat > deltat_mbd_cut[1]) {
-	     // reco_bkg_cut = false;
-	    //}
+	    lead_deltat = jettime->at(ind_lead)*17.6 - mbd_t0;
+	    if (lead_deltat < deltat_mbd_cut[0] || lead_deltat > deltat_mbd_cut[1]) {
+	      reco_bkg_cut = false;
+	    }
 
 	    if (!reco_bkg_cut) { continue; }	
 
@@ -614,7 +614,7 @@ void full_jet_ue_pileup_analysis(int run, bool clusters = true, bool emcal_clust
   				cls.SetPtEtaPhi(cluster_e[i]/cosh(cluster_eta[i]),cluster_eta[i],cluster_phi[i]); // define cluster vector 
   				float dphi = lead.DeltaPhi(cls); // find the deltaphi between leading jet and cluster 
   				h_ue_2D_total->Fill(cluster_eta[i],dphi,cluster_e[i]/cosh(cluster_eta[i]));
-  				if (fabs(dphi) < M_PI/3.0) { // towards region 
+  				if (fabs(dphi) < M_PI/3.0 && cluster_e[i]/cluster_eta[i] > -1.0) { // towards region 
   					et_towards += cluster_e[i]/cosh(cluster_eta[i]);
   					for (int j = 0; j < 8; j++) {
   						if (cluster_e[i] > float(topo_thresholds[j]/1000.0)) {
@@ -625,7 +625,7 @@ void full_jet_ue_pileup_analysis(int run, bool clusters = true, bool emcal_clust
   						}
   					}
   					h_ue_2D_towards->Fill(cluster_eta[i],dphi,cluster_e[i]/cosh(cluster_eta[i]));
-  				} else if (fabs(dphi) > M_PI/3.0 && fabs(dphi) < (2.0*M_PI)/3.0) { // transverse region 
+  				} else if (fabs(dphi) > M_PI/3.0 && fabs(dphi) < (2.0*M_PI)/3.0 && cluster_e[i]/cluster_eta[i] > -1.0) { // transverse region 
 					et_transverse += cluster_e[i]/cosh(cluster_eta[i]);
   					for (int j = 0; j < 8; j++) {
   						if (cluster_e[i] > float(topo_thresholds[j]/1000.0)) {
@@ -636,7 +636,7 @@ void full_jet_ue_pileup_analysis(int run, bool clusters = true, bool emcal_clust
   						}
   					}
   					h_ue_2D_transverse->Fill(cluster_eta[i],dphi,cluster_e[i]/cosh(cluster_eta[i]));
-  				} else if (fabs(dphi) > (2.0*M_PI)/3.0) { // away region 
+  				} else if (fabs(dphi) > (2.0*M_PI)/3.0 && cluster_e[i]/cluster_eta[i] > -1.0) { // away region 
   					et_away += cluster_e[i]/cosh(cluster_eta[i]);
   					for (int j = 0; j < 8; j++) {
   						if (cluster_e[i] > float(topo_thresholds[j]/1000.0)) {

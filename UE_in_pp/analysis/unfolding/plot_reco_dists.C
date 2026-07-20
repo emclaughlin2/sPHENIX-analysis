@@ -18,9 +18,10 @@ void plot_reco_dists() {
       //"analysis_sim_run21_output/output_efrac_bkg_cut_sim_iter_3.root",
       //"analysis_sim_run28_output/test_run21_output_analysis_clean_none_bkg_cut_sim_iter_3.root",
       //"analysis_sim_run28_output/output_none_bkg_cut_sim_iter_3_run21_event_weights_jet10_20_30_50_zvtx_lt_30_eta_lt_0.7.root",
-      "analysis_sim_run28_output/output_dijet_bkg_cut_sim_iter_1.root",
+      "sphenix_primary_analysis_sim_run28_output/output_dijet_bkg_cut_sim_iter_1.root",
+      "sphenix_primary_analysis_sim_run28_output/output_dijet_bkg_cut_sim_iter_1_herwig.root",
       //"analysis_sim_run28_output/output_dijet_bkg_cut_sim_iter_3.root",
-      "analysis_sim_ppg09_test/output_dijet_bkg_cut_sim_iter_1.root",
+      //"analysis_sim_ppg09_test/output_dijet_bkg_cut_sim_iter_1.root",
       //"analysis_sim_ppg09_test/output_dijet_bkg_cut_sim_iter_1_no_jet5.root",
       "analysis_sim_run21_test_output/output_dijet_bkg_cut_sim_iter_1.root",
       //"analysis_sim_run28_output/output_none_bkg_cut_sim_iter_3_run28_event_weights_alljets_zvtx_lt_60_calo_accept_eta.root",
@@ -32,14 +33,17 @@ void plot_reco_dists() {
 
   };
 
-  std::vector<float> scales = {1.4903 * 0.81608598, 1.4903 * 0.81608598, 3.997, 0, 0};
+  //std::vector<float> scales = {1.4903 * 0.81608598, 0.67108 * 0.81608598, 1.4903 * 0.81608598, 3.997, 0, 0};
+  std::vector<float> scales = {1.4903 * 0.81608598, 1.6873621636*0.67108*0.81608598, 3.997, 0, 0};
+  
 
   std::vector<std::string> labels = {
-      "MC Run28 dijet w Jet 5",
+      "MC Run28 dijet Pythia",
+      "MC Run28 dijet Herwig",
       //"MC Run28 dijet w/o Jet 5",
-      "MC Run28 Hanpu ttree",
+      //"MC Run28 Hanpu ttree",
       //"MC Run28 Hanpu ttree w/o Jet 5",
-      "MC Run21 dijet",
+      "MC Run21 dijet Pythia",
       //"MC |zvtx| < 30 cm & |eta| < 0.7",
       //"MC |zvtx| < 30 cm & |eta| < 0.7 check",
       //"MC |zvtx| < 30 cm & |eta| < 0.7 check run28",
@@ -215,15 +219,15 @@ void plot_reco_dists() {
         }
     }
     zcanvas->BuildLegend();
-    zcanvas->SaveAs("compare_run28_run21_test_plots/zvertex_dists.png");
+    zcanvas->SaveAs("compare_herwig_plots/zvertex_dists.png");
 
     for (size_t i = 0; i < truth_jet.size(); i++) {
         truth_jet[i]->SetTitle(labels[i].c_str());
-        //if (scales[i] != 0) {
-        //    truth_jet[i]->Scale(scales[i]);
-        //} else {
+        if (scales[i] != 0) {
+            truth_jet[i]->Scale(scales[i]);
+        } else {
             truth_jet[i]->Scale(1.0 / truth_jet[i]->Integral());
-        //}
+        }
         truth_et[i]->SetTitle(labels[i].c_str());
         truth_et[i]->Scale(1.0 / truth_et[i]->Integral());
     }
@@ -285,8 +289,8 @@ void plot_reco_dists() {
                                    truth_ref->GetXaxis()->GetXmax(), 1.0);
     truth_unity->SetLineStyle(2);
     truth_unity->Draw("SAME");
-    //tcanvas->SaveAs("compare_run28_run21_test_plots/truth_jet_dists_xsection_scale.png");
-    tcanvas->SaveAs("compare_run28_run21_test_plots/truth_jet_dists.png");
+    tcanvas->SaveAs("compare_herwig_plots/truth_jet_dists_xsection_scale.png");
+    //tcanvas->SaveAs("compare_herwig_plots/truth_jet_dists.png");
 
     TCanvas* tecanvas = new TCanvas("tecanvas", "Truth ET Distribution", 1200, 800);
     for (size_t i = 0; i < truth_et.size(); ++i) {
@@ -302,16 +306,17 @@ void plot_reco_dists() {
             truth_et[i]->Draw("SAME");
         }
     }
+    //tecanvas->SetLogy(1);
     tecanvas->BuildLegend();
-    tecanvas->SaveAs("compare_run28_run21_test_plots/truth_et_dists.png");
+    tecanvas->SaveAs("compare_herwig_plots/truth_et_dists_nolog.png");
 
     for (size_t i = 0; i < calib_jet.size(); i++) {
         calib_jet[i]->SetTitle(labels[i].c_str());
-        //if (scales[i] != 0) {
-        //    calib_jet[i]->Scale(scales[i]);
-        //} else {
+        if (scales[i] != 0) {
+            calib_jet[i]->Scale(scales[i]);
+        } else {
             calib_jet[i]->Scale(1.0 / calib_jet[i]->Integral());
-        //}
+        }
         calib_et[i]->SetTitle(labels[i].c_str());
         calib_et[i]->Scale(1.0 / calib_et[i]->Integral());
     }
@@ -374,8 +379,8 @@ void plot_reco_dists() {
                                    calib_ref->GetXaxis()->GetXmax(), 1.0);
     calib_unity->SetLineStyle(2);
     calib_unity->Draw("SAME");
-    //ccanvas->SaveAs("compare_run28_run21_test_plots/calib_jet_dists_xsection_scale.png");
-    ccanvas->SaveAs("compare_run28_run21_test_plots/calib_jet_dists.png");
+    ccanvas->SaveAs("compare_herwig_plots/calib_jet_dists_xsection_scale.png");
+    //ccanvas->SaveAs("compare_herwig_plots/calib_jet_dists.png");
 
     TCanvas* cecanvas = new TCanvas("cecanvas", "Calib ET Distribution", 1200, 800);
     for (size_t i = 0; i < calib_et.size(); ++i) {
@@ -391,9 +396,9 @@ void plot_reco_dists() {
             calib_et[i]->Draw("SAME");
         }
     }
-    cecanvas->SetLogy(1);
+    //cecanvas->SetLogy(1);
     cecanvas->BuildLegend();
-    cecanvas->SaveAs("compare_run28_run21_test_plots/calib_et_dists.png");
+    cecanvas->SaveAs("compare_herwig_plots/calib_et_dists_nolog.png");
 
     // Plot histograms with labels
     for (size_t i = 0; i < measure_projX.size(); ++i) {
@@ -429,8 +434,8 @@ void plot_reco_dists() {
         }
     }
     canvasX->BuildLegend();
-    //canvasX->SaveAs("compare_run28_run21_test_plots/reco_dists_projX_xsection_scale.png");
-    canvasX->SaveAs("compare_run28_run21_test_plots/reco_dists_projX.png");
+    canvasX->SaveAs("compare_herwig_plots/reco_dists_projX_xsection_scale.png");
+    //canvasX->SaveAs("compare_herwig_plots/reco_dists_projX.png");
 
     TCanvas* canvasY = new TCanvas("canvasY", "Projection Y", 1200, 800);
     for (size_t i = 0; i < measure_projY.size(); ++i) {
@@ -445,8 +450,8 @@ void plot_reco_dists() {
         }
     }
     canvasY->BuildLegend();
-    //canvasY->SaveAs("compare_run28_run21_test_plots/reco_dists_projY_xsection_scale.png");
-    canvasY->SaveAs("compare_run28_run21_test_plots/reco_dists_projY.png");
+    canvasY->SaveAs("compare_herwig_plots/reco_dists_projY_xsection_scale.png");
+    //canvasY->SaveAs("compare_herwig_plots/reco_dists_projY.png");
 
     TCanvas* truthcanvasX = new TCanvas("truthcanvasX", "Projection X", 1200, 800);
     for (size_t i = 0; i < truth_projX.size(); ++i) {
@@ -461,8 +466,8 @@ void plot_reco_dists() {
         }
     }
     truthcanvasX->BuildLegend();
-    //truthcanvasX->SaveAs("compare_run28_run21_test_plots/truth_dists_projX_xsection_scale.png");
-    truthcanvasX->SaveAs("compare_run28_run21_test_plots/truth_dists_projX.png");
+    truthcanvasX->SaveAs("compare_herwig_plots/truth_dists_projX_xsection_scale.png");
+    //truthcanvasX->SaveAs("compare_herwig_plots/truth_dists_projX.png");
 
     TCanvas* truthcanvasY = new TCanvas("truthcanvasY", "Projection Y", 1200, 800);
     for (size_t i = 0; i < truth_projY.size(); ++i) {
@@ -477,6 +482,6 @@ void plot_reco_dists() {
         }
     }
     truthcanvasY->BuildLegend();
-    //truthcanvasY->SaveAs("compare_run28_run21_test_plots/truth_dists_projY_xsection_scale.png");
-    truthcanvasY->SaveAs("compare_run28_run21_test_plots/truth_dists_projY.png");
+    truthcanvasY->SaveAs("compare_herwig_plots/truth_dists_projY_xsection_scale.png");
+    //truthcanvasY->SaveAs("compare_herwig_plots/truth_dists_projY.png");
 }

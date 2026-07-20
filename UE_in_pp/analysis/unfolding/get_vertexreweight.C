@@ -4,7 +4,7 @@
 #include <TMath.h>
 #include <iostream>
 
-void get_vertexreweight(const char* simfile = "analysis_sim_run28_output/output_none_bkg_cut_sim_iter_3.root", 
+void get_vertexreweight(const char* simfile = "sphenix_primary_analysis_sim_run28_output/output_none_bkg_cut_sim_iter_3.root", 
                         const char* datafile = "analysis_data_run28_output/output_pu_correct_data_efrac_bkg_cut.root", 
                         const char* reweightfile = "output_vertex_reweight_run28_none_bkg_cut_iter_1.root") {
   // Read Files
@@ -12,7 +12,7 @@ void get_vertexreweight(const char* simfile = "analysis_sim_run28_output/output_
   TFile *f_sim = new TFile(simfile, "READ");
   TFile *f_data = new TFile(datafile, "READ");
 
-  TH1D* h_zvertex_sim = (TH1D*)f_sim->Get("h_zvertex");
+  TH1D* h_zvertex_sim = (TH1D*)f_sim->Get("h_zvertex_noreweight");
   h_zvertex_sim->SetName("h_zvertex_sim");
   TH1D* h_zvertex_data = (TH1D*)f_data->Get("h_zvertex");
   h_zvertex_data->SetName("h_zvertex_data");

@@ -1,100 +1,500 @@
-herwig_jet10 0 67
-herwig_jet10 67 134
-herwig_jet10 134 201
-herwig_jet10 201 268
-herwig_jet10 268 335
-herwig_jet10 335 402
-herwig_jet10 402 469
-herwig_jet10 469 536
-herwig_jet10 536 603
-herwig_jet10 603 670
-herwig_jet10 670 737
-herwig_jet10 737 804
-herwig_jet10 804 871
-herwig_jet10 871 938
-herwig_jet10 938 1005
-herwig_jet10 1005 1072
-herwig_jet10 1072 1139
-herwig_jet10 1139 1206
-herwig_jet10 1206 1273
-herwig_jet10 1273 1340
-herwig_jet10 1340 1407
-herwig_jet10 1407 1474
-herwig_jet10 1474 1541
-herwig_jet10 1541 1608
-herwig_jet10 1608 1675
-herwig_jet10 1675 1742
-herwig_jet10 1742 1809
-herwig_jet10 1809 1876
-herwig_jet10 1876 1943
-herwig_jet10 1943 2010
-herwig_jet10 2010 2077
-herwig_jet10 2077 2144
-herwig_jet10 2144 2211
-herwig_jet10 2211 2278
-herwig_jet10 2278 2345
-herwig_jet10 2345 2412
-herwig_jet10 2412 2479
-herwig_jet10 2479 2546
-herwig_jet10 2546 2613
-herwig_jet10 2613 2680
-herwig_jet10 2680 2747
-herwig_jet10 2747 2814
-herwig_jet10 2814 2881
-herwig_jet10 2881 2948
-herwig_jet10 2948 3015
-herwig_jet10 3015 3082
-herwig_jet10 3082 3149
-herwig_jet10 3149 3216
-herwig_jet10 3216 3283
-herwig_jet10 3283 3334
-herwig_jet30 0 67
-herwig_jet30 67 134
-herwig_jet30 134 201
-herwig_jet30 201 268
-herwig_jet30 268 335
-herwig_jet30 335 402
-herwig_jet30 402 469
-herwig_jet30 469 536
-herwig_jet30 536 603
-herwig_jet30 603 670
-herwig_jet30 670 737
-herwig_jet30 737 804
-herwig_jet30 804 871
-herwig_jet30 871 938
-herwig_jet30 938 1005
-herwig_jet30 1005 1072
-herwig_jet30 1072 1139
-herwig_jet30 1139 1206
-herwig_jet30 1206 1273
-herwig_jet30 1273 1340
-herwig_jet30 1340 1407
-herwig_jet30 1407 1474
-herwig_jet30 1474 1541
-herwig_jet30 1541 1608
-herwig_jet30 1608 1675
-herwig_jet30 1675 1742
-herwig_jet30 1742 1809
-herwig_jet30 1809 1876
-herwig_jet30 1876 1943
-herwig_jet30 1943 2010
-herwig_jet30 2010 2077
-herwig_jet30 2077 2144
-herwig_jet30 2144 2211
-herwig_jet30 2211 2278
-herwig_jet30 2278 2345
-herwig_jet30 2345 2412
-herwig_jet30 2412 2479
-herwig_jet30 2479 2546
-herwig_jet30 2546 2613
-herwig_jet30 2613 2680
-herwig_jet30 2680 2747
-herwig_jet30 2747 2814
-herwig_jet30 2814 2881
-herwig_jet30 2881 2948
-herwig_jet30 2948 3015
-herwig_jet30 3015 3082
-herwig_jet30 3082 3149
-herwig_jet30 3149 3216
-herwig_jet30 3216 3283
-herwig_jet30 3283 3334
+herwig_jet12 0 67 dijet
+herwig_jet12 67 134 dijet
+herwig_jet12 134 201 dijet
+herwig_jet12 201 268 dijet
+herwig_jet12 268 335 dijet
+herwig_jet12 335 402 dijet
+herwig_jet12 402 469 dijet
+herwig_jet12 469 536 dijet
+herwig_jet12 536 603 dijet
+herwig_jet12 603 670 dijet
+herwig_jet12 670 737 dijet
+herwig_jet12 737 804 dijet
+herwig_jet12 804 871 dijet
+herwig_jet12 871 938 dijet
+herwig_jet12 938 1005 dijet
+herwig_jet12 1005 1072 dijet
+herwig_jet12 1072 1139 dijet
+herwig_jet12 1139 1206 dijet
+herwig_jet12 1206 1273 dijet
+herwig_jet12 1273 1340 dijet
+herwig_jet12 1340 1407 dijet
+herwig_jet12 1407 1474 dijet
+herwig_jet12 1474 1541 dijet
+herwig_jet12 1541 1608 dijet
+herwig_jet12 1608 1675 dijet
+herwig_jet12 1675 1742 dijet
+herwig_jet12 1742 1809 dijet
+herwig_jet12 1809 1876 dijet
+herwig_jet12 1876 1943 dijet
+herwig_jet12 1943 2010 dijet
+herwig_jet12 2010 2077 dijet
+herwig_jet12 2077 2144 dijet
+herwig_jet12 2144 2211 dijet
+herwig_jet12 2211 2278 dijet
+herwig_jet12 2278 2345 dijet
+herwig_jet12 2345 2412 dijet
+herwig_jet12 2412 2479 dijet
+herwig_jet12 2479 2546 dijet
+herwig_jet12 2546 2613 dijet
+herwig_jet12 2613 2680 dijet
+herwig_jet12 2680 2747 dijet
+herwig_jet12 2747 2814 dijet
+herwig_jet12 2814 2881 dijet
+herwig_jet12 2881 2948 dijet
+herwig_jet12 2948 3015 dijet
+herwig_jet12 3015 3082 dijet
+herwig_jet12 3082 3149 dijet
+herwig_jet12 3149 3216 dijet
+herwig_jet12 3216 3283 dijet
+herwig_jet12 3283 3332 dijet
+herwig_jet20 0 67 dijet
+herwig_jet20 67 134 dijet
+herwig_jet20 134 201 dijet
+herwig_jet20 201 268 dijet
+herwig_jet20 268 335 dijet
+herwig_jet20 335 402 dijet
+herwig_jet20 402 469 dijet
+herwig_jet20 469 536 dijet
+herwig_jet20 536 603 dijet
+herwig_jet20 603 670 dijet
+herwig_jet20 670 737 dijet
+herwig_jet20 737 804 dijet
+herwig_jet20 804 871 dijet
+herwig_jet20 871 938 dijet
+herwig_jet20 938 1005 dijet
+herwig_jet20 1005 1072 dijet
+herwig_jet20 1072 1139 dijet
+herwig_jet20 1139 1206 dijet
+herwig_jet20 1206 1273 dijet
+herwig_jet20 1273 1340 dijet
+herwig_jet20 1340 1407 dijet
+herwig_jet20 1407 1474 dijet
+herwig_jet20 1474 1541 dijet
+herwig_jet20 1541 1608 dijet
+herwig_jet20 1608 1675 dijet
+herwig_jet20 1675 1742 dijet
+herwig_jet20 1742 1809 dijet
+herwig_jet20 1809 1876 dijet
+herwig_jet20 1876 1943 dijet
+herwig_jet20 1943 2010 dijet
+herwig_jet20 2010 2077 dijet
+herwig_jet20 2077 2144 dijet
+herwig_jet20 2144 2211 dijet
+herwig_jet20 2211 2278 dijet
+herwig_jet20 2278 2345 dijet
+herwig_jet20 2345 2412 dijet
+herwig_jet20 2412 2479 dijet
+herwig_jet20 2479 2546 dijet
+herwig_jet20 2546 2613 dijet
+herwig_jet20 2613 2680 dijet
+herwig_jet20 2680 2747 dijet
+herwig_jet20 2747 2814 dijet
+herwig_jet20 2814 2881 dijet
+herwig_jet20 2881 2948 dijet
+herwig_jet20 2948 3015 dijet
+herwig_jet20 3015 3082 dijet
+herwig_jet20 3082 3149 dijet
+herwig_jet20 3149 3216 dijet
+herwig_jet20 3216 3283 dijet
+herwig_jet20 3283 3332 dijet
+herwig_jet30 0 67 dijet
+herwig_jet30 67 134 dijet
+herwig_jet30 134 201 dijet
+herwig_jet30 201 268 dijet
+herwig_jet30 268 335 dijet
+herwig_jet30 335 402 dijet
+herwig_jet30 402 469 dijet
+herwig_jet30 469 536 dijet
+herwig_jet30 536 603 dijet
+herwig_jet30 603 670 dijet
+herwig_jet30 670 737 dijet
+herwig_jet30 737 804 dijet
+herwig_jet30 804 871 dijet
+herwig_jet30 871 938 dijet
+herwig_jet30 938 1005 dijet
+herwig_jet30 1005 1072 dijet
+herwig_jet30 1072 1139 dijet
+herwig_jet30 1139 1206 dijet
+herwig_jet30 1206 1273 dijet
+herwig_jet30 1273 1340 dijet
+herwig_jet30 1340 1407 dijet
+herwig_jet30 1407 1474 dijet
+herwig_jet30 1474 1541 dijet
+herwig_jet30 1541 1608 dijet
+herwig_jet30 1608 1675 dijet
+herwig_jet30 1675 1742 dijet
+herwig_jet30 1742 1809 dijet
+herwig_jet30 1809 1876 dijet
+herwig_jet30 1876 1943 dijet
+herwig_jet30 1943 2010 dijet
+herwig_jet30 2010 2077 dijet
+herwig_jet30 2077 2144 dijet
+herwig_jet30 2144 2211 dijet
+herwig_jet30 2211 2278 dijet
+herwig_jet30 2278 2345 dijet
+herwig_jet30 2345 2412 dijet
+herwig_jet30 2412 2479 dijet
+herwig_jet30 2479 2546 dijet
+herwig_jet30 2546 2613 dijet
+herwig_jet30 2613 2680 dijet
+herwig_jet30 2680 2747 dijet
+herwig_jet30 2747 2814 dijet
+herwig_jet30 2814 2881 dijet
+herwig_jet30 2881 2948 dijet
+herwig_jet30 2948 3015 dijet
+herwig_jet30 3015 3082 dijet
+herwig_jet30 3082 3149 dijet
+herwig_jet30 3149 3216 dijet
+herwig_jet30 3216 3283 dijet
+herwig_jet30 3283 3332 dijet
+herwig_jet40 0 67 dijet
+herwig_jet40 67 134 dijet
+herwig_jet40 134 201 dijet
+herwig_jet40 201 268 dijet
+herwig_jet40 268 335 dijet
+herwig_jet40 335 402 dijet
+herwig_jet40 402 469 dijet
+herwig_jet40 469 536 dijet
+herwig_jet40 536 603 dijet
+herwig_jet40 603 670 dijet
+herwig_jet40 670 737 dijet
+herwig_jet40 737 804 dijet
+herwig_jet40 804 871 dijet
+herwig_jet40 871 938 dijet
+herwig_jet40 938 1005 dijet
+herwig_jet40 1005 1072 dijet
+herwig_jet40 1072 1139 dijet
+herwig_jet40 1139 1206 dijet
+herwig_jet40 1206 1273 dijet
+herwig_jet40 1273 1340 dijet
+herwig_jet40 1340 1407 dijet
+herwig_jet40 1407 1474 dijet
+herwig_jet40 1474 1541 dijet
+herwig_jet40 1541 1608 dijet
+herwig_jet40 1608 1675 dijet
+herwig_jet40 1675 1742 dijet
+herwig_jet40 1742 1809 dijet
+herwig_jet40 1809 1876 dijet
+herwig_jet40 1876 1943 dijet
+herwig_jet40 1943 2010 dijet
+herwig_jet40 2010 2077 dijet
+herwig_jet40 2077 2144 dijet
+herwig_jet40 2144 2211 dijet
+herwig_jet40 2211 2278 dijet
+herwig_jet40 2278 2345 dijet
+herwig_jet40 2345 2412 dijet
+herwig_jet40 2412 2479 dijet
+herwig_jet40 2479 2546 dijet
+herwig_jet40 2546 2613 dijet
+herwig_jet40 2613 2680 dijet
+herwig_jet40 2680 2747 dijet
+herwig_jet40 2747 2814 dijet
+herwig_jet40 2814 2881 dijet
+herwig_jet40 2881 2948 dijet
+herwig_jet40 2948 3015 dijet
+herwig_jet40 3015 3082 dijet
+herwig_jet40 3082 3149 dijet
+herwig_jet40 3149 3216 dijet
+herwig_jet40 3216 3283 dijet
+herwig_jet40 3283 3332 dijet
+herwig_jet50 0 67 dijet
+herwig_jet50 67 134 dijet
+herwig_jet50 134 201 dijet
+herwig_jet50 201 268 dijet
+herwig_jet50 268 335 dijet
+herwig_jet50 335 402 dijet
+herwig_jet50 402 469 dijet
+herwig_jet50 469 536 dijet
+herwig_jet50 536 603 dijet
+herwig_jet50 603 670 dijet
+herwig_jet50 670 737 dijet
+herwig_jet50 737 804 dijet
+herwig_jet50 804 871 dijet
+herwig_jet50 871 938 dijet
+herwig_jet50 938 1005 dijet
+herwig_jet50 1005 1072 dijet
+herwig_jet50 1072 1139 dijet
+herwig_jet50 1139 1206 dijet
+herwig_jet50 1206 1273 dijet
+herwig_jet50 1273 1340 dijet
+herwig_jet50 1340 1407 dijet
+herwig_jet50 1407 1474 dijet
+herwig_jet50 1474 1541 dijet
+herwig_jet50 1541 1608 dijet
+herwig_jet50 1608 1675 dijet
+herwig_jet50 1675 1742 dijet
+herwig_jet50 1742 1809 dijet
+herwig_jet50 1809 1876 dijet
+herwig_jet50 1876 1943 dijet
+herwig_jet50 1943 2010 dijet
+herwig_jet50 2010 2077 dijet
+herwig_jet50 2077 2144 dijet
+herwig_jet50 2144 2211 dijet
+herwig_jet50 2211 2278 dijet
+herwig_jet50 2278 2345 dijet
+herwig_jet50 2345 2412 dijet
+herwig_jet50 2412 2479 dijet
+herwig_jet50 2479 2546 dijet
+herwig_jet50 2546 2613 dijet
+herwig_jet50 2613 2680 dijet
+herwig_jet50 2680 2747 dijet
+herwig_jet50 2747 2814 dijet
+herwig_jet50 2814 2881 dijet
+herwig_jet50 2881 2948 dijet
+herwig_jet50 2948 3015 dijet
+herwig_jet50 3015 3082 dijet
+herwig_jet50 3082 3149 dijet
+herwig_jet50 3149 3216 dijet
+herwig_jet50 3216 3283 dijet
+herwig_jet50 3283 3332 dijet
+herwig_jet12 0 67 none
+herwig_jet12 67 134 none
+herwig_jet12 134 201 none
+herwig_jet12 201 268 none
+herwig_jet12 268 335 none
+herwig_jet12 335 402 none
+herwig_jet12 402 469 none
+herwig_jet12 469 536 none
+herwig_jet12 536 603 none
+herwig_jet12 603 670 none
+herwig_jet12 670 737 none
+herwig_jet12 737 804 none
+herwig_jet12 804 871 none
+herwig_jet12 871 938 none
+herwig_jet12 938 1005 none
+herwig_jet12 1005 1072 none
+herwig_jet12 1072 1139 none
+herwig_jet12 1139 1206 none
+herwig_jet12 1206 1273 none
+herwig_jet12 1273 1340 none
+herwig_jet12 1340 1407 none
+herwig_jet12 1407 1474 none
+herwig_jet12 1474 1541 none
+herwig_jet12 1541 1608 none
+herwig_jet12 1608 1675 none
+herwig_jet12 1675 1742 none
+herwig_jet12 1742 1809 none
+herwig_jet12 1809 1876 none
+herwig_jet12 1876 1943 none
+herwig_jet12 1943 2010 none
+herwig_jet12 2010 2077 none
+herwig_jet12 2077 2144 none
+herwig_jet12 2144 2211 none
+herwig_jet12 2211 2278 none
+herwig_jet12 2278 2345 none
+herwig_jet12 2345 2412 none
+herwig_jet12 2412 2479 none
+herwig_jet12 2479 2546 none
+herwig_jet12 2546 2613 none
+herwig_jet12 2613 2680 none
+herwig_jet12 2680 2747 none
+herwig_jet12 2747 2814 none
+herwig_jet12 2814 2881 none
+herwig_jet12 2881 2948 none
+herwig_jet12 2948 3015 none
+herwig_jet12 3015 3082 none
+herwig_jet12 3082 3149 none
+herwig_jet12 3149 3216 none
+herwig_jet12 3216 3283 none
+herwig_jet12 3283 3332 none
+herwig_jet20 0 67 none
+herwig_jet20 67 134 none
+herwig_jet20 134 201 none
+herwig_jet20 201 268 none
+herwig_jet20 268 335 none
+herwig_jet20 335 402 none
+herwig_jet20 402 469 none
+herwig_jet20 469 536 none
+herwig_jet20 536 603 none
+herwig_jet20 603 670 none
+herwig_jet20 670 737 none
+herwig_jet20 737 804 none
+herwig_jet20 804 871 none
+herwig_jet20 871 938 none
+herwig_jet20 938 1005 none
+herwig_jet20 1005 1072 none
+herwig_jet20 1072 1139 none
+herwig_jet20 1139 1206 none
+herwig_jet20 1206 1273 none
+herwig_jet20 1273 1340 none
+herwig_jet20 1340 1407 none
+herwig_jet20 1407 1474 none
+herwig_jet20 1474 1541 none
+herwig_jet20 1541 1608 none
+herwig_jet20 1608 1675 none
+herwig_jet20 1675 1742 none
+herwig_jet20 1742 1809 none
+herwig_jet20 1809 1876 none
+herwig_jet20 1876 1943 none
+herwig_jet20 1943 2010 none
+herwig_jet20 2010 2077 none
+herwig_jet20 2077 2144 none
+herwig_jet20 2144 2211 none
+herwig_jet20 2211 2278 none
+herwig_jet20 2278 2345 none
+herwig_jet20 2345 2412 none
+herwig_jet20 2412 2479 none
+herwig_jet20 2479 2546 none
+herwig_jet20 2546 2613 none
+herwig_jet20 2613 2680 none
+herwig_jet20 2680 2747 none
+herwig_jet20 2747 2814 none
+herwig_jet20 2814 2881 none
+herwig_jet20 2881 2948 none
+herwig_jet20 2948 3015 none
+herwig_jet20 3015 3082 none
+herwig_jet20 3082 3149 none
+herwig_jet20 3149 3216 none
+herwig_jet20 3216 3283 none
+herwig_jet20 3283 3332 none
+herwig_jet30 0 67 none
+herwig_jet30 67 134 none
+herwig_jet30 134 201 none
+herwig_jet30 201 268 none
+herwig_jet30 268 335 none
+herwig_jet30 335 402 none
+herwig_jet30 402 469 none
+herwig_jet30 469 536 none
+herwig_jet30 536 603 none
+herwig_jet30 603 670 none
+herwig_jet30 670 737 none
+herwig_jet30 737 804 none
+herwig_jet30 804 871 none
+herwig_jet30 871 938 none
+herwig_jet30 938 1005 none
+herwig_jet30 1005 1072 none
+herwig_jet30 1072 1139 none
+herwig_jet30 1139 1206 none
+herwig_jet30 1206 1273 none
+herwig_jet30 1273 1340 none
+herwig_jet30 1340 1407 none
+herwig_jet30 1407 1474 none
+herwig_jet30 1474 1541 none
+herwig_jet30 1541 1608 none
+herwig_jet30 1608 1675 none
+herwig_jet30 1675 1742 none
+herwig_jet30 1742 1809 none
+herwig_jet30 1809 1876 none
+herwig_jet30 1876 1943 none
+herwig_jet30 1943 2010 none
+herwig_jet30 2010 2077 none
+herwig_jet30 2077 2144 none
+herwig_jet30 2144 2211 none
+herwig_jet30 2211 2278 none
+herwig_jet30 2278 2345 none
+herwig_jet30 2345 2412 none
+herwig_jet30 2412 2479 none
+herwig_jet30 2479 2546 none
+herwig_jet30 2546 2613 none
+herwig_jet30 2613 2680 none
+herwig_jet30 2680 2747 none
+herwig_jet30 2747 2814 none
+herwig_jet30 2814 2881 none
+herwig_jet30 2881 2948 none
+herwig_jet30 2948 3015 none
+herwig_jet30 3015 3082 none
+herwig_jet30 3082 3149 none
+herwig_jet30 3149 3216 none
+herwig_jet30 3216 3283 none
+herwig_jet30 3283 3332 none
+herwig_jet40 0 67 none
+herwig_jet40 67 134 none
+herwig_jet40 134 201 none
+herwig_jet40 201 268 none
+herwig_jet40 268 335 none
+herwig_jet40 335 402 none
+herwig_jet40 402 469 none
+herwig_jet40 469 536 none
+herwig_jet40 536 603 none
+herwig_jet40 603 670 none
+herwig_jet40 670 737 none
+herwig_jet40 737 804 none
+herwig_jet40 804 871 none
+herwig_jet40 871 938 none
+herwig_jet40 938 1005 none
+herwig_jet40 1005 1072 none
+herwig_jet40 1072 1139 none
+herwig_jet40 1139 1206 none
+herwig_jet40 1206 1273 none
+herwig_jet40 1273 1340 none
+herwig_jet40 1340 1407 none
+herwig_jet40 1407 1474 none
+herwig_jet40 1474 1541 none
+herwig_jet40 1541 1608 none
+herwig_jet40 1608 1675 none
+herwig_jet40 1675 1742 none
+herwig_jet40 1742 1809 none
+herwig_jet40 1809 1876 none
+herwig_jet40 1876 1943 none
+herwig_jet40 1943 2010 none
+herwig_jet40 2010 2077 none
+herwig_jet40 2077 2144 none
+herwig_jet40 2144 2211 none
+herwig_jet40 2211 2278 none
+herwig_jet40 2278 2345 none
+herwig_jet40 2345 2412 none
+herwig_jet40 2412 2479 none
+herwig_jet40 2479 2546 none
+herwig_jet40 2546 2613 none
+herwig_jet40 2613 2680 none
+herwig_jet40 2680 2747 none
+herwig_jet40 2747 2814 none
+herwig_jet40 2814 2881 none
+herwig_jet40 2881 2948 none
+herwig_jet40 2948 3015 none
+herwig_jet40 3015 3082 none
+herwig_jet40 3082 3149 none
+herwig_jet40 3149 3216 none
+herwig_jet40 3216 3283 none
+herwig_jet40 3283 3332 none
+herwig_jet50 0 67 none
+herwig_jet50 67 134 none
+herwig_jet50 134 201 none
+herwig_jet50 201 268 none
+herwig_jet50 268 335 none
+herwig_jet50 335 402 none
+herwig_jet50 402 469 none
+herwig_jet50 469 536 none
+herwig_jet50 536 603 none
+herwig_jet50 603 670 none
+herwig_jet50 670 737 none
+herwig_jet50 737 804 none
+herwig_jet50 804 871 none
+herwig_jet50 871 938 none
+herwig_jet50 938 1005 none
+herwig_jet50 1005 1072 none
+herwig_jet50 1072 1139 none
+herwig_jet50 1139 1206 none
+herwig_jet50 1206 1273 none
+herwig_jet50 1273 1340 none
+herwig_jet50 1340 1407 none
+herwig_jet50 1407 1474 none
+herwig_jet50 1474 1541 none
+herwig_jet50 1541 1608 none
+herwig_jet50 1608 1675 none
+herwig_jet50 1675 1742 none
+herwig_jet50 1742 1809 none
+herwig_jet50 1809 1876 none
+herwig_jet50 1876 1943 none
+herwig_jet50 1943 2010 none
+herwig_jet50 2010 2077 none
+herwig_jet50 2077 2144 none
+herwig_jet50 2144 2211 none
+herwig_jet50 2211 2278 none
+herwig_jet50 2278 2345 none
+herwig_jet50 2345 2412 none
+herwig_jet50 2412 2479 none
+herwig_jet50 2479 2546 none
+herwig_jet50 2546 2613 none
+herwig_jet50 2613 2680 none
+herwig_jet50 2680 2747 none
+herwig_jet50 2747 2814 none
+herwig_jet50 2814 2881 none
+herwig_jet50 2881 2948 none
+herwig_jet50 2948 3015 none
+herwig_jet50 3015 3082 none
+herwig_jet50 3082 3149 none
+herwig_jet50 3149 3216 none
+herwig_jet50 3216 3283 none
+herwig_jet50 3283 3332 none

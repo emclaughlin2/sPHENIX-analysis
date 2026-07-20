@@ -1,5 +1,6 @@
 executable = analysis_sim.sh
 arguments = $(trig) $(start_seg) $(end_seg) 1 $(bkg_cut)
+request_memory = 4GB
 output = output_logs/output_allsim_1_$(Process).out
 when_to_transfer_output = ON_EXIT
 error			= output_logs/error_allsim_1_$(Process).err

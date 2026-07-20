@@ -26,7 +26,6 @@ void draw_one(
     return;
   }
 
-  // Get latest cycle by requesting object name directly.
   TH1 *h = nullptr;
   TF1 *fit = nullptr;
   f->GetObject(hist_name.c_str(), h);
@@ -45,7 +44,6 @@ void draw_one(
               << " in " << infile << std::endl;
   }
 
-  // Detach from file so objects survive file close.
   TH1 *hclone = (TH1 *) h->Clone((hist_name + "_clone").c_str());
   hclone->SetDirectory(nullptr);
 
@@ -59,7 +57,6 @@ void draw_one(
   TCanvas *c = new TCanvas(canvas_name.c_str(), canvas_name.c_str(), 900, 700);
   c->cd();
 
-  // Histogram style tuned for sPHENIX-like look.
   hclone->SetLineColor(kBlack);
   hclone->SetLineWidth(2);
   hclone->SetMarkerStyle(20);
@@ -81,15 +78,16 @@ void draw_one(
 
   if (fclone)
   {
-    //fclone->SetLineColor(kRed + 1);
     fclone->SetLineColor(kBlue + 1);
     fclone->SetLineWidth(2);
     fclone->SetLineStyle(1);
-    hclone->GetListOfFunctions()->Add(fclone);  // keep fit with histogram
+    // Extend drawing range to match the full histogram x-axis range
+    if (particle_label == "Isolated hadron") fclone->SetRange(0.0, 1.5);
+    hclone->GetListOfFunctions()->Add(fclone);
     fclone->Draw("SAME");
   }
 
-  // Legend style (minimal box, sPHENIX-friendly).
+  // Legend
   TLegend *leg = new TLegend(0.56, 0.76, 0.86, 0.9);
   leg->SetBorderSize(0);
   leg->SetFillStyle(0);
@@ -101,13 +99,34 @@ void draw_one(
   if (fclone) leg->AddEntry(fclone, "Gaussian Fit", "l");
   leg->Draw();
 
-  // sPHENIX label style.
+  // sPHENIX label
   TLatex lat;
   lat.SetNDC();
   lat.SetTextFont(42);
   lat.SetTextSize(0.04);
   lat.DrawLatex(0.2, 0.87, "#it{#bf{sPHENIX}} Simulation Internal");
   lat.DrawLatex(0.2, 0.82, "200 GeV Pythia8 p+p");
+
+  // Fit parameters label
+  if (fclone)
+  {
+    double mean      = fclone->GetParameter(1);
+    double mean_err  = fclone->GetParError(1);
+    double sigma     = TMath::Abs(fclone->GetParameter(2));
+    double sigma_err = fclone->GetParError(2);
+
+    char mean_str[64], sigma_str[64];
+    snprintf(mean_str,  sizeof(mean_str),  "#mu = %.3f #pm %.3f", mean,  mean_err);
+    snprintf(sigma_str, sizeof(sigma_str), "#sigma = %.3f #pm %.3f", sigma, sigma_err);
+
+    TLatex fitlat;
+    fitlat.SetNDC();
+    fitlat.SetTextFont(42);
+    fitlat.SetTextSize(0.038);
+    //fitlat.SetTextColor(kBlue + 1);   // matches fit line color
+    fitlat.DrawLatex(0.64, 0.72, mean_str);
+    fitlat.DrawLatex(0.64, 0.67, sigma_str);
+  }
 
   c->Modified();
   c->Update();
@@ -128,7 +147,7 @@ void plot_isolated_resolution_sphenix()
 
   // Hadron from Hadron_Isolated_Resolution_3Plots_fit.root
   draw_one(
-      "Hadron_Isolated_Resolution_3Plots_fit.root",
+      "Hadron_Isolated_Resolution_3Plots_paper_fit.root",
       "hEP_hadron_3s",
       "gausFit_3s",
       "c_hadron_3s_sphenix",
